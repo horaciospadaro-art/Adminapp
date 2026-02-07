@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Core & Multi-tenancy
+model Company {
+  id                String   @id @default(uuid())
+  name              String
+  rif               String   @unique // Venezuelan Tax ID
+  fiscal_year_start DateTime
+  currency          String   @default("VES") // VES or USD
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  accounts       ChartOfAccount[]
+  journalEntries JournalEntry[]
+  thirdParties   ThirdParty[]
+  products       Product[]
+  bankAccounts   BankAccount[]
+}
+
+// Accounting Module
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  COST
+  EXPENSE
+  OTHER
+}
+
+model ChartOfAccount {
+  id         String      @id @default(uuid())
+  company_id String
+  company    Company     @relation(fields: [company_id], references: [id])
+  code       String // Hierarchical: 1.1.01
+  name       String
+  type       AccountType
+  parent_id  String?
+  parent     ChartOfAccount? @relation("AccountHierarchy", fields: [parent_id], references: [id])
+  children   ChartOfAccount[] @relation("AccountHierarchy")
+  balance    Decimal     @default(0.00) @db.Decimal(20, 2)
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+
+  // Relations
+  journalLines    JournalLine[]
+  linkedProducts  Product[]     @relation("InventoryAsset")
+  linkedCOGS      Product[]     @relation("COGS")
+  linkedIncome    Product[]     @relation("SalesIncome")
+  linkedBankAccts BankAccount[]
+
+  @@unique([company_id, code])
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  VOID
+}
+
+model JournalEntry {
+  id          String        @id @default(uuid())
+  company_id  String
+  company     Company       @relation(fields: [company_id], references: [id])
+  date        DateTime
+  description String
+  status      JournalStatus @default(DRAFT)
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  // Relations
+  lines JournalLine[]
+}
+
+model JournalLine {
+  id          String         @id @default(uuid())
+  entry_id    String
+  entry       JournalEntry   @relation(fields: [entry_id], references: [id])
+  account_id  String
+  account     ChartOfAccount @relation(fields: [account_id], references: [id])
+  debit       Decimal        @default(0.00) @db.Decimal(20, 2)
+  credit      Decimal        @default(0.00) @db.Decimal(20, 2)
+  description String?
+}
+
+// Administrative Module
+model ThirdParty {
+  id                   String   @id @default(uuid())
+  company_id           String
+  company              Company  @relation(fields: [company_id], references: [id])
+  name                 String
+  rif                  String
+  is_tax_payer_special Boolean  @default(false)
+  retention_agent_islr Boolean  @default(false)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+}
+
+model Product {
+  id                String         @id @default(uuid())
+  company_id        String
+  company           Company        @relation(fields: [company_id], references: [id])
+  sku               String
+  name              String
+  cost_avg          Decimal        @default(0.00) @db.Decimal(20, 2)
+  stock_qty         Int            @default(0)
+  asset_account_id  String
+  asset_account     ChartOfAccount @relation("InventoryAsset", fields: [asset_account_id], references: [id])
+  cogs_account_id   String
+  cogs_account      ChartOfAccount @relation("COGS", fields: [cogs_account_id], references: [id])
+  income_account_id String
+  income_account    ChartOfAccount @relation("SalesIncome", fields: [income_account_id], references: [id])
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+
+  @@unique([company_id, sku])
+}
+
+model BankAccount {
+  id             String         @id @default(uuid())
+  company_id     String
+  company        Company        @relation(fields: [company_id], references: [id])
+  bank_name      String
+  account_number String
+  gl_account_id  String
+  gl_account     ChartOfAccount @relation(fields: [gl_account_id], references: [id])
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+}
