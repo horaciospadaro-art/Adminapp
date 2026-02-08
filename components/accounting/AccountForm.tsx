@@ -1,25 +1,44 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { AccountType } from '@prisma/client'
 
-enum AccountType {
-    ASSET = 'ASSET',
-    LIABILITY = 'LIABILITY',
-    EQUITY = 'EQUITY',
-    INCOME = 'INCOME',
-    COST = 'COST',
-    EXPENSE = 'EXPENSE',
-    OTHER = 'OTHER'
+
+
+interface AccountFormProps {
+    companyId: string
+    initialData?: {
+        id: string
+        code: string
+        name: string
+        type: AccountType
+    } | null
+    onCancel?: () => void
+    onSuccess?: () => void
 }
 
-export function AccountForm({ companyId }: { companyId: string }) {
+export function AccountForm({ companyId, initialData, onCancel, onSuccess }: AccountFormProps) {
     const router = useRouter()
     const [code, setCode] = useState('')
     const [name, setName] = useState('')
     const [type, setType] = useState<AccountType>(AccountType.ASSET)
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+
+    // Load initial data if editing
+    useEffect(() => {
+        if (initialData) {
+            setCode(initialData.code)
+            setName(initialData.name)
+            setType(initialData.type)
+        } else {
+            // Reset if switching back to create mode
+            setCode('')
+            setName('')
+            setType(AccountType.ASSET)
+        }
+    }, [initialData])
 
     // Lógica de validación básica para permitir escribir
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,14 +67,6 @@ export function AccountForm({ companyId }: { companyId: string }) {
         // Si solo escribió números sin puntos (ej: 110100001), intentamos aplicar máscara estricta
         // Pero si tiene puntos, respetamos la estructura y rellenamos ceros
         if (parts.length === 1 && input.length > 1) {
-            // Fallback a lógica de posición fija si no hay puntos
-            const raw = parts[0]
-            // Better stick to: if no dots, user treats it as raw string.
-            // Let's rely on the previous mask logic for raw string?
-            // No, let's start fresh.
-            // If no dots, just return as is or try to parse?
-            // Requirement: "Input mask... obligue... formato de puntos".
-            // Let's assume user uses dots for smart fill. x.x.x.x
             return input
         }
 
@@ -77,23 +88,37 @@ export function AccountForm({ companyId }: { companyId: string }) {
         setError(null)
 
         try {
+            const isEdit = !!initialData
+            const method = isEdit ? 'PUT' : 'POST'
+            const body = {
+                companyId,
+                code,
+                name,
+                type,
+                id: initialData?.id // Include ID for updates
+            }
+
             const res = await fetch('/api/accounting/accounts', {
-                method: 'POST',
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ companyId, code, name, type })
+                body: JSON.stringify(body)
             })
 
             if (!res.ok) {
                 const data = await res.json()
-                throw new Error(data.error || 'Error al crear la cuenta')
+                throw new Error(data.error || 'Error al guardar la cuenta')
             }
 
             router.refresh()
-            // Reset form
-            setCode('')
-            setName('')
-            // Mantener tipo o resetear? Resetear a ASSET
-            setType(AccountType.ASSET)
+
+            if (onSuccess) onSuccess()
+
+            if (!isEdit) {
+                // If create mode, reset form. If edit, parent might handle state clear
+                setCode('')
+                setName('')
+                setType(AccountType.ASSET)
+            }
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -103,7 +128,19 @@ export function AccountForm({ companyId }: { companyId: string }) {
 
     return (
         <div className="bg-white p-6 rounded shadow border border-gray-100 mb-6">
-            <h2 className="text-lg font-bold mb-4">Nueva Cuenta Contable</h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold">
+                    {initialData ? 'Editar Cuenta' : 'Nueva Cuenta Contable'}
+                </h2>
+                {initialData && onCancel && (
+                    <button
+                        onClick={onCancel}
+                        className="text-gray-500 hover:text-gray-700 text-sm"
+                    >
+                        Cancelar Edición
+                    </button>
+                )}
+            </div>
 
             {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm">
@@ -166,13 +203,22 @@ export function AccountForm({ companyId }: { companyId: string }) {
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                    {initialData && onCancel && (
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-4 py-2 rounded text-gray-700 hover:bg-gray-100"
+                        >
+                            Cancelar
+                        </button>
+                    )}
                     <button
                         type="submit"
                         disabled={loading}
                         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
                     >
-                        {loading ? 'Guardando...' : 'Crear Cuenta'}
+                        {loading ? 'Guardando...' : (initialData ? 'Actualizar Cuenta' : 'Crear Cuenta')}
                     </button>
                 </div>
             </form>

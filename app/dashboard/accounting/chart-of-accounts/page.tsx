@@ -1,6 +1,5 @@
-import { AccountForm } from '@/components/accounting/AccountForm'
-import { AccountTree } from '@/components/accounting/AccountTree'
 import prisma from '@/lib/db'
+import { ChartOfAccountsManager } from '@/components/accounting/ChartOfAccountsManager'
 
 async function getDemoCompanyId() {
     const company = await prisma.company.findFirst()
@@ -15,14 +14,7 @@ export default async function ChartOfAccountsPage() {
             <h1 className="text-2xl font-bold text-gray-800">Plan de Cuentas</h1>
             <p className="text-gray-500">Gestione la estructura de cuentas contables de la empresa.</p>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                    <AccountForm companyId={companyId} />
-                </div>
-                <div>
-                    <AccountTree companyId={companyId} />
-                </div>
-            </div>
+            <ChartOfAccountsManager companyId={companyId} />
         </div>
     )
 }

@@ -11,7 +11,7 @@ type Account = {
     balance: number
 }
 
-export function AccountTree({ companyId }: { companyId: string }) {
+export function AccountTree({ companyId, onEdit }: { companyId: string, onEdit?: (account: any) => void }) {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -40,7 +40,7 @@ export function AccountTree({ companyId }: { companyId: string }) {
             <ul className={`pl-${parentId ? '4' : '0'} space-y-1`}>
                 {nodes.map(node => (
                     <li key={node.id}>
-                        <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded border-b border-gray-50">
+                        <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded border-b border-gray-50 group">
                             <div className="flex items-center gap-2">
                                 <span className={`font-mono text-sm ${depth === 0 ? 'font-bold' : ''}`}>
                                     {node.code}
@@ -49,8 +49,16 @@ export function AccountTree({ companyId }: { companyId: string }) {
                                     {node.name}
                                 </span>
                             </div>
-                            <div className="text-sm text-gray-600">
-                                {Number(node.balance).toFixed(2)}
+                            <div className="flex items-center gap-4">
+                                <div className="text-sm text-gray-600">
+                                    {Number(node.balance).toFixed(2)}
+                                </div>
+                                <button
+                                    onClick={() => onEdit && onEdit(node)}
+                                    className="text-blue-500 hover:text-blue-700 opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                                >
+                                    Editar
+                                </button>
                             </div>
                         </div>
                         {buildTree(node.id, depth + 1)}

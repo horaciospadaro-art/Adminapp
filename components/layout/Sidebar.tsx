@@ -21,6 +21,12 @@ export function Sidebar() {
                             </Link>
                         </li>
                         <li>
+                            <Link href="/dashboard/companies" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                                <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Em</span>
+                                Empresas
+                            </Link>
+                        </li>
+                        <li>
                             <Link href="/dashboard/operations" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
                                 <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Op</span>
                                 Operaciones
