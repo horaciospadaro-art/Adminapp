@@ -2,6 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+    LayoutDashboard,
+    Building2,
+    Landmark,
+    Users,
+    Truck,
+    BookOpen,
+    ChartBar
+} from 'lucide-react'
 
 export function Sidebar() {
     const pathname = usePathname()
@@ -15,50 +24,49 @@ export function Sidebar() {
         {
             title: 'MENÚ PRINCIPAL',
             items: [
-                { label: 'Tablero', href: '/dashboard', icon: 'Tb' },
-                { label: 'Empresas', href: '/dashboard/companies', icon: 'Em' },
+                { label: 'Tablero', href: '/dashboard', icon: LayoutDashboard },
+                { label: 'Empresas', href: '/dashboard/companies', icon: Building2 },
             ]
         },
         {
             title: 'ADMINISTRACIÓN',
             items: [
-                { label: 'Bancos', href: '/dashboard/banks', icon: 'Bn' },
-                { label: 'Clientes', href: '/dashboard/operations/clients', icon: 'Cl' },
-                { label: 'Proveedores', href: '/dashboard/operations/suppliers', icon: 'Pr' },
+                { label: 'Bancos', href: '/dashboard/banks', icon: Landmark },
+                { label: 'Clientes', href: '/dashboard/operations/clients', icon: Users },
+                { label: 'Proveedores', href: '/dashboard/operations/suppliers', icon: Truck },
             ]
         },
         {
             title: 'CONTABILIDAD',
             items: [
-                { label: 'Plan de Cuentas', href: '/dashboard/accounting/chart-of-accounts', icon: 'Pc' },
-                { label: 'Reportes Contables', href: '/dashboard/reports', icon: 'Rp' },
+                { label: 'Plan de Cuentas', href: '/dashboard/accounting/chart-of-accounts', icon: BookOpen },
+                { label: 'Reportes Contables', href: '/dashboard/reports', icon: ChartBar },
             ]
         }
     ]
 
     return (
-        <div className="w-56 bg-[#f4f5f8] text-[#393a3d] h-full flex flex-col border-r border-gray-200">
-            <nav className="flex-1 py-4 overflow-y-auto">
+        <div className="w-60 bg-[#f4f5f8] text-[#393a3d] h-full flex flex-col border-r border-gray-200">
+            <nav className="flex-1 py-6 overflow-y-auto">
                 {menuSections.map((section, idx) => (
-                    <div key={idx} className="mb-6">
-                        <h3 className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    <div key={idx} className="mb-8">
+                        <h3 className="px-6 text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
                             {section.title}
                         </h3>
                         <div className="space-y-1">
                             {section.items.map((item) => {
                                 const active = isActive(item.href)
+                                const Icon = item.icon
                                 return (
                                     <Link
                                         key={item.href}
                                         href={item.href}
-                                        className={`flex items-center px-4 py-2 text-sm font-medium transition-colors border-l-4 ${active
+                                        className={`flex items-center px-6 py-3 text-base font-medium transition-colors border-l-4 ${active
                                             ? 'border-[#2ca01c] bg-white text-black'
                                             : 'border-transparent hover:bg-gray-200 text-gray-600'
                                             }`}
                                     >
-                                        <span className={`w-6 text-center mr-3 font-mono text-xs ${active ? 'text-[#2ca01c]' : 'opacity-50'}`}>
-                                            {item.icon}
-                                        </span>
+                                        <Icon className={`w-5 h-5 mr-3 ${active ? 'text-[#2ca01c]' : 'text-gray-400'}`} />
                                         {item.label}
                                     </Link>
                                 )
@@ -76,4 +84,3 @@ export function Sidebar() {
         </div>
     )
 }
-
