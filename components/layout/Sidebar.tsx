@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -11,15 +12,26 @@ import {
     BookOpen,
     ChartBar,
     Settings,
-    Package
+    Package,
+    ChevronDown,
+    ChevronRight
 } from 'lucide-react'
 
 export function Sidebar() {
     const pathname = usePathname()
+    const [expandedItems, setExpandedItems] = useState<string[]>([])
 
     const isActive = (path: string) => {
         if (path === '/dashboard' && pathname === '/dashboard') return true
         return path !== '/dashboard' && pathname.startsWith(path)
+    }
+
+    const toggleExpand = (label: string) => {
+        setExpandedItems(prev =>
+            prev.includes(label)
+                ? prev.filter(item => item !== label)
+                : [...prev, label]
+        )
     }
 
     const menuSections = [
@@ -28,6 +40,14 @@ export function Sidebar() {
             items: [
                 { label: 'Tablero', href: '/dashboard', icon: LayoutDashboard },
                 { label: 'Empresas', href: '/dashboard/companies', icon: Building2 },
+                {
+                    label: 'Configuración',
+                    href: '#',
+                    icon: Settings,
+                    subItems: [
+                        { label: 'Impuestos', href: '/dashboard/configuration/taxes' }
+                    ]
+                },
             ]
         },
         {
@@ -50,12 +70,6 @@ export function Sidebar() {
             items: [
                 { label: 'Centro de Reportes', href: '/dashboard/reports', icon: ChartBar },
             ]
-        },
-        {
-            title: 'CONFIGURACIÓN',
-            items: [
-                { label: 'Impuestos', href: '/dashboard/configuration/taxes', icon: Settings },
-            ]
         }
     ]
 
@@ -71,6 +85,45 @@ export function Sidebar() {
                             {section.items.map((item) => {
                                 const active = isActive(item.href)
                                 const Icon = item.icon
+                                const hasSubItems = 'subItems' in item
+                                const isExpanded = expandedItems.includes(item.label)
+
+                                if (hasSubItems) {
+                                    return (
+                                        <div key={item.label}>
+                                            <button
+                                                onClick={() => toggleExpand(item.label)}
+                                                className={`w-full flex items-center justify-between px-6 py-3 text-base font-medium transition-colors border-l-4 border-transparent hover:bg-gray-200 text-gray-600`}
+                                            >
+                                                <div className="flex items-center">
+                                                    <Icon className="w-5 h-5 mr-3 text-gray-400" />
+                                                    {item.label}
+                                                </div>
+                                                <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                            </button>
+                                            {isExpanded && (
+                                                <div className="bg-gray-50 py-1">
+                                                    {item.subItems?.map((subItem) => {
+                                                        const subActive = isActive(subItem.href)
+                                                        return (
+                                                            <Link
+                                                                key={subItem.href}
+                                                                href={subItem.href}
+                                                                className={`block pl-14 pr-6 py-2 text-sm font-medium transition-colors border-l-4 ${subActive
+                                                                    ? 'border-[#2ca01c] text-[#2ca01c] bg-white'
+                                                                    : 'border-transparent text-gray-500 hover:text-gray-900'
+                                                                    }`}
+                                                            >
+                                                                {subItem.label}
+                                                            </Link>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                }
+
                                 return (
                                     <Link
                                         key={item.href}

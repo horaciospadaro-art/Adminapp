@@ -39,11 +39,12 @@ async function main() {
                 company_id: company.id,
                 sku: 'TEST-SKU',
                 name: 'Test Setup Product',
+                type: 'GOODS',
                 asset_account_id: assetAcc.id,
                 income_account_id: incomeAcc.id,
                 cogs_account_id: cogsAcc.id,
-                cost_avg: 100,
-                stock_qty: 10
+                avg_cost: 100,
+                quantity_on_hand: 10
             }
         })
     }

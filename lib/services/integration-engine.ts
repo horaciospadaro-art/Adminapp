@@ -59,6 +59,11 @@ export class IntegrationEngine {
 
             if (!product) throw new Error(`Product ${item.sku} not found`)
 
+            // Validate Accounting Configuration
+            if (!product.income_account) throw new Error(`Product ${product.name} missing Income Account`)
+            if (!product.cogs_account) throw new Error(`Product ${product.name} missing COGS Account`)
+            if (!product.asset_account) throw new Error(`Product ${product.name} missing Asset Account`)
+
             const amount = item.qty * item.price
             totalIncome += amount
 
@@ -77,7 +82,7 @@ export class IntegrationEngine {
             // COGS Integration (Inventory)
             // When selling, we must reduce inventory and recognize Cost of Goods Sold
             // We need the current cost to credit inventory and debit COGS
-            const costAmount = Number(product.cost_avg) * item.qty
+            const costAmount = Number(product.avg_cost) * item.qty
 
             lines.push({
                 accountCode: product.cogs_account.code,
@@ -96,7 +101,7 @@ export class IntegrationEngine {
             // Update Stock (Decrease)
             await prisma.product.update({
                 where: { id: product.id },
-                data: { stock_qty: { decrement: item.qty } }
+                data: { quantity_on_hand: { decrement: item.qty } }
             })
         }
 

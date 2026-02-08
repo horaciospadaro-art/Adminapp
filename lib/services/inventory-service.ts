@@ -42,8 +42,8 @@ export class InventoryService {
         }
 
         const newCost = this.calculateNewCost(
-            product.stock_qty,
-            Number(product.cost_avg),
+            Number(product.quantity_on_hand),
+            Number(product.avg_cost),
             qty,
             unitCost
         )
@@ -52,8 +52,8 @@ export class InventoryService {
         const updatedProduct = await prisma.product.update({
             where: { id: product.id },
             data: {
-                stock_qty: { increment: qty },
-                cost_avg: newCost
+                quantity_on_hand: { increment: qty },
+                avg_cost: newCost
             }
         })
 

@@ -8,7 +8,7 @@ import { getDynamicReportData } from '@/app/actions/reports'
 type ReportField = {
     id: string
     label: string
-    category: 'basic' | 'contact' | 'fiscal' | 'accounting'
+    category: 'basic' | 'contact' | 'fiscal' | 'accounting' | 'document' | 'financial'
 }
 
 const AVAILABLE_FIELDS: ReportField[] = [
@@ -27,14 +27,31 @@ const AVAILABLE_FIELDS: ReportField[] = [
     // Accounting
     { id: 'account_code', label: 'Cuenta Contable', category: 'accounting' },
     { id: 'balance', label: 'Saldo Actual (Contable)', category: 'accounting' },
+    // Document Specific
+    { id: 'date', label: 'Fecha Emisión', category: 'document' },
+    { id: 'due_date', label: 'Fecha Vencimiento', category: 'document' },
+    { id: 'number', label: 'Número Control', category: 'document' },
+    { id: 'reference', label: 'Referencia', category: 'document' },
+    // Financial Specific
+    { id: 'subtotal', label: 'Subtotal', category: 'financial' },
+    { id: 'tax_amount', label: 'Impuestos', category: 'financial' },
+    { id: 'total', label: 'Total', category: 'financial' },
+    { id: 'pending_balance', label: 'Saldo Pendiente', category: 'financial' },
 ]
 
 export function DynamicReportBuilder() {
-    const [module, setModule] = useState('clients') // clients, suppliers, etc.
+    const [module, setModule] = useState('clients') // clients, suppliers, invoices, bills
     const [selectedFields, setSelectedFields] = useState<string[]>(['name', 'rif', 'email', 'balance'])
     const [data, setData] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+
+    // Date Filters
+    const now = new Date()
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+    const [startDate, setStartDate] = useState(firstDay)
+    const [endDate, setEndDate] = useState(lastDay)
 
     const toggleField = (id: string) => {
         if (selectedFields.includes(id)) {
@@ -47,7 +64,7 @@ export function DynamicReportBuilder() {
     const handleGenerate = async () => {
         setLoading(true)
         try {
-            const results = await getDynamicReportData(module, selectedFields)
+            const results = await getDynamicReportData(module, selectedFields, startDate, endDate)
             setData(results)
             setLastUpdated(new Date())
         } catch (error) {
@@ -58,12 +75,42 @@ export function DynamicReportBuilder() {
         }
     }
 
+    const handleExport = () => {
+        if (data.length === 0) return
+
+        // CSV Header
+        const header = selectedFields.map(id => {
+            const field = AVAILABLE_FIELDS.find(f => f.id === id)
+            return `"${field?.label || id}"`
+        }).join(',')
+
+        // CSV Rows
+        const rows = data.map(row => {
+            return selectedFields.map(id => {
+                const val = row[id] !== undefined && row[id] !== null ? String(row[id]) : ''
+                return `"${val.replace(/"/g, '""')}"` // Escape quotes
+            }).join(',')
+        }).join('\n')
+
+        const csvContent = `\uFEFF${header}\n${rows}` // Add BOM for Excel
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `reporte_${module}_${new Date().toISOString().split('T')[0]}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
     // Group fields for UI
     const groupedFields = {
         basic: AVAILABLE_FIELDS.filter(f => f.category === 'basic'),
         contact: AVAILABLE_FIELDS.filter(f => f.category === 'contact'),
         fiscal: AVAILABLE_FIELDS.filter(f => f.category === 'fiscal'),
         accounting: AVAILABLE_FIELDS.filter(f => f.category === 'accounting'),
+        document: AVAILABLE_FIELDS.filter(f => f.category === 'document'),
+        financial: AVAILABLE_FIELDS.filter(f => f.category === 'financial'),
     }
 
     return (
@@ -72,17 +119,52 @@ export function DynamicReportBuilder() {
             <div className="col-span-12 md:col-span-3 flex flex-col gap-4">
 
                 {/* Selector de Módulo */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Módulo</label>
-                    <select
-                        value={module}
-                        onChange={(e) => setModule(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    >
-                        <option value="clients">Clientes</option>
-                        <option value="suppliers">Proveedores</option>
-                        {/* Future: Inventory, Banks */}
-                    </select>
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Módulo</label>
+                        <select
+                            value={module}
+                            onChange={(e) => {
+                                setModule(e.target.value)
+                                // Reset fields based on module? Or keep intersecting ones?
+                                // For now keep as is, user must select relevant fields.
+                                if (e.target.value === 'invoices' || e.target.value === 'bills') {
+                                    setSelectedFields(['date', 'number', 'name', 'total', 'status'])
+                                } else {
+                                    setSelectedFields(['name', 'rif', 'email', 'balance'])
+                                }
+                            }}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="clients">Clientes</option>
+                            <option value="suppliers">Proveedores</option>
+                            <option value="invoices">Ventas (Facturas)</option>
+                            <option value="bills">Compras (Facturas)</option>
+                        </select>
+                    </div>
+
+                    {/* Date Filters */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Rango de Fecha</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={e => setStartDate(e.target.value)}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1.5"
+                                />
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={e => setEndDate(e.target.value)}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1.5"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Selector de Campos */}
@@ -98,30 +180,41 @@ export function DynamicReportBuilder() {
                     </div>
 
                     <div className="p-4 overflow-y-auto space-y-4 flex-1">
-                        {Object.entries(groupedFields).map(([category, fields]) => (
-                            <div key={category}>
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                    {category === 'basic' ? 'Básicos' :
-                                        category === 'contact' ? 'Contacto' :
-                                            category === 'fiscal' ? 'Fiscal' : 'Contable'}
-                                </h4>
-                                <div className="space-y-2">
-                                    {fields.map(field => (
-                                        <label key={field.id} className="flex items-center gap-2 cursor-pointer group">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedFields.includes(field.id)}
-                                                onChange={() => toggleField(field.id)}
-                                                className="w-4 h-4 text-[#4CAF50] border-gray-300 rounded focus:ring-[#4CAF50] cursor-pointer"
-                                            />
-                                            <span className={`text-sm group-hover:text-gray-900 ${selectedFields.includes(field.id) ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
-                                                {field.label}
-                                            </span>
-                                        </label>
-                                    ))}
+                        {Object.entries(groupedFields).map(([category, fields]) => {
+                            if (fields.length === 0) return null
+                            // Hide document fields if not looking at documents
+                            const isDocModule = module === 'invoices' || module === 'bills'
+                            if ((category === 'document' || category === 'financial') && !isDocModule) return null
+                            // Hide some contact fields if looking at documents (maybe kep them joined?)
+                            // Let's allow everything for now, but in reality backend only maps some.
+
+                            return (
+                                <div key={category}>
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                        {category === 'basic' ? 'Básicos' :
+                                            category === 'contact' ? 'Contacto' :
+                                                category === 'fiscal' ? 'Fiscal' :
+                                                    category === 'accounting' ? 'Contable' :
+                                                        category === 'document' ? 'Documento' : 'Financiero'}
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {fields.map(field => (
+                                            <label key={field.id} className="flex items-center gap-2 cursor-pointer group">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedFields.includes(field.id)}
+                                                    onChange={() => toggleField(field.id)}
+                                                    className="w-4 h-4 text-[#4CAF50] border-gray-300 rounded focus:ring-[#4CAF50] cursor-pointer"
+                                                />
+                                                <span className={`text-sm group-hover:text-gray-900 ${selectedFields.includes(field.id) ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
+                                                    {field.label}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     <div className="p-4 border-t border-gray-100 bg-gray-50">
@@ -146,7 +239,7 @@ export function DynamicReportBuilder() {
                             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Filtrar..."
+                                placeholder="Filtrar resultados..."
                                 className="pl-9 pr-4 py-1.5 border border-gray-300 rounded-md text-sm w-48 focus:ring-1 focus:ring-blue-500"
                             />
                         </div>
@@ -156,8 +249,12 @@ export function DynamicReportBuilder() {
                             </span>
                         )}
                     </div>
-                    <button className="flex items-center gap-2 px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium">
-                        <Download className="w-4 h-4" /> Exportar
+                    <button
+                        onClick={handleExport}
+                        disabled={data.length === 0}
+                        className="flex items-center gap-2 px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium disabled:opacity-50"
+                    >
+                        <Download className="w-4 h-4" /> Exportar CSV
                     </button>
                 </div>
 
@@ -189,7 +286,7 @@ export function DynamicReportBuilder() {
                                     {data.map((row, idx) => (
                                         <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
                                             {selectedFields.map(fieldId => (
-                                                <td key={`${idx}-${fieldId}`} className="px-6 py-3 whitespace-nowrap text-gray-700 border-b border-gray-100">
+                                                <td key={`${idx}-${fieldId}`} className="px-6 py-3 whitespace-nowrap text-gray-700 border-b border-gray-100 font-mono">
                                                     {row[fieldId] !== undefined && row[fieldId] !== null ? String(row[fieldId]) : '-'}
                                                 </td>
                                             ))}

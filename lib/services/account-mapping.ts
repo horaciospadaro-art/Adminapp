@@ -45,6 +45,7 @@ export class AccountMappingService {
         })
 
         if (!product) throw new Error(`Product ${sku} not found`)
+        if (!product.income_account) throw new Error(`Product ${sku} has no income account assigned`)
         return product.income_account.code
     }
 }

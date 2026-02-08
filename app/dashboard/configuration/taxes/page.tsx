@@ -144,6 +144,68 @@ export default function TaxesPage() {
         }
     }
 
+    const ivaTaxes = taxes.filter(t => t.type === 'IVA')
+    const igtfTaxes = taxes.filter(t => t.type === 'IGTF')
+    const otherTaxes = taxes.filter(t => !['IVA', 'IGTF'].includes(t.type))
+
+    const renderTaxTable = (title: string, data: Tax[], emptyMsg: string) => (
+        <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">{title}</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th className="px-6 py-3 font-medium text-gray-700">Nombre</th>
+                            <th className="px-6 py-3 font-medium text-gray-700">Tipo</th>
+                            <th className="px-6 py-3 font-medium text-gray-700 text-right">Tasa (%)</th>
+                            <th className="px-6 py-3 font-medium text-gray-700">Cuenta Contable</th>
+                            <th className="px-6 py-3 font-medium text-gray-700 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {data.map(tax => (
+                            <tr key={tax.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium text-gray-900">{tax.name}</td>
+                                <td className="px-6 py-4 text-gray-500">
+                                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-mono">
+                                        {tax.type}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-gray-900 text-right font-mono">{Number(tax.rate).toFixed(2)}%</td>
+                                <td className="px-6 py-4 text-gray-500">
+                                    {tax.gl_account ? `${tax.gl_account.code} - ${tax.gl_account.name}` : '-'}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            onClick={() => handleOpenModal(tax)}
+                                            className="text-gray-400 hover:text-blue-600"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(tax.id)}
+                                            className="text-gray-400 hover:text-red-600"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {data.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                    {emptyMsg}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+
     return (
         <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -156,63 +218,16 @@ export default function TaxesPage() {
                 </button>
             </div>
 
-            {loading && taxes.length === 0 ? (
+            {loading ? (
                 <div className="flex justify-center p-12">
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3 font-medium text-gray-700">Nombre</th>
-                                <th className="px-6 py-3 font-medium text-gray-700">Tipo</th>
-                                <th className="px-6 py-3 font-medium text-gray-700 text-right">Tasa (%)</th>
-                                <th className="px-6 py-3 font-medium text-gray-700">Cuenta Contable</th>
-                                <th className="px-6 py-3 font-medium text-gray-700 text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {taxes.map(tax => (
-                                <tr key={tax.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{tax.name}</td>
-                                    <td className="px-6 py-4 text-gray-500">
-                                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-mono">
-                                            {tax.type}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-900 text-right font-mono">{Number(tax.rate).toFixed(2)}%</td>
-                                    <td className="px-6 py-4 text-gray-500">
-                                        {tax.gl_account ? `${tax.gl_account.code} - ${tax.gl_account.name}` : '-'}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button
-                                                onClick={() => handleOpenModal(tax)}
-                                                className="text-gray-400 hover:text-blue-600"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(tax.id)}
-                                                className="text-gray-400 hover:text-red-600"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {taxes.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                        No hay impuestos configurados.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                <>
+                    {renderTaxTable('Impuesto al Valor Agregado (IVA)', ivaTaxes, 'No hay impuestos de IVA configurados.')}
+                    {renderTaxTable('Impuesto a Grandes Transacciones Financieras (IGTF)', igtfTaxes, 'No hay impuestos IGTF configurados.')}
+                    {otherTaxes.length > 0 && renderTaxTable('Otros Impuestos / Retenciones', otherTaxes, 'No hay otros impuestos.')}
+                </>
             )}
 
             {/* Modal */}
