@@ -155,9 +155,13 @@ export function AccountForm({ companyId }: { companyId: string }) {
                             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             aria-label="Tipo de Cuenta"
                         >
-                            {Object.keys(AccountType).map(t => (
-                                <option key={t} value={t}>{t}</option>
-                            ))}
+                            <option value={AccountType.ASSET}>ACTIVO</option>
+                            <option value={AccountType.LIABILITY}>PASIVO</option>
+                            <option value={AccountType.EQUITY}>PATRIMONIO</option>
+                            <option value={AccountType.INCOME}>INGRESOS</option>
+                            <option value={AccountType.COST}>COSTOS</option>
+                            <option value={AccountType.EXPENSE}>GASTOS</option>
+                            <option value={AccountType.OTHER}>OTROS</option>
                         </select>
                     </div>
                 </div>
