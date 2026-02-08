@@ -54,7 +54,15 @@ export function Sidebar() {
             title: 'ADMINISTRACIÓN',
             items: [
                 { label: 'Bancos', href: '/dashboard/banks', icon: Landmark },
-                { label: 'Inventario', href: '/dashboard/inventory', icon: Package },
+                {
+                    label: 'Inventario',
+                    href: '#',
+                    icon: Package,
+                    subItems: [
+                        { label: 'Productos', href: '/dashboard/inventory/products' },
+                        { label: 'Servicios', href: '/dashboard/inventory/services' }
+                    ]
+                },
                 { label: 'Clientes', href: '/dashboard/operations/clients', icon: Users },
                 { label: 'Proveedores', href: '/dashboard/operations/suppliers', icon: Truck },
             ]

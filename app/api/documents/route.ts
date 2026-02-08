@@ -98,18 +98,37 @@ export async function POST(request: Request) {
             // For now, simple decrement if it's a sale (INVOICE) or increment if it's a purchase (BILL)
             // AND if the product tracks inventory.
 
+            // Limit inventory check to relevant types
             if (!ignore_inventory) {
+                // Fetch Third Party to determine direction (CLIENT vs SUPPLIER)
+                // If it's a CREDIT_NOTE, we need to know who it is for.
+                const thirdParty = await tx.thirdParty.findUnique({ where: { id: third_party_id } })
+                const isClient = thirdParty?.type === 'CLIENTE' || thirdParty?.type === 'AMBOS'
+                const isSupplier = thirdParty?.type === 'PROVEEDOR' || thirdParty?.type === 'AMBOS'
+
                 for (const item of processedItems) {
                     if (item.product_id) {
                         const product = await tx.product.findUnique({ where: { id: item.product_id } })
 
                         if (product?.track_inventory && product.type === ProductType.GOODS) {
                             let adjustment = 0
+
                             if (type === DocumentType.INVOICE) {
+                                // Sale -> Decrease
                                 adjustment = -item.quantity
                             } else if (type === DocumentType.BILL) {
+                                // Purchase -> Increase
                                 adjustment = item.quantity
+                            } else if (type === DocumentType.CREDIT_NOTE) {
+                                if (isClient) {
+                                    // Sale Return -> Increase
+                                    adjustment = item.quantity
+                                } else if (isSupplier) {
+                                    // Purchase Return -> Decrease
+                                    adjustment = -item.quantity
+                                }
                             }
+                            // DEBIT_NOTE usually doesn't affect inventory
 
                             if (adjustment !== 0) {
                                 await tx.product.update({

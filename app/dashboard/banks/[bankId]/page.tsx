@@ -35,6 +35,9 @@ export default async function BankDetailsPage(props: { params: Promise<{ bankId:
     if (!bankRaw) return notFound()
 
     const accounts = await getAccounts(bankRaw.company_id)
+    const taxes = await prisma.tax.findMany({
+        where: { company_id: bankRaw.company_id, is_active: true }
+    })
 
     const b = bankRaw as any
 
@@ -49,6 +52,11 @@ export default async function BankDetailsPage(props: { params: Promise<{ bankId:
         }))
     }
 
-    return <BankDetailsClient bank={bank} accounts={accounts} />
+    const serializedTaxes = taxes.map(t => ({
+        ...t,
+        rate: Number(t.rate)
+    }))
+
+    return <BankDetailsClient bank={bank} accounts={accounts} taxes={serializedTaxes} />
 }
 

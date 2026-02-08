@@ -6,7 +6,7 @@ import { SummaryCards } from '@/components/ui/SummaryCards'
 import { TransactionList } from '@/components/banks/TransactionList'
 import { NewTransactionModal } from '@/components/banks/NewTransactionModal'
 
-export function BankDetailsClient({ bank, accounts }: { bank: any, accounts: any[] }) {
+export function BankDetailsClient({ bank, accounts, taxes }: { bank: any, accounts: any[], taxes?: any[] }) {
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     return (
@@ -51,6 +51,7 @@ export function BankDetailsClient({ bank, accounts }: { bank: any, accounts: any
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 accounts={accounts}
+                taxes={taxes || []}
             />
         </div>
     )

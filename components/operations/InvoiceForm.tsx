@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Calendar, Upload, Plus, Trash2, Calculator, Save, Loader2, ArrowLeft } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -48,6 +48,7 @@ export function InvoiceForm() {
     const [taxes, setTaxes] = useState<Tax[]>([])
 
     // Form State
+    const [type, setType] = useState('INVOICE')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [dueDate, setDueDate] = useState('')
     const [number, setNumber] = useState('') // Invoice Number (Control)
@@ -146,7 +147,7 @@ export function InvoiceForm() {
             const payload = {
                 company_id: '',
                 third_party_id: thirdPartyId,
-                type: 'INVOICE', // Sales Invoice
+                type: type, // Uses state
                 date,
                 due_date: dueDate || null,
                 number,
@@ -186,13 +187,46 @@ export function InvoiceForm() {
     return (
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-6 pb-20">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-800">Registrar Factura de Venta</h1>
+                <div className="flex items-center gap-4">
+                    <h1 className="text-2xl font-bold text-gray-800">
+                        {type === 'INVOICE' && 'Factura de Venta'}
+                        {type === 'CREDIT_NOTE' && 'Nota de Crédito'}
+                        {type === 'DEBIT_NOTE' && 'Nota de Débito'}
+                    </h1>
+                </div>
                 <Link href="/dashboard/operations/invoices" className="text-sm text-blue-600 hover:underline">
                     &larr; Volver
                 </Link>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="mb-6 border-b pb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+                    <div className="flex gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setType('INVOICE')}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${type === 'INVOICE' ? 'bg-[#2ca01c] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Factura
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setType('CREDIT_NOTE')}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${type === 'CREDIT_NOTE' ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Nota de Crédito
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setType('DEBIT_NOTE')}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${type === 'DEBIT_NOTE' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Nota de Débito
+                        </button>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
@@ -209,7 +243,7 @@ export function InvoiceForm() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Control / Factura <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nro. {type === 'INVOICE' ? 'Factura' : 'Control'} <span className="text-red-500">*</span></label>
                         <input
                             value={number}
                             onChange={e => setNumber(e.target.value)}
