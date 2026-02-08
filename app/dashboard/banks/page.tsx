@@ -34,7 +34,7 @@ export default async function BanksPage() {
                                 <p className="text-sm text-gray-500">{bank.account_number}</p>
                             </div>
                             <span className="bg-gray-100 text-gray-600 text-xs font-mono px-2 py-1 rounded">
-                                {bank.gl_account.currency || 'VES'}
+                                VES
                             </span>
                         </div>
 

@@ -27,7 +27,7 @@ export default async function BankDetailsPage(props: { params: Promise<{ bankId:
             <div className="flex justify-between items-center bg-white p-6 rounded shadow border-l-4 border-blue-600">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">{bank.bank_name}</h1>
-                    <p className="text-gray-500">{bank.account_number} | {bank.gl_account.currency}</p>
+                    <p className="text-gray-500">{bank.account_number}</p>
                 </div>
                 <div className="text-right">
                     <p className="text-sm text-gray-500">Saldo Disponible</p>
