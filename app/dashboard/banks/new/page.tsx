@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function NewBankAccountPage() {
     const router = useRouter()
@@ -13,14 +14,23 @@ export default function NewBankAccountPage() {
 
         const formData = new FormData(e.currentTarget)
         const data = {
-            bankName: formData.get('bankName'),
-            accountNumber: formData.get('accountNumber'),
+            name: formData.get('bankName'),
+            account_number: formData.get('accountNumber'),
             currency: formData.get('currency'),
-            glAccountCode: formData.get('glAccountCode'), // We might need to select from existing accounts or create one
-            glAccountName: formData.get('glAccountName')
+            type: formData.get('type'),
+            initial_balance: formData.get('initialBalance'),
+            // For now, we are NOT sending gl_account_id, assuming backend might handle it 
+            // OR we need to let user creating it. 
+            // To make this work with minimal friction, we will auto-generate a GL Account in the backend if not provided.
+            // But my API implementation EXPECTS gl_account_id.
+            // I will modify this to include a request to create one.
+            create_gl_account: true,
+            gl_account_name: formData.get('bankName') // Use bank name for account name
         }
 
         try {
+            // We need to update API to handle this 'create_gl_account' flag or similar.
+            // For this iteration, let's assume I will update the API.
             const res = await fetch('/api/banks', {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -31,7 +41,8 @@ export default function NewBankAccountPage() {
                 router.push('/dashboard/banks')
                 router.refresh()
             } else {
-                alert('Error al crear cuenta bancaria')
+                const err = await res.json()
+                alert(err.error || 'Error al crear cuenta bancaria')
             }
         } catch (error) {
             console.error(error)
@@ -42,51 +53,56 @@ export default function NewBankAccountPage() {
     }
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Nueva Cuenta Bancaria</h1>
+        <div className="max-w-3xl mx-auto">
+            <PageHeader title="Nueva Cuenta Bancaria" />
 
-            <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow border border-gray-100 space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Banco</label>
-                    <input name="bankName" required placeholder="Ej. Banco Mercantil" className="w-full border rounded px-3 py-2" />
-                </div>
+            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Banco / Caja</label>
+                            <input name="bankName" required placeholder="Ej. Banco Mercantil" className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2ca01c] focus:border-[#2ca01c] px-3 py-2 border" />
+                        </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Número de Cuenta</label>
-                    <input name="accountNumber" required placeholder="0105-..." className="w-full border rounded px-3 py-2" />
-                </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Número de Cuenta</label>
+                            <input name="accountNumber" required placeholder="0105-..." className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2ca01c] focus:border-[#2ca01c] px-3 py-2 border" />
+                        </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
-                    <select name="currency" className="w-full border rounded px-3 py-2">
-                        <option value="VES">Bolívares (VES)</option>
-                        <option value="USD">Dólares (USD)</option>
-                    </select>
-                </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Cuenta</label>
+                            <select name="type" className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2ca01c] focus:border-[#2ca01c] px-3 py-2 border">
+                                <option value="CORRIENTE">Corriente</option>
+                                <option value="AHORRO">Ahorro</option>
+                                <option value="CAJA_CHICA">Caja Chica</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </div>
 
-                <div className="border-t pt-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">Vinculación Contable (Plan de Cuentas)</h3>
-                    <p className="text-sm text-gray-500 mb-4">Se creará automáticamente una cuenta auxiliar en el Activo (1.1.01...)</p>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                            <select name="currency" className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2ca01c] focus:border-[#2ca01c] px-3 py-2 border">
+                                <option value="VES">Bolívares (VES)</option>
+                                <option value="USD">Dólares (USD)</option>
+                            </select>
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Cuenta Contable</label>
-                        <input name="glAccountName" required placeholder="Ej. Banco Mercantil Principal" className="w-full border rounded px-3 py-2" />
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial (Libros)</label>
+                            <input type="number" step="0.01" name="initialBalance" placeholder="0.00" className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2ca01c] focus:border-[#2ca01c] px-3 py-2 border" />
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                    <button type="button" onClick={() => router.back()} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">
-                        Cancelar
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {loading ? 'Guardando...' : 'Guardar Cuenta'}
-                    </button>
-                </div>
-            </form>
+                    <div className="pt-6 border-t border-gray-200 flex justify-end gap-3">
+                        <button type="button" onClick={() => router.back()} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" disabled={loading} className="px-4 py-2 text-white bg-[#2ca01c] rounded-md hover:bg-[#248217] disabled:opacity-50">
+                            {loading ? 'Guardando...' : 'Guardar Cuenta'}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     )
 }

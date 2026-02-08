@@ -151,12 +151,23 @@ model Product {
   @@unique([company_id, sku])
 }
 
+enum BankAccountType {
+  CORRIENTE
+  AHORRO
+  CAJA_CHICA
+  OTRO
+}
+
 model BankAccount {
   id             String         @id @default(uuid())
   company_id     String
   company        Company        @relation(fields: [company_id], references: [id])
   bank_name      String
   account_number String
+  currency       String         @default("VES") // VES or USD
+  type           BankAccountType @default(CORRIENTE)
+  balance        Decimal        @default(0.00) @db.Decimal(20, 2)
+  
   gl_account_id  String
   gl_account     ChartOfAccount @relation(fields: [gl_account_id], references: [id])
   created_at     DateTime       @default(now())
@@ -171,16 +182,23 @@ enum BankTransactionType {
   CREDIT
 }
 
+enum BankTransactionStatus {
+  PENDING
+  RECONCILED
+  VOID
+}
+
 model BankTransaction {
   id              String              @id @default(uuid())
   bank_account_id String
   bank_account    BankAccount         @relation(fields: [bank_account_id], references: [id])
   
   date            DateTime
-  reference       String
+  reference       String?
   description     String
   amount          Decimal             @db.Decimal(20, 2)
   type            BankTransactionType
+  status          BankTransactionStatus @default(PENDING)
   
   // Venezuelan specifics
   is_igtf_applied Boolean             @default(false)
