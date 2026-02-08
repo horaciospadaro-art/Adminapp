@@ -78,7 +78,7 @@ export function AccountForm({ companyId, initialData, onCancel, onSuccess }: Acc
         try {
             // Si el usuario deja el campo, intentamos formatear "oficialmente"
             // Esto rellena ceros si faltan en los niveles intermedios/finales
-            const formatted = AccountService.formatCode(code)
+            const formatted = formatAccountCode(code)
             setCode(formatted)
         } catch (e) {
             // Si es inválido, no hacemos nada, dejamos que la validación del submit atrapé el error
