@@ -9,7 +9,9 @@ import {
     Users,
     Truck,
     BookOpen,
-    ChartBar
+    ChartBar,
+    Settings,
+    Package
 } from 'lucide-react'
 
 export function Sidebar() {
@@ -32,6 +34,7 @@ export function Sidebar() {
             title: 'ADMINISTRACIÓN',
             items: [
                 { label: 'Bancos', href: '/dashboard/banks', icon: Landmark },
+                { label: 'Inventario', href: '/dashboard/inventory', icon: Package },
                 { label: 'Clientes', href: '/dashboard/operations/clients', icon: Users },
                 { label: 'Proveedores', href: '/dashboard/operations/suppliers', icon: Truck },
             ]
@@ -46,6 +49,12 @@ export function Sidebar() {
             title: 'REPORTES FINANCIEROS',
             items: [
                 { label: 'Centro de Reportes', href: '/dashboard/reports', icon: ChartBar },
+            ]
+        },
+        {
+            title: 'CONFIGURACIÓN',
+            items: [
+                { label: 'Impuestos', href: '/dashboard/configuration/taxes', icon: Settings },
             ]
         }
     ]

@@ -25,6 +25,7 @@ model Company {
   thirdParties   ThirdParty[]
   products       Product[]
   bankAccounts   BankAccount[]
+  taxes          Tax[]
 }
 
 // Accounting Module
@@ -209,4 +210,33 @@ model BankTransaction {
 
   created_at      DateTime            @default(now())
   updated_at      DateTime            @updatedAt
+}
+
+// Configuration Module
+enum TaxType {
+  IVA
+  ISLR
+  IGTF
+  RETENCION_IVA
+  RETENCION_ISLR
+  OTRO
+}
+
+model Tax {
+  id              String   @id @default(uuid())
+  company_id      String
+  company         Company  @relation(fields: [company_id], references: [id])
+  name            String
+  code            String?  
+  rate            Decimal  @db.Decimal(5, 2) 
+  type            TaxType
+  description     String?
+
+  // Connection to Accounting
+  gl_account_id   String
+  gl_account      ChartOfAccount @relation(fields: [gl_account_id], references: [id])
+
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 }
