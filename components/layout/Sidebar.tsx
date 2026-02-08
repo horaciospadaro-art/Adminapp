@@ -52,8 +52,8 @@ export function Sidebar() {
                                         key={item.href}
                                         href={item.href}
                                         className={`flex items-center px-4 py-2 text-sm font-medium transition-colors border-l-4 ${active
-                                                ? 'border-[#2ca01c] bg-white text-black'
-                                                : 'border-transparent hover:bg-gray-200 text-gray-600'
+                                            ? 'border-[#2ca01c] bg-white text-black'
+                                            : 'border-transparent hover:bg-gray-200 text-gray-600'
                                             }`}
                                     >
                                         <span className={`w-6 text-center mr-3 font-mono text-xs ${active ? 'text-[#2ca01c]' : 'opacity-50'}`}>
@@ -70,7 +70,7 @@ export function Sidebar() {
 
             <div className="p-4 shrink-0">
                 <div className="text-xs text-gray-400 text-center">
-                    &copy; 2026 V-Ledge ERP
+                    &copy; 2026 ABC AdminApp
                 </div>
             </div>
         </div>

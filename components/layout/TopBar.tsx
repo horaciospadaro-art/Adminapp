@@ -6,10 +6,10 @@ export function TopBar() {
             <div className="flex items-center gap-4">
                 {/* Logo / Brand */}
                 <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-                    <div className="w-8 h-8 bg-[#2ca01c] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        VL
+                    <div className="w-8 h-8 bg-[#84cc16] rounded-full flex items-center justify-center text-white font-bold text-xs">
+                        ABC
                     </div>
-                    <span>V-LEDGE</span>
+                    <span>ABC AdminApp</span>
                 </Link>
 
                 {/* Search Bar (Visual Placeholder) */}

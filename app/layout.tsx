@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "V-Ledge ERP",
-  description: "Sistema de Gestión Empresarial Venezolano",
+  title: "ABC AdminApp",
+  description: "Software Contable & Administrativo",
 };
 
 export default function RootLayout({
