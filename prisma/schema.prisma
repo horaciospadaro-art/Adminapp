@@ -63,6 +63,7 @@ model ChartOfAccount {
   // ThirdParty Relations
   linkedReceivables ThirdParty[] @relation("ThirdPartyReceivable")
   linkedPayables    ThirdParty[] @relation("ThirdPartyPayable")
+  taxes             Tax[]
 
   @@unique([company_id, code])
 }
