@@ -1,13 +1,6 @@
-'use client'
-
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
-interface Account {
-    id: string
-    code: string
-    name: string
-}
+import { AccountCombobox, Account } from '@/components/accounting/AccountCombobox'
 
 export function NewTransactionModal({
     bankId,
@@ -23,6 +16,7 @@ export function NewTransactionModal({
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [type, setType] = useState<'DEBIT' | 'CREDIT'>('CREDIT') // Egreso por defecto
+    const [contraAccountId, setContraAccountId] = useState('')
 
     if (!isOpen) return null
 
@@ -37,7 +31,7 @@ export function NewTransactionModal({
             reference: formData.get('reference'),
             amount: formData.get('amount'),
             type: type,
-            contra_account_id: formData.get('contraAccountId')
+            contra_account_id: contraAccountId // Use state
         }
 
         try {
@@ -112,13 +106,17 @@ export function NewTransactionModal({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta Contable (Contrapartida)</label>
-                            <select name="contraAccountId" required className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c]">
-                                <option value="">Seleccione cuenta...</option>
-                                {accounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>
-                                ))}
-                            </select>
+                            {/* Hidden input not needed technically if we override data construction, but good practice if using FormData fully */}
+                            <input type="hidden" name="contraAccountId" value={contraAccountId} />
+
+                            <AccountCombobox
+                                companyId="" // Not needed if preloadedAccounts provided
+                                label="Cuenta Contable (Contrapartida)"
+                                value={contraAccountId}
+                                onChange={setContraAccountId}
+                                preloadedAccounts={accounts}
+                                placeholder="Buscar cuenta..."
+                            />
                             <p className="text-xs text-gray-500 mt-1">
                                 {type === 'CREDIT' ? 'Gasto, Pasivo (quien recibe el pago)' : 'Ingreso, Cuentas por Cobrar (origen del dinero)'}
                             </p>

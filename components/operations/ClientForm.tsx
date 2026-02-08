@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AccountSelector } from '@/components/accounting/AccountSelector'
+import { AccountCombobox } from '@/components/accounting/AccountCombobox'
 
 interface ClientFormProps {
     companyId: string
@@ -120,12 +120,13 @@ export function ClientForm({ companyId, initialData, onSuccess, onCancel }: Clie
                     <input id="client-address" type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2" />
                 </div>
                 <div className="md:col-span-2 bg-blue-50 p-4 rounded border border-blue-100">
-                    <AccountSelector
+                    <AccountCombobox
                         companyId={companyId}
                         label="Cuenta Contable (Por Cobrar)"
                         value={accountId}
                         onChange={setAccountId}
                         typeFilter="ASSET"
+                        placeholder="Buscar cuenta por código o nombre..."
                     />
                     <p className="text-xs text-blue-600 mt-1">
                         Seleccione la cuenta de Activo donde se registrarán las deudas de este cliente.

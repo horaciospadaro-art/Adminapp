@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AccountSelector } from '@/components/accounting/AccountSelector'
+import { AccountCombobox } from '@/components/accounting/AccountCombobox'
 
 interface SupplierFormProps {
     companyId: string
@@ -120,12 +120,13 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
                     <input id="supplier-address" type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2" />
                 </div>
                 <div className="md:col-span-2 bg-orange-50 p-4 rounded border border-orange-100">
-                    <AccountSelector
+                    <AccountCombobox
                         companyId={companyId}
                         label="Cuenta Contable (Por Pagar)"
                         value={accountId}
                         onChange={setAccountId}
                         typeFilter="LIABILITY"
+                        placeholder="Buscar cuenta por código o nombre..."
                     />
                     <p className="text-xs text-orange-600 mt-1">
                         Seleccione la cuenta de Pasivo donde se registrarán las deudas con este proveedor.

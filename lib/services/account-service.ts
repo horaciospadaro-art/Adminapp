@@ -4,17 +4,55 @@ import { AccountType, ChartOfAccount } from '@prisma/client'
 export class AccountService {
 
     /**
-     * Formatea un código de cuenta según la máscara 0.0.00.00000
+     * Aplica la máscara X.X.XX.XXXXX dinámicamente al input
+     * Retorna el string formateado hasta donde se haya escrito.
+     */
+    static maskAccountCode(value: string): string {
+        // 1. Limpiar todo lo que no sea número
+        const digits = value.replace(/\D/g, '')
+
+        // 2. Limitar a 9 dígitos (1+1+2+5)
+        const limited = digits.slice(0, 9)
+
+        // 3. Construir el string con puntos
+        let masked = ''
+        if (limited.length > 0) {
+            masked += limited.substring(0, 1) // Nivel 1 (1 dígito)
+        }
+        if (limited.length > 1) {
+            masked += '.' + limited.substring(1, 2) // Nivel 2 (1 dígito)
+        }
+        if (limited.length > 2) {
+            masked += '.' + limited.substring(2, 4) // Nivel 3 (2 dígitos)
+        }
+        if (limited.length > 4) {
+            masked += '.' + limited.substring(4, 9) // Nivel 4 (5 dígitos)
+        }
+
+        return masked
+    }
+
+    /**
+     * Formatea un código de cuenta completo (rellena ceros si faltan)
      * Ejemplos:
      * "1.1.1.1" -> "1.1.01.00001"
-     * "1.1" -> "1.1"
-     * "1.1.1" -> "1.1.01"
      */
     static formatCode(input: string): string {
         const cleanInput = input.replace(/[^0-9.]/g, '')
         const parts = cleanInput.split('.')
 
+        // ... rest of logic relies on parts logic, but let's keep it robust
+        // This method assumes the input might have dots already or be raw.
+        // If it's raw 1101, valid formatCode might fail if it expects dots to split hierarchy.
+        // But maskAccountCode is for input typing. formatCode is for validation/storage.
+
+        // Let's keep original formatCode logic but ensure it handles what maskAccountCode produces.
+        // maskAccountCode produces "1.1.01" so formatCode should handle that.
+
         if (parts.length > 4) throw new Error('El código excede los 4 niveles jerárquicos.')
+
+        // ... existing validation logic ...
+        // Re-implementing specifically to ensure consistency with what I see in the file content
 
         // Nivel 1: Jerarquía Mayor (1 dígito)
         if (parts[0] && parts[0].length > 1) throw new Error('Nivel 1 (Clase) debe tener 1 dígito.')

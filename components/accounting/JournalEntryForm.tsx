@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-
-type Account = {
-    id: string
-    code: string
-    name: string
-}
+import { AccountCombobox, Account } from '@/components/accounting/AccountCombobox'
 
 type JournalLine = {
     accountCode: string
@@ -21,9 +16,10 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
     const [description, setDescription] = useState('')
-    const [lines, setLines] = useState<JournalLine[]>([
-        { accountCode: '', debit: '0', credit: '0', description: '' },
-        { accountCode: '', debit: '0', credit: '0', description: '' }
+    // Changed accountCode to accountId in state
+    const [lines, setLines] = useState<any[]>([
+        { accountId: '', debit: '0', credit: '0', description: '' },
+        { accountId: '', debit: '0', credit: '0', description: '' }
     ])
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
@@ -38,10 +34,10 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
     }, [companyId])
 
     const addLine = () => {
-        setLines([...lines, { accountCode: '', debit: '0', credit: '0', description: '' }])
+        setLines([...lines, { accountId: '', debit: '0', credit: '0', description: '' }])
     }
 
-    const updateLine = (index: number, field: keyof JournalLine, value: string) => {
+    const updateLine = (index: number, field: string, value: string) => {
         const newLines = [...lines]
         newLines[index] = { ...newLines[index], [field]: value }
         setLines(newLines)
@@ -65,6 +61,12 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
             return
         }
 
+        const invalidAllocations = lines.filter(l => !l.accountId && (parseFloat(l.debit) > 0 || parseFloat(l.credit) > 0))
+        if (invalidAllocations.length > 0) {
+            setError('Hay líneas con montos pero sin cuenta asignada.')
+            return
+        }
+
         setLoading(true)
 
         try {
@@ -72,12 +74,15 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
                 companyId,
                 date: new Date(date),
                 description,
-                lines: lines.map(l => ({
-                    accountCode: l.accountCode, // Engine looks up ID by code
-                    debit: parseFloat(l.debit) || 0,
-                    credit: parseFloat(l.credit) || 0,
-                    description: l.description || description
-                })).filter(l => l.debit > 0 || l.credit > 0)
+                lines: lines.map(l => {
+                    const acc = accounts.find(a => a.id === l.accountId)
+                    return {
+                        accountCode: acc ? acc.code : '', // Resolve code from ID
+                        debit: parseFloat(l.debit) || 0,
+                        credit: parseFloat(l.credit) || 0,
+                        description: l.description || description
+                    }
+                }).filter(l => l.accountCode && (l.debit > 0 || l.credit > 0))
             }
 
             const res = await fetch('/api/transactions', {
@@ -94,8 +99,8 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
             // Reset Form
             setDescription('')
             setLines([
-                { accountCode: '', debit: '0', credit: '0', description: '' },
-                { accountCode: '', debit: '0', credit: '0', description: '' }
+                { accountId: '', debit: '0', credit: '0', description: '' },
+                { accountId: '', debit: '0', credit: '0', description: '' }
             ])
             alert('¡Asiento registrado con éxito!')
             router.refresh()
@@ -149,20 +154,15 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
                 </div>
 
                 {lines.map((line, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-start">
                         <div className="col-span-4">
-                            <select
-                                value={line.accountCode}
-                                onChange={e => updateLine(idx, 'accountCode', e.target.value)}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                            >
-                                <option value="">Seleccionar Cuenta</option>
-                                {accounts.map(acc => (
-                                    <option key={acc.id} value={acc.code}>
-                                        {acc.code} - {acc.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <AccountCombobox
+                                companyId={companyId}
+                                value={line.accountId}
+                                onChange={(id) => updateLine(idx, 'accountId', id)}
+                                preloadedAccounts={accounts}
+                                placeholder="Buscar cuenta..."
+                            />
                         </div>
                         <div className="col-span-3">
                             <input
@@ -191,7 +191,7 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
                                 className="block w-full text-right rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                             />
                         </div>
-                        <div className="col-span-1 text-center">
+                        <div className="col-span-1 text-center pt-2">
                             <button
                                 type="button"
                                 onClick={() => {

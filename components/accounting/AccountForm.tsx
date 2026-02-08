@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AccountType } from '@prisma/client'
+import { AccountService } from '@/lib/services/account-service'
 
 
 
@@ -40,46 +41,49 @@ export function AccountForm({ companyId, initialData, onCancel, onSuccess }: Acc
         }
     }, [initialData])
 
-    // Lógica de validación básica para permitir escribir
+    // Lógica de validación y máscara en tiempo real
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value
-        // Permitir solo números y puntos
-        if (/^[0-9.]*$/.test(val)) {
-            setCode(val)
+        let val = e.target.value
+
+        // 1. Limpiar todo lo que no sea número
+        const digits = val.replace(/\D/g, '')
+
+        // 2. Limitar a 9 dígitos (1+1+2+5)
+        const limited = digits.slice(0, 9)
+
+        // 3. Construir el string con puntos
+        let masked = ''
+        if (limited.length > 0) {
+            masked += limited.substring(0, 1) // Nivel 1 (1 dígito)
         }
+        if (limited.length > 1) {
+            masked += '.' + limited.substring(1, 2) // Nivel 2 (1 dígito)
+        }
+        if (limited.length > 2) {
+            masked += '.' + limited.substring(2, 4) // Nivel 3 (2 dígitos)
+        }
+        if (limited.length > 4) {
+            masked += '.' + limited.substring(4, 9) // Nivel 4 (5 dígitos)
+        }
+
+        setCode(masked)
     }
 
-    // Auto-relleno inteligente al salir del campo
+    // Auto-relleno inteligente al salir del campo (opcional, si queremos forzar ceros)
+    // AccountService.formatCode ya hace validación/relleno si fuera necesario, 
+    // pero maskAccountCode ya estructura bastante bien.
+    // Podemos usar formatCode para asegurar que si escribió "1.1" se guarde como "1.1" (Grupo) 
+    // o si es cuenta nivel 4 "1.1.01.00001".
     const handleBlur = () => {
         try {
-            const formatted = smartFormat(code)
+            // Si el usuario deja el campo, intentamos formatear "oficialmente"
+            // Esto rellena ceros si faltan en los niveles intermedios/finales
+            const formatted = AccountService.formatCode(code)
             setCode(formatted)
         } catch (e) {
-            // Si falla (ej: demasiados niveles), dejamos el input como está para que el usuario corrija
-            // Opcional: mostrar error inmediato
+            // Si es inválido, no hacemos nada, dejamos que la validación del submit atrapé el error
+            // o el usuario lo corrija.
         }
-    }
-
-    const smartFormat = (input: string) => {
-        const cleanInput = input.replace(/[^0-9.]/g, '')
-        const parts = cleanInput.split('.')
-
-        // Si solo escribió números sin puntos (ej: 110100001), intentamos aplicar máscara estricta
-        // Pero si tiene puntos, respetamos la estructura y rellenamos ceros
-        if (parts.length === 1 && input.length > 1) {
-            return input
-        }
-
-        // Lógica de padStart (Replica de AccountService)
-        if (parts[0] && parts[0].length > 1) parts[0] = parts[0] // Error technically, but let validator catch it or UI error
-
-        // Nivel 3 (Index 2) -> 2 digits
-        if (parts[2]) parts[2] = parts[2].padStart(2, '0')
-
-        // Nivel 4 (Index 3) -> 5 digits
-        if (parts[3]) parts[3] = parts[3].padStart(5, '0')
-
-        return parts.join('.')
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -161,6 +165,7 @@ export function AccountForm({ companyId, initialData, onCancel, onSuccess }: Acc
                             onBlur={handleBlur}
                             placeholder="1.1.01.00001"
                             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            maxLength={12} // 9 digits + 3 dots
                             required
                         />
                         <p className="text-xs text-gray-500 mt-1">
