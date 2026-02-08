@@ -36,7 +36,7 @@ async function getFinancialData(
             SUM(jl.debit) as debit, 
             SUM(jl.credit) as credit
         FROM "JournalLine" jl
-        JOIN "JournalEntry" je ON jl.journal_entry_id = je.id
+        JOIN "JournalEntry" je ON jl.entry_id = je.id
         WHERE je.date >= ${new Date(queryStart)} AND je.date <= ${new Date(endDate)}
         GROUP BY jl.account_id
     `
