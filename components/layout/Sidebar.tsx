@@ -40,7 +40,12 @@ export function Sidebar() {
             title: 'CONTABILIDAD',
             items: [
                 { label: 'Plan de Cuentas', href: '/dashboard/accounting/chart-of-accounts', icon: BookOpen },
-                { label: 'Reportes Contables', href: '/dashboard/reports', icon: ChartBar },
+            ]
+        },
+        {
+            title: 'REPORTES FINANCIEROS',
+            items: [
+                { label: 'Centro de Reportes', href: '/dashboard/reports', icon: ChartBar },
             ]
         }
     ]
