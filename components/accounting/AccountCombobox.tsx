@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
-import { AccountService } from '@/lib/services/account-service'
+
 
 export interface Account {
     id: string

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AccountType } from '@prisma/client'
-import { AccountService } from '@/lib/services/account-service'
+import { formatAccountCode } from '@/lib/utils/account-utils'
 
 
 
