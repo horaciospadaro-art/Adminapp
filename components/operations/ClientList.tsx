@@ -31,47 +31,69 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
     if (loading) return <div>Cargando clientes...</div>
 
     return (
-        <div className="bg-white rounded shadow border border-gray-100 overflow-hidden">
-            <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-700 font-medium border-b">
-                    <tr>
-                        <th className="px-6 py-3">Nombre</th>
-                        <th className="px-6 py-3">RIF</th>
-                        <th className="px-6 py-3 hidden md:table-cell">Email</th>
-                        <th className="px-6 py-3 hidden md:table-cell">Teléfono</th>
-                        <th className="px-6 py-3 hidden lg:table-cell">Cuenta Contable</th>
-                        <th className="px-6 py-3">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                    {clients.map(client => (
-                        <tr key={client.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-3 font-medium">{client.name}</td>
-                            <td className="px-6 py-3">{client.rif}</td>
-                            <td className="px-6 py-3 hidden md:table-cell text-gray-500">{client.email}</td>
-                            <td className="px-6 py-3 hidden md:table-cell text-gray-500">{client.phone}</td>
-                            <td className="px-6 py-3 hidden lg:table-cell text-xs text-blue-600">
-                                {client.receivable_account ? `${client.receivable_account.code} - ${client.receivable_account.name}` : '-'}
-                            </td>
-                            <td className="px-6 py-3">
-                                <button
-                                    onClick={() => onEdit(client)}
-                                    className="text-blue-600 hover:text-blue-800 font-medium"
-                                >
-                                    Editar
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                    {clients.length === 0 && (
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                         <tr>
-                            <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                                No hay clientes registrados.
-                            </td>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Cliente / Razón Social
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                RIF / Contacto
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Cuenta Por Cobrar
+                            </th>
+                            <th scope="col" className="relative px-6 py-3">
+                                <span className="sr-only">Acciones</span>
+                            </th>
                         </tr>
-                    )}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {clients.map((client) => (
+                            <tr key={client.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-[#393a3d]">{client.name}</div>
+                                    <div className="text-xs text-gray-500">{client.email}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-900">{client.rif}</div>
+                                    <div className="text-xs text-gray-500">{client.phone}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {client.receivable_account ? (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {client.receivable_account.code} - {client.receivable_account.name}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-gray-400 italic">No asignada</span>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            className="text-[#2ca01c] hover:text-[#248217] font-semibold text-sm"
+                                            onClick={() => onEdit(client)}
+                                        >
+                                            Editar
+                                        </button>
+                                        <span className="text-gray-300">|</span>
+                                        <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-1">
+                                            Crear factura <span className="text-xs">▼</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {clients.length === 0 && (
+                <div className="p-12 text-center text-gray-500">
+                    <p className="text-lg mb-2">No hay clientes registrados aún.</p>
+                </div>
+            )}
         </div>
     )
 }

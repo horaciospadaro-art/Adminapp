@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CompanyForm } from '@/components/admin/CompanyForm'
 import { CompanyList } from '@/components/admin/CompanyList'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function CompaniesPage() {
     const [editingCompany, setEditingCompany] = useState<any | null>(null)
@@ -23,19 +24,27 @@ export default function CompaniesPage() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Gestión de Empresas</h1>
-            <p className="text-gray-500">Administre las empresas registradas en el sistema.</p>
+            <PageHeader title="Gestión de Empresas" description="Administre las empresas registradas en el sistema." />
 
-            <CompanyForm
-                initialData={editingCompany}
-                onSuccess={handleSuccess}
-                onCancel={handleCancel}
-            />
-
-            <CompanyList
-                key={refreshKey}
-                onEdit={handleEdit}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h2 className="text-lg font-medium text-gray-700 mb-4">
+                        {editingCompany ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
+                    </h2>
+                    <CompanyForm
+                        initialData={editingCompany}
+                        onSuccess={handleSuccess}
+                        onCancel={handleCancel}
+                    />
+                </div>
+                <div>
+                    <h2 className="text-lg font-medium text-gray-700 mb-4">Empresas Existentes</h2>
+                    <CompanyList
+                        key={refreshKey}
+                        onEdit={handleEdit}
+                    />
+                </div>
+            </div>
         </div>
     )
 }
