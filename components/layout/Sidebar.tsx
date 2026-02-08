@@ -23,6 +23,27 @@ export function Sidebar() {
                     </ul>
                 </div>
 
+                {/* Section: OPERACIONES */}
+                <div>
+                    <h3 className="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                        Operaciones
+                    </h3>
+                    <ul className="space-y-1">
+                        <li>
+                            <Link href="/dashboard/operations/clients" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                                <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Cl</span>
+                                Clientes
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href="/dashboard/operations/suppliers" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                                <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Pr</span>
+                                Proveedores
+                            </Link>
+                        </li>
+                    </ul>
+                </div>
+
                 {/* Section: ADMINISTRACIÓN */}
                 <div>
                     <h3 className="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
@@ -33,12 +54,6 @@ export function Sidebar() {
                             <Link href="/dashboard" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
                                 <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Tb</span>
                                 Tablero
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/dashboard/operations" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                                <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Op</span>
-                                Operaciones
                             </Link>
                         </li>
                         <li>

@@ -59,6 +59,10 @@ model ChartOfAccount {
   linkedCOGS      Product[]     @relation("COGS")
   linkedIncome    Product[]     @relation("SalesIncome")
   linkedBankAccts BankAccount[]
+  
+  // ThirdParty Relations
+  linkedReceivables ThirdParty[] @relation("ThirdPartyReceivable")
+  linkedPayables    ThirdParty[] @relation("ThirdPartyPayable")
 
   @@unique([company_id, code])
 }
@@ -96,14 +100,33 @@ model JournalLine {
 }
 
 // Administrative Module
+enum ThirdPartyType {
+  CLIENTE
+  PROVEEDOR
+  AMBOS
+}
+
 model ThirdParty {
   id                   String   @id @default(uuid())
   company_id           String
   company              Company  @relation(fields: [company_id], references: [id])
   name                 String
   rif                  String
+  email                String?
+  phone                String?
+  address              String?
+  type                 ThirdPartyType @default(CLIENTE)
+  
   is_tax_payer_special Boolean  @default(false)
   retention_agent_islr Boolean  @default(false)
+  
+  // Accounting Links
+  receivable_account_id String?
+  receivable_account    ChartOfAccount? @relation("ThirdPartyReceivable", fields: [receivable_account_id], references: [id])
+  
+  payable_account_id    String?
+  payable_account       ChartOfAccount? @relation("ThirdPartyPayable", fields: [payable_account_id], references: [id])
+
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
 }
