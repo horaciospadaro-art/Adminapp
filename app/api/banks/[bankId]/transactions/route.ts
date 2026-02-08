@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { BankService } from '@/lib/services/bank-service'
 import prisma from '@/lib/db'
 
-export async function POST(request: Request, { params }: { params: { bankId: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ bankId: string }> }) {
     try {
         const body = await request.json()
+        const params = await props.params
         const { bankId } = params
 
         // Get company ID (assuming single company for MVP or from session)
