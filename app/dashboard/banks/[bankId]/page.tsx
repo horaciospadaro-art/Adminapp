@@ -16,7 +16,8 @@ async function getBankDetails(bankId: string) {
     return bank
 }
 
-export default async function BankDetailsPage({ params }: { params: { bankId: string } }) {
+export default async function BankDetailsPage(props: { params: Promise<{ bankId: string }> }) {
+    const params = await props.params
     const bank = await getBankDetails(params.bankId)
 
     if (!bank) return notFound()
