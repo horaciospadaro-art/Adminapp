@@ -27,6 +27,12 @@ export function Sidebar() {
                             </Link>
                         </li>
                         <li>
+                            <Link href="/dashboard/banks" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                                <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Bn</span>
+                                Bancos
+                            </Link>
+                        </li>
+                        <li>
                             <Link href="/dashboard/settings" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
                                 <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Cf</span>
                                 Configuración

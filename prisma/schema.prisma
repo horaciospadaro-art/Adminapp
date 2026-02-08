@@ -80,7 +80,8 @@ model JournalEntry {
   updated_at  DateTime      @updatedAt
 
   // Relations
-  lines JournalLine[]
+  lines            JournalLine[]
+  bankTransaction  BankTransaction?
 }
 
 model JournalLine {
@@ -137,4 +138,35 @@ model BankAccount {
   gl_account     ChartOfAccount @relation(fields: [gl_account_id], references: [id])
   created_at     DateTime       @default(now())
   updated_at     DateTime       @updatedAt
+
+  // Relations
+  transactions   BankTransaction[]
+}
+
+enum BankTransactionType {
+  DEBIT
+  CREDIT
+}
+
+model BankTransaction {
+  id              String              @id @default(uuid())
+  bank_account_id String
+  bank_account    BankAccount         @relation(fields: [bank_account_id], references: [id])
+  
+  date            DateTime
+  reference       String
+  description     String
+  amount          Decimal             @db.Decimal(20, 2)
+  type            BankTransactionType
+  
+  // Venezuelan specifics
+  is_igtf_applied Boolean             @default(false)
+  igtf_amount     Decimal             @default(0.00) @db.Decimal(20, 2)
+  
+  // Atomic Link to Accounting
+  journal_entry_id String?            @unique
+  journal_entry    JournalEntry?      @relation(fields: [journal_entry_id], references: [id])
+
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
 }
