@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Plus, Trash2, Save, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Tax {
     id: string
@@ -39,6 +39,7 @@ interface InvoiceItem {
 
 export function InvoiceForm() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
     const [pageLoading, setPageLoading] = useState(true)
 
@@ -78,6 +79,14 @@ export function InvoiceForm() {
         }
         loadResources()
     }, [])
+
+    // Pre-select client from URL
+    useEffect(() => {
+        const clientId = searchParams?.get('clientId')
+        if (clientId) {
+            setThirdPartyId(clientId)
+        }
+    }, [searchParams])
 
     const addItem = () => {
         setItems([...items, {

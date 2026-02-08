@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Calendar, Upload, Plus, Trash2, Calculator, Save, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Tax {
     id: string
@@ -39,6 +39,7 @@ interface BillItem {
 
 export function BillForm() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
     const [pageLoading, setPageLoading] = useState(true)
 
@@ -81,6 +82,14 @@ export function BillForm() {
         }
         loadResources()
     }, [])
+
+    // Pre-select supplier from URL
+    useEffect(() => {
+        const supplierId = searchParams?.get('supplierId')
+        if (supplierId) {
+            setThirdPartyId(supplierId)
+        }
+    }, [searchParams])
 
     const addItem = () => {
         setItems([...items, {

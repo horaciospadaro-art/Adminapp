@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface ClientListProps {
     companyId: string
@@ -11,6 +12,7 @@ interface ClientListProps {
 export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
     const [clients, setClients] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const router = useRouter()
 
     useEffect(() => {
         if (!companyId) return
@@ -27,6 +29,10 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
                 setLoading(false)
             })
     }, [companyId, refreshKey])
+
+    const handleCreateInvoice = (clientId: string) => {
+        router.push(`/dashboard/operations/invoices/new?clientId=${clientId}`)
+    }
 
     if (loading) return <div>Cargando clientes...</div>
 
@@ -79,8 +85,11 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
                                             Editar
                                         </button>
                                         <span className="text-gray-300">|</span>
-                                        <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-1">
-                                            Crear factura <span className="text-xs">▼</span>
+                                        <button
+                                            className="text-blue-600 hover:text-blue-900 text-sm font-semibold"
+                                            onClick={() => handleCreateInvoice(client.id)}
+                                        >
+                                            Crear factura
                                         </button>
                                     </div>
                                 </td>

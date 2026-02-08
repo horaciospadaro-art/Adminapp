@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface SupplierListProps {
     companyId: string
@@ -11,6 +12,7 @@ interface SupplierListProps {
 export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProps) {
     const [suppliers, setSuppliers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const router = useRouter()
 
     useEffect(() => {
         if (!companyId) return
@@ -27,6 +29,10 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
                 setLoading(false)
             })
     }, [companyId, refreshKey])
+
+    const handleCreateBill = (supplierId: string) => {
+        router.push(`/dashboard/operations/bills/new?supplierId=${supplierId}`)
+    }
 
     if (loading) return <div>Cargando proveedores...</div>
 
@@ -79,8 +85,11 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
                                             Editar
                                         </button>
                                         <span className="text-gray-300">|</span>
-                                        <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-1">
-                                            Crear orden <span className="text-xs">▼</span>
+                                        <button
+                                            className="text-orange-600 hover:text-orange-900 text-sm font-semibold"
+                                            onClick={() => handleCreateBill(supplier.id)}
+                                        >
+                                            Crear orden
                                         </button>
                                     </div>
                                 </td>
