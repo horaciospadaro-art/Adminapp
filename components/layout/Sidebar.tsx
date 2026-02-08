@@ -48,6 +48,12 @@ export function Sidebar() {
                     </h3>
                     <ul className="space-y-1">
                         <li>
+                            <Link href="/dashboard/accounting/chart-of-accounts" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                                <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">Pc</span>
+                                Plan de Cuentas
+                            </Link>
+                        </li>
+                        <li>
                             <Link href="/dashboard/accounting" className="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
                                 <span className="w-6 text-center mr-3 text-sm font-mono opacity-50">As</span>
                                 Asientos
