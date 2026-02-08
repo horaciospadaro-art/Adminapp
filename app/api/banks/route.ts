@@ -14,16 +14,14 @@ export async function GET(request: Request) {
             }
             const banks = await prisma.bankAccount.findMany({
                 where: { company_id: company.id },
-                // Temporarily disabled to debug P2022 error
-                // include: { gl_account: true }
+                include: { gl_account: true }
             })
             return NextResponse.json(banks)
         }
 
         const banks = await prisma.bankAccount.findMany({
             where: { company_id: companyId },
-            // Temporarily disabled to debug P2022 error
-            // include: { gl_account: true },
+            include: { gl_account: true },
             orderBy: { created_at: 'desc' }
         })
 
