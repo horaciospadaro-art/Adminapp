@@ -1,4 +1,5 @@
 import prisma from '@/lib/db'
+import { ChartOfAccount } from '@prisma/client'
 
 async function getTrialBalance() {
     // Group lines by account, sum debits and credits
@@ -20,7 +21,7 @@ async function getTrialBalance() {
     })
 
     // 3. Merge
-    const report = accounts.map(acc => {
+    const report = accounts.map((acc: ChartOfAccount) => {
         const bal = balances.find(b => b.account_id === acc.id)
         const debit = Number(bal?._sum.debit || 0)
         const credit = Number(bal?._sum.credit || 0)
