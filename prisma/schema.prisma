@@ -26,6 +26,7 @@ model Company {
   products       Product[]
   bankAccounts   BankAccount[]
   taxes          Tax[]
+  documents      Document[]
 }
 
 // Accounting Module
@@ -87,6 +88,7 @@ model JournalEntry {
   // Relations
   lines            JournalLine[]
   bankTransaction  BankTransaction?
+  document         Document?
 }
 
 model JournalLine {
@@ -127,6 +129,8 @@ model ThirdParty {
   
   payable_account_id    String?
   payable_account       ChartOfAccount? @relation("ThirdPartyPayable", fields: [payable_account_id], references: [id])
+  
+  documents             Document[]
 
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
