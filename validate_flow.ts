@@ -1,3 +1,4 @@
+// @ts-nocheck
 require('dotenv').config();
 // Intentar importar prisma de lib/db.ts
 // lib/db.ts tiene 'export default prisma', así que en CJS esto suele ser .default
