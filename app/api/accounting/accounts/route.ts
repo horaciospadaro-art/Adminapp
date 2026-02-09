@@ -33,10 +33,15 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
-    const companyId = searchParams.get('companyId')
+    let companyId = searchParams.get('companyId')
 
     if (!companyId) {
-        return NextResponse.json({ error: 'Company ID required' }, { status: 400 })
+        // Default to first company
+        const company = await prisma.company.findFirst()
+        if (!company) {
+            return NextResponse.json({ error: 'No company found' }, { status: 404 })
+        }
+        companyId = company.id
     }
 
     const service = new AccountService()
