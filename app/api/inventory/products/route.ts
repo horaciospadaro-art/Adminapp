@@ -69,6 +69,8 @@ export async function POST(request: Request) {
                 track_inventory,
                 quantity_on_hand,
                 avg_cost,
+                minimum_stock: body.minimum_stock || 0,
+                reorder_point: body.reorder_point || null,
 
                 income_account_id: income_account_id || null,
                 cogs_account_id: cogs_account_id || null,

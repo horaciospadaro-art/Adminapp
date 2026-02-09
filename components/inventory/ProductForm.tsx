@@ -41,6 +41,8 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
         track_inventory: initialData?.track_inventory || false,
         quantity_on_hand: initialData?.quantity_on_hand || 0,
         avg_cost: initialData?.avg_cost || 0,
+        minimum_stock: initialData?.minimum_stock || 0,
+        reorder_point: initialData?.reorder_point || '',
 
         // Accounts
         income_account_id: initialData?.income_account_id || '',
@@ -201,6 +203,38 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                     </div>
                 </div>
             </div>
+
+            {!isService && (
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Control de Stock</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={formData.minimum_stock}
+                                onChange={e => setFormData({ ...formData, minimum_stock: parseFloat(e.target.value) || 0 })}
+                                className="w-full border p-2 rounded focus:ring-blue-500 font-mono"
+                                placeholder="0.00"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Se generará alerta cuando el stock esté por debajo de este valor</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Punto de Reorden (Opcional)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={formData.reorder_point}
+                                onChange={e => setFormData({ ...formData, reorder_point: e.target.value })}
+                                className="w-full border p-2 rounded focus:ring-blue-500 font-mono"
+                                placeholder="0.00"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Nivel sugerido para realizar un nuevo pedido</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex justify-end gap-4">
                 <Link
