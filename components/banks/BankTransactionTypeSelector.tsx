@@ -14,6 +14,7 @@ export type TransactionSubtype =
     | 'DEPOSIT'
     | 'WITHDRAWAL'
     | 'TRANSFER_OUT'
+    | 'TRANSFER_IN'
     | 'DEBIT_NOTE'
     | 'CREDIT_NOTE'
     | 'OTHER'
