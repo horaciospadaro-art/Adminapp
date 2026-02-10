@@ -234,35 +234,20 @@ export async function POST(
             // ---------------------------------------------------------
             if (type === 'CREDIT' && bankAccount.currency === 'USD' && isIgtfApplied) {
                 // Find IGTF Tax Configuration
-                const igtfTax = await tx.tax.findFirst({
-                    where: {
-                        company_id: bankAccount.company_id,
-                        type: 'IGTF',
-                        is_active: true
-                    }
-                })
-
                 let rate = 3.00
-                let taxAccountId = null
+                const taxAccountId = await getIgtfAccountId(tx, bankAccount.company_id)
 
-                if (igtfTax) {
-                    rate = Number(igtfTax.rate)
-                    taxAccountId = igtfTax.gl_account_id
-                } else {
-                    // Try to find an IGTF account by name
-                    const igtfAccount = await tx.chartOfAccount.findFirst({
-                        where: {
-                            company_id: bankAccount.company_id,
-                            name: { contains: 'IGTF', mode: 'insensitive' }
-                        }
-                    })
+                // If we want the specific rate from the Tax table, we can fetch it, 
+                // but usually IGTF is fixed or we can trust the default 3% if not found.
+                // However, to be precise, let's try to get the rate from a Tax record if it exists.
+                const igtfTax = await tx.tax.findFirst({
+                    where: { company_id: bankAccount.company_id, type: 'IGTF', is_active: true }
+                })
+                if (igtfTax) rate = Number(igtfTax.rate)
 
-                    if (igtfAccount) {
-                        taxAccountId = igtfAccount.id
-                    } else {
-                        console.warn('No IGTF tax or account configured. Skipping IGTF.')
-                        return mainTransaction
-                    }
+                if (!taxAccountId) {
+                    console.warn('No IGTF tax account configured. Skipping IGTF.')
+                    return mainTransaction
                 }
 
                 const igtfAmount = Number(amount) * (rate / 100)
@@ -458,22 +443,12 @@ async function handleTransfer(
         // Handle IGTF if applicable (on USD transfers)
         if (data.isIgtfApplied && sourceBankAccount.currency === 'USD') {
             const igtfTax = await tx.tax.findFirst({
-                where: {
-                    company_id: sourceBankAccount.company_id,
-                    type: 'IGTF',
-                    is_active: true
-                }
+                where: { company_id: sourceBankAccount.company_id, type: 'IGTF', is_active: true }
             })
-
             const rate = igtfTax ? Number(igtfTax.rate) : 3.00
-            const igtfAmount = data.amount * (rate / 100)
 
-            const taxAccountId = igtfTax?.gl_account_id || (await tx.chartOfAccount.findFirst({
-                where: {
-                    company_id: sourceBankAccount.company_id,
-                    name: { contains: 'IGTF', mode: 'insensitive' }
-                }
-            }))?.id
+            const taxAccountId = await getIgtfAccountId(tx, sourceBankAccount.company_id)
+            const igtfAmount = data.amount * (rate / 100)
 
             if (taxAccountId) {
                 // Create IGTF transaction
@@ -553,4 +528,25 @@ function getSubtypeLabel(subtype: string): string {
         'OTHER': 'Otro'
     }
     return labels[subtype] || subtype
+}
+
+// Helper: Resolve IGTF Account ID with fallback priority
+async function getIgtfAccountId(tx: any, companyId: string): Promise<string | null> {
+    // 1. Check Global Configuration
+    const globalConfig = await tx.globalTaxConfiguration.findUnique({
+        where: { company_id: companyId }
+    })
+    if (globalConfig?.igtf_account_id) return globalConfig.igtf_account_id
+
+    // 2. Check existing Tax definition (legacy fallback)
+    const igtfTax = await tx.tax.findFirst({
+        where: { company_id: companyId, type: 'IGTF', is_active: true }
+    })
+    if (igtfTax?.gl_account_id) return igtfTax.gl_account_id
+
+    // 3. Last resort: Search by name
+    const account = await tx.chartOfAccount.findFirst({
+        where: { company_id: companyId, name: { contains: 'IGTF', mode: 'insensitive' } }
+    })
+    return account?.id || null
 }
