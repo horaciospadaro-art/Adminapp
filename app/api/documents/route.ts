@@ -12,6 +12,8 @@ export async function POST(request: Request) {
             date,
             due_date,
             number,
+            control_number, // New
+            accounting_date, // New
             reference,
             items, // Array of { product_id, description, quantity, unit_price, tax_id }
             ignore_inventory = false
@@ -32,16 +34,19 @@ export async function POST(request: Request) {
         let subtotal = 0
         let totalTax = 0
 
-        // Fetch taxes for calculation if needed, or rely on frontend values?
-        // Better to fetch to ensure integrity, but for speed we might trust frontend tax_amount if validated.
-        // Let's iterate items and calculate.
-
         const processedItems = items.map((item: any) => {
             const qty = parseFloat(item.quantity)
             const price = parseFloat(item.unit_price)
             const lineTotal = qty * price
             const taxRate = parseFloat(item.tax_rate) || 0
             const taxAmount = lineTotal * (taxRate / 100)
+
+            // Retention Snapshots
+            const vatRetRate = parseFloat(item.vat_retention_rate) || 0
+            const vatRetAmount = taxAmount * (vatRetRate / 100)
+
+            const islrRate = parseFloat(item.islr_rate) || 0
+            const islrAmount = lineTotal * (islrRate / 100) // ISLR base is usually subtotal
 
             subtotal += lineTotal
             totalTax += taxAmount
@@ -52,6 +57,10 @@ export async function POST(request: Request) {
                 unit_price: price,
                 tax_rate: taxRate,
                 tax_amount: taxAmount,
+                vat_retention_rate: vatRetRate,
+                vat_retention_amount: vatRetAmount,
+                islr_rate: islrRate,
+                islr_amount: islrAmount,
                 total: lineTotal + taxAmount
             }
         })
@@ -69,6 +78,8 @@ export async function POST(request: Request) {
                     date: new Date(date),
                     due_date: due_date ? new Date(due_date) : null,
                     number,
+                    control_number,
+                    accounting_date: accounting_date ? new Date(accounting_date) : new Date(date),
                     reference,
                     currency_code: 'VES', // Default for now
 
@@ -87,6 +98,13 @@ export async function POST(request: Request) {
                             tax_id: item.tax_id || null,
                             tax_rate: item.tax_rate,
                             tax_amount: item.tax_amount,
+
+                            // New Fields
+                            vat_retention_rate: item.vat_retention_rate,
+                            vat_retention_amount: item.vat_retention_amount,
+                            islr_rate: item.islr_rate,
+                            islr_amount: item.islr_amount,
+
                             total: item.total,
                             gl_account_id: item.gl_account_id || null
                         }))
@@ -95,13 +113,8 @@ export async function POST(request: Request) {
             })
 
             // Update Inventory (if applicable and strictly tracked)
-            // For now, simple decrement if it's a sale (INVOICE) or increment if it's a purchase (BILL)
-            // AND if the product tracks inventory.
-
-            // Limit inventory check to relevant types
             if (!ignore_inventory) {
                 // Fetch Third Party to determine direction (CLIENT vs SUPPLIER)
-                // If it's a CREDIT_NOTE, we need to know who it is for.
                 const thirdParty = await tx.thirdParty.findUnique({ where: { id: third_party_id } })
                 const isClient = thirdParty?.type === 'CLIENTE' || thirdParty?.type === 'AMBOS'
                 const isSupplier = thirdParty?.type === 'PROVEEDOR' || thirdParty?.type === 'AMBOS'
@@ -128,7 +141,6 @@ export async function POST(request: Request) {
                                     adjustment = -item.quantity
                                 }
                             }
-                            // DEBIT_NOTE usually doesn't affect inventory
 
                             if (adjustment !== 0) {
                                 await tx.product.update({

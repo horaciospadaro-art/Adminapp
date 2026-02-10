@@ -35,6 +35,16 @@ interface BillItem {
     tax_id: string
     // derived
     total: number
+    
+    // New fields
+    tax_rate: number
+    tax_amount: number
+
+    vat_retention_rate: number
+    vat_retention_amount: number
+    
+    islr_rate: number
+    islr_amount: number
 }
 
 export function BillForm() {
@@ -50,23 +60,21 @@ export function BillForm() {
 
     // Form State
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [accountingDate, setAccountingDate] = useState(new Date().toISOString().split('T')[0])
     const [dueDate, setDueDate] = useState('')
-    const [number, setNumber] = useState('')
+    const [number, setNumber] = useState('') 
+    const [controlNumber, setControlNumber] = useState('') 
     const [reference, setReference] = useState('')
     const [thirdPartyId, setThirdPartyId] = useState('')
 
     const [items, setItems] = useState<BillItem[]>([])
-
-    // Retention State (Simplified for MVP, ideally fetched from BE configuration)
-    const [applyRetentionIVA, setApplyRetentionIVA] = useState(false)
-    const [retentionIVAPercentage, setRetentionIVAPercentage] = useState(75)
 
     // Initial Load
     useEffect(() => {
         async function loadResources() {
             try {
                 const [supRes, prodRes, taxRes] = await Promise.all([
-                    fetch('/api/third-parties?type=PROVEEDOR'), // Need to implement filter in third-parties api
+                    fetch('/api/third-parties?type=PROVEEDOR'), 
                     fetch('/api/inventory/products'),
                     fetch('/api/configuration/taxes')
                 ])
@@ -98,7 +106,13 @@ export function BillForm() {
             quantity: 1,
             unit_price: 0,
             tax_id: taxes.find(t => t.type === 'IVA')?.id || '',
-            total: 0
+            total: 0,
+            tax_rate: 0,
+            tax_amount: 0,
+            vat_retention_rate: 0,
+            vat_retention_amount: 0,
+            islr_rate: 0,
+            islr_amount: 0
         }])
     }
 
@@ -115,10 +129,22 @@ export function BillForm() {
                 if (prod.tax_id) item.tax_id = prod.tax_id
             }
         }
+        
+        // Auto-update tax rate if tax_id changes (or product changed)
+        if (field === 'tax_id' || field === 'product_id') {
+             const tax = taxes.find(t => t.id === item.tax_id)
+             item.tax_rate = tax ? parseFloat(tax.rate) : 0
+        }
 
-        // Recalculate line total (pre-tax for now, but display usually includes tax? No, usually base + tax)
-        // Let's keep total as base line total for simplicity in this function
-        item.total = item.quantity * item.unit_price
+        // Calculations per line
+        const base = item.quantity * item.unit_price
+        item.tax_amount = base * (item.tax_rate / 100)
+        
+        // Retentions
+        item.vat_retention_amount = item.tax_amount * (item.vat_retention_rate / 100)
+        item.islr_amount = base * (item.islr_rate / 100)
+        
+        item.total = base + item.tax_amount
 
         newItems[index] = item
         setItems(newItems)
@@ -132,32 +158,28 @@ export function BillForm() {
     const calculations = useMemo(() => {
         let subtotal = 0
         let totalTax = 0
+        let totalRetIVA = 0
+        let totalRetISLR = 0
 
         items.forEach(item => {
             const lineBase = item.quantity * item.unit_price
             subtotal += lineBase
-
-            const tax = taxes.find(t => t.id === item.tax_id)
-            if (tax) {
-                totalTax += lineBase * (parseFloat(tax.rate) / 100)
-            }
+            totalTax += item.tax_amount
+            totalRetIVA += item.vat_retention_amount
+            totalRetISLR += item.islr_amount
         })
 
         const totalInvoice = subtotal + totalTax
-
-        let retIVA = 0
-        if (applyRetentionIVA) {
-            retIVA = totalTax * (retentionIVAPercentage / 100)
-        }
 
         return {
             subtotal,
             totalTax,
             totalInvoice,
-            retIVA,
-            totalPayable: totalInvoice - retIVA
+            totalRetIVA,
+            totalRetISLR,
+            totalPayable: totalInvoice - totalRetIVA - totalRetISLR
         }
-    }, [items, taxes, applyRetentionIVA, retentionIVAPercentage])
+    }, [items])
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -173,17 +195,22 @@ export function BillForm() {
                 third_party_id: thirdPartyId,
                 type: 'BILL',
                 date,
+                accounting_date: accountingDate,
                 due_date: dueDate || null,
                 number,
+                control_number: controlNumber,
                 reference,
-                items: items.map(item => {
-                    const tax = taxes.find(t => t.id === item.tax_id)
-                    return {
-                        ...item,
-                        tax_rate: tax ? parseFloat(tax.rate) : 0
-                    }
-                }),
-                // Add retention info if needed (schema support pending for retentions, will assume just document creation for now)
+                items: items.map(item => ({
+                    ...item,
+                    quantity: Number(item.quantity),
+                    unit_price: Number(item.unit_price),
+                    tax_rate: Number(item.tax_rate),
+                    tax_amount: Number(item.tax_amount),
+                    vat_retention_rate: Number(item.vat_retention_rate),
+                    vat_retention_amount: Number(item.vat_retention_amount),
+                    islr_rate: Number(item.islr_rate),
+                    islr_amount: Number(item.islr_amount),
+                })),
             }
 
             const res = await fetch('/api/documents', {
@@ -210,7 +237,7 @@ export function BillForm() {
     if (pageLoading) return <div className="p-8"><Loader2 className="animate-spin" /></div>
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-6 pb-20">
+        <form onSubmit={handleSubmit} className="max-w-[95%] mx-auto space-y-6 pb-20">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-800">Registrar Factura de Compra</h1>
                 <Link href="/dashboard/operations/bills" className="text-sm text-blue-600 hover:underline">
@@ -235,24 +262,54 @@ export function BillForm() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Factura / Control <span className="text-red-500">*</span></label>
-                        <input
-                            value={number}
-                            onChange={e => setNumber(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500"
-                            placeholder="000123"
-                            required
-                        />
+                        <div className="flex gap-2">
+                             <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Factura <span className="text-red-500">*</span></label>
+                                <input
+                                    value={number}
+                                    onChange={e => setNumber(e.target.value)}
+                                    className="w-full p-2 border rounded focus:ring-blue-500"
+                                    placeholder="000123"
+                                    required
+                                />
+                             </div>
+                             <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Control</label>
+                                <input
+                                    value={controlNumber}
+                                    onChange={e => setControlNumber(e.target.value)}
+                                    className="w-full p-2 border rounded focus:ring-blue-500"
+                                    placeholder="00-..."
+                                />
+                             </div>
+                        </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Emisión <span className="text-red-500">*</span></label>
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
-                            className="w-full p-2 border rounded focus:ring-blue-500"
-                            required
-                        />
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Emisión <span className="text-red-500">*</span></label>
+                                <input
+                                    type="date"
+                                    value={date}
+                                    onChange={e => {
+                                        setDate(e.target.value)
+                                        if (e.target.value) setAccountingDate(e.target.value)
+                                    }}
+                                    className="w-full p-2 border rounded focus:ring-blue-500"
+                                    required
+                                />
+                            </div>
+                             <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">F. Contable <span className="text-red-500">*</span></label>
+                                <input
+                                    type="date"
+                                    value={accountingDate}
+                                    onChange={e => setAccountingDate(e.target.value)}
+                                    className="w-full p-2 border rounded focus:ring-blue-500"
+                                    required
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -260,83 +317,119 @@ export function BillForm() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 overflow-hidden">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Detalle de Factura</h3>
 
-                <table className="w-full text-sm text-left mb-4">
-                    <thead className="bg-gray-50 text-gray-600">
-                        <tr>
-                            <th className="p-2 pl-4">Producto / Descripción</th>
-                            <th className="p-2 w-24 text-right">Cant.</th>
-                            <th className="p-2 w-32 text-right">Precio Unit.</th>
-                            <th className="p-2 w-32">Impuesto</th>
-                            <th className="p-2 w-32 text-right">Total</th>
-                            <th className="p-2 w-10"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {items.map((item, idx) => (
-                            <tr key={idx} className="group">
-                                <td className="p-2 pl-4">
-                                    <div className="space-y-1">
-                                        <select
-                                            value={item.product_id}
-                                            onChange={e => updateItem(idx, 'product_id', e.target.value)}
-                                            className="w-full p-1 border rounded text-xs mb-1"
-                                        >
-                                            <option value="">(Ninguno) - Item Libre</option>
-                                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                        </select>
-                                        <input
-                                            value={item.description}
-                                            onChange={e => updateItem(idx, 'description', e.target.value)}
-                                            placeholder="Descripción del item"
-                                            className="w-full p-1 border-b border-gray-300 focus:border-blue-500 focus:outline-none"
-                                        />
-                                    </div>
-                                </td>
-                                <td className="p-2">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={item.quantity}
-                                        onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                                        className="w-full text-right p-1 border rounded"
-                                    />
-                                </td>
-                                <td className="p-2">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={item.unit_price}
-                                        onChange={e => updateItem(idx, 'unit_price', parseFloat(e.target.value) || 0)}
-                                        className="w-full text-right p-1 border rounded"
-                                    />
-                                </td>
-                                <td className="p-2">
-                                    <select
-                                        value={item.tax_id}
-                                        onChange={e => updateItem(idx, 'tax_id', e.target.value)}
-                                        className="w-full p-1 border rounded text-xs"
-                                    >
-                                        {taxes.map(t => <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>)}
-                                    </select>
-                                </td>
-                                <td className="p-2 text-right font-medium">
-                                    {(item.quantity * item.unit_price).toFixed(2)}
-                                </td>
-                                <td className="p-2 text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => removeItem(idx)}
-                                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left mb-4 min-w-[1200px]">
+                        <thead className="bg-gray-50 text-gray-600">
+                            <tr>
+                                <th className="p-2 pl-4 w-48">Producto / Descripción</th>
+                                <th className="p-2 w-16 text-right">Cant.</th>
+                                <th className="p-2 w-24 text-right">Precio Unit.</th>
+                                <th className="p-2 w-24 text-right bg-blue-50/50">Base Imp.</th>
+                                <th className="p-2 w-24">Tasa IVA</th>
+                                <th className="p-2 w-24 text-right bg-blue-50/50">Monto IVA</th>
+                                <th className="p-2 w-20">% Ret IVA</th>
+                                <th className="p-2 w-24 text-right bg-red-50/50">Ret IVA</th>
+                                <th className="p-2 w-20">% ISLR</th>
+                                <th className="p-2 w-24 text-right bg-red-50/50">Ret ISLR</th>
+                                <th className="p-2 w-24 text-right font-semibold">Total</th>
+                                <th className="p-2 w-24 text-right font-bold text-green-700">Neto</th>
+                                <th className="p-2 w-10"></th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {items.map((item, idx) => (
+                                <tr key={idx} className="group hover:bg-gray-50 transition-colors">
+                                    <td className="p-2 pl-4">
+                                        <div className="space-y-1">
+                                            <select
+                                                value={item.product_id}
+                                                onChange={e => updateItem(idx, 'product_id', e.target.value)}
+                                                className="w-full p-1 border rounded text-xs mb-1"
+                                            >
+                                                <option value="">(Libre)</option>
+                                                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                            </select>
+                                            <input
+                                                value={item.description}
+                                                onChange={e => updateItem(idx, 'description', e.target.value)}
+                                                placeholder="Descripción"
+                                                className="w-full p-1 border-b border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent"
+                                            />
+                                        </div>
+                                    </td>
+                                    <td className="p-2">
+                                        <input
+                                            type="number" min="0" step="0.01"
+                                            value={item.quantity}
+                                            onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                            className="w-full text-right p-1 border rounded"
+                                        />
+                                    </td>
+                                    <td className="p-2">
+                                        <input
+                                            type="number" min="0" step="0.01"
+                                            value={item.unit_price}
+                                            onChange={e => updateItem(idx, 'unit_price', parseFloat(e.target.value) || 0)}
+                                            className="w-full text-right p-1 border rounded"
+                                        />
+                                    </td>
+                                    <td className="p-2 text-right bg-blue-50/30">
+                                        {(item.quantity * item.unit_price).toFixed(2)}
+                                    </td>
+                                    <td className="p-2">
+                                        <select
+                                            value={item.tax_id}
+                                            onChange={e => updateItem(idx, 'tax_id', e.target.value)}
+                                            className="w-full p-1 border rounded text-xs"
+                                        >
+                                            {taxes.map(t => <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>)}
+                                        </select>
+                                    </td>
+                                    <td className="p-2 text-right bg-blue-50/30">
+                                        {item.tax_amount.toFixed(2)}
+                                    </td>
+                                    <td className="p-2">
+                                        <select
+                                            value={item.vat_retention_rate}
+                                            onChange={e => updateItem(idx, 'vat_retention_rate', parseFloat(e.target.value) || 0)}
+                                            className="w-full p-1 border rounded text-xs"
+                                        >
+                                            <option value="0">0%</option>
+                                            <option value="75">75%</option>
+                                            <option value="100">100%</option>
+                                        </select>
+                                    </td>
+                                    <td className="p-2 text-right bg-red-50/30 text-red-600">
+                                        {item.vat_retention_amount.toFixed(2)}
+                                    </td>
+                                    <td className="p-2">
+                                         <input
+                                            type="number" min="0" step="0.5"
+                                            value={item.islr_rate}
+                                            onChange={e => updateItem(idx, 'islr_rate', parseFloat(e.target.value) || 0)}
+                                            className="w-full text-right p-1 border rounded"
+                                            placeholder="%"
+                                        />
+                                    </td>
+                                    <td className="p-2 text-right bg-red-50/30 text-red-600">
+                                        {item.islr_amount.toFixed(2)}
+                                    </td>
+                                    <td className="p-2 text-right font-medium">
+                                        {(item.quantity * item.unit_price + item.tax_amount).toFixed(2)}
+                                    </td>
+                                    <td className="p-2 text-right font-bold text-green-700">
+                                        {(item.quantity * item.unit_price + item.tax_amount - item.vat_retention_amount - item.islr_amount).toFixed(2)}
+                                    </td>
+                                    <td className="p-2 text-center">
+                                        <button type="button" onClick={() => removeItem(idx)} className="text-gray-400 hover:text-red-500">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 <button
                     type="button"
                     onClick={addItem}
@@ -349,53 +442,36 @@ export function BillForm() {
             {/* Calculations & Submit */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                    {/* Retention Options */}
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer mb-2">
-                            <input
-                                type="checkbox"
-                                checked={applyRetentionIVA}
-                                onChange={(e) => setApplyRetentionIVA(e.target.checked)}
-                                className="rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            Aplicar Retención de IVA
-                        </label>
-                        {applyRetentionIVA && (
-                            <select
-                                value={retentionIVAPercentage}
-                                onChange={(e) => setRetentionIVAPercentage(Number(e.target.value))}
-                                className="w-full p-2 border rounded text-sm bg-gray-50"
-                            >
-                                <option value="75">75%</option>
-                                <option value="100">100%</option>
-                            </select>
-                        )}
-                    </div>
+                   {/* Left blank or for notes */}
                 </div>
 
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Subtotal</span>
+                            <span className="text-gray-600">Subtotal (Base Imponible)</span>
                             <span className="font-medium">{calculations.subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">IVA</span>
+                            <span className="text-gray-600">IVA Total</span>
                             <span className="font-medium">{calculations.totalTax.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between border-t pt-2 font-semibold">
                             <span>Total Factura</span>
                             <span>{calculations.totalInvoice.toFixed(2)}</span>
                         </div>
-                        {applyRetentionIVA && (
-                            <div className="flex justify-between text-red-600 text-xs mt-2">
-                                <span>(-) Retención IVA ({retentionIVAPercentage}%)</span>
-                                <span>-{calculations.retIVA.toFixed(2)}</span>
-                            </div>
-                        )}
+
+                        <div className="flex justify-between text-red-600 text-xs mt-2">
+                             <span>(-) Total Retención IVA</span>
+                             <span>-{calculations.totalRetIVA.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-red-600 text-xs mt-1">
+                             <span>(-) Total Retención ISLR</span>
+                             <span>-{calculations.totalRetISLR.toFixed(2)}</span>
+                        </div>
+
                         <div className="border-t-2 border-gray-800 pt-3 mt-4">
                             <div className="flex justify-between text-lg font-bold">
-                                <span>Total a Pagar</span>
+                                <span>Neto a Pagar</span>
                                 <span className="text-[#2ca01c]">
                                     {calculations.totalPayable.toFixed(2)}
                                 </span>

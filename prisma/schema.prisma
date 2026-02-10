@@ -279,7 +279,9 @@ model Document {
   type            DocumentType
   date            DateTime
   due_date        DateTime?
-  number          String         // Nro de Factura / Control
+  number          String         // Nro de Factura
+  control_number  String?        // Nro de Control
+  accounting_date DateTime       @default(now()) // Fecha de Operacion Contable
   reference       String?        // Order Reference, etc.
   
   // Financials
@@ -328,6 +330,13 @@ model DocumentItem {
   tax_id          String?
   tax_rate        Decimal   @default(0) @db.Decimal(5, 2)
   tax_amount      Decimal   @default(0) @db.Decimal(15, 2)
+
+  // Retentions (Per line calculation snapshots)
+  vat_retention_rate    Decimal @default(0) @db.Decimal(5, 2)
+  vat_retention_amount  Decimal @default(0) @db.Decimal(15, 2)
+  
+  islr_rate             Decimal @default(0) @db.Decimal(5, 2)
+  islr_amount           Decimal @default(0) @db.Decimal(15, 2)
   
   total           Decimal   @db.Decimal(15, 2)
 
