@@ -28,6 +28,7 @@ model Company {
   taxes          Tax[]
   documents      Document[]
   withholdings   Withholding[]
+  globalTaxConfig GlobalTaxConfiguration?
 }
 
 // Accounting Module
