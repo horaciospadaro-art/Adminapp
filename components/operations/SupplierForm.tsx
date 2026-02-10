@@ -18,6 +18,7 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
     const [email, setEmail] = useState('')
     const [phone, setPhone] = useState('')
     const [address, setAddress] = useState('')
+    const [taxpayerType, setTaxpayerType] = useState('PJ_DOMICILIADA')
     const [accountId, setAccountId] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -29,6 +30,7 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
             setEmail(initialData.email || '')
             setPhone(initialData.phone || '')
             setAddress(initialData.address || '')
+            setTaxpayerType(initialData.taxpayer_type || 'PJ_DOMICILIADA')
             setAccountId(initialData.payable_account_id || '') // Note: payable_account_id
         }
     }, [initialData])
@@ -51,6 +53,7 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
                 email,
                 phone,
                 address,
+                taxpayer_type: taxpayerType,
                 payable_account_id: accountId
             }
 
@@ -74,6 +77,7 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
                 setEmail('')
                 setPhone('')
                 setAddress('')
+                setTaxpayerType('PJ_DOMICILIADA')
                 setAccountId('')
             }
         } catch (err: any) {
@@ -114,6 +118,20 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
                 <div>
                     <label htmlFor="supplier-phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                     <input id="supplier-phone" type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2" />
+                </div>
+                <div>
+                    <label htmlFor="supplier-type" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Persona (ISLR)</label>
+                    <select
+                        id="supplier-type"
+                        value={taxpayerType}
+                        onChange={e => setTaxpayerType(e.target.value)}
+                        className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
+                    >
+                        <option value="PJ_DOMICILIADA">P. Jurídica Domiciliada</option>
+                        <option value="PJ_NO_DOMICILIADA">P. Jurídica No Domiciliada</option>
+                        <option value="PN_RESIDENTE">P. Natural Residente</option>
+                        <option value="PN_NO_RESIDENTE">P. Natural No Residente</option>
+                    </select>
                 </div>
                 <div className="md:col-span-2">
                     <label htmlFor="supplier-address" className="block text-sm font-medium text-gray-700 mb-1">Dirección Fiscal</label>

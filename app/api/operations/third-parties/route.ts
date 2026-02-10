@@ -16,6 +16,7 @@ export async function PUT(req: NextRequest) {
                 email,
                 phone,
                 address,
+                taxpayer_type: body.taxpayer_type || undefined,
                 receivable_account_id: receivable_account_id || undefined, // undefined to ignore if not passed? No, probably null if explicitly cleared? 
                 // Let's assume frontend sends null if cleared. 
                 // But prisma treats undefined as "do nothing".

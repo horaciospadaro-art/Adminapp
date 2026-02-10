@@ -45,6 +45,16 @@ interface BillItem {
 
     islr_rate: number
     islr_amount: number
+    islr_concept_id?: string // New field
+}
+
+interface ISLRConcept {
+    id: string
+    description: string
+    pn_resident_rate: number
+    pn_non_resident_rate: number
+    pj_domiciled_rate: number
+    pj_non_domiciled_rate: number
 }
 
 export function BillForm() {
@@ -57,6 +67,7 @@ export function BillForm() {
     const [suppliers, setSuppliers] = useState<ThirdParty[]>([])
     const [products, setProducts] = useState<Product[]>([])
     const [taxes, setTaxes] = useState<Tax[]>([])
+    const [islrConcepts, setIslrConcepts] = useState<ISLRConcept[]>([])
 
     // Form State
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -73,15 +84,17 @@ export function BillForm() {
     useEffect(() => {
         async function loadResources() {
             try {
-                const [supRes, prodRes, taxRes] = await Promise.all([
+                const [supRes, prodRes, taxRes, conceptRes] = await Promise.all([
                     fetch('/api/third-parties?type=PROVEEDOR'),
                     fetch('/api/inventory/products'),
-                    fetch('/api/configuration/taxes')
+                    fetch('/api/configuration/taxes'),
+                    fetch('/api/configuration/islr-concepts')
                 ])
 
                 if (supRes.ok) setSuppliers(await supRes.json())
                 if (prodRes.ok) setProducts(await prodRes.json())
                 if (taxRes.ok) setTaxes(await taxRes.json())
+                if (conceptRes.ok) setIslrConcepts(await conceptRes.json())
             } catch (error) {
                 console.error(error)
             } finally {
@@ -112,7 +125,8 @@ export function BillForm() {
             vat_retention_rate: 0,
             vat_retention_amount: 0,
             islr_rate: 0,
-            islr_amount: 0
+            islr_amount: 0,
+            islr_concept_id: ''
         }])
     }
 
@@ -134,6 +148,27 @@ export function BillForm() {
         if (field === 'tax_id' || field === 'product_id') {
             const tax = taxes.find(t => t.id === item.tax_id)
             item.tax_rate = tax ? parseFloat(tax.rate) : 0
+        }
+
+        // Auto-update ISLR rate if concept or supplier changes (concept change handled here)
+        if (field === 'islr_concept_id') {
+            const concept = islrConcepts.find(c => c.id === value)
+            const supplier = suppliers.find(s => s.id === thirdPartyId) as any
+            const type = supplier?.taxpayer_type || 'PJ_DOMICILIADA'
+
+            if (concept) {
+                let rate = 0
+                switch (type) {
+                    case 'PN_RESIDENTE': rate = Number(concept.pn_resident_rate); break;
+                    case 'PN_NO_RESIDENTE': rate = Number(concept.pn_non_resident_rate); break;
+                    case 'PJ_DOMICILIADA': rate = Number(concept.pj_domiciled_rate); break;
+                    case 'PJ_NO_DOMICILIADA': rate = Number(concept.pj_non_domiciled_rate); break;
+                    default: rate = Number(concept.pj_domiciled_rate);
+                }
+                item.islr_rate = rate
+            } else {
+                item.islr_rate = 0
+            }
         }
 
         // Calculations per line
@@ -329,6 +364,7 @@ export function BillForm() {
                                 <th className="p-2 text-center">Monto IVA</th>
                                 <th className="p-2 text-center">% Ret IVA</th>
                                 <th className="p-2 text-center">Ret IVA</th>
+                                <th className="p-2 text-center text-red-600 font-bold">Concepto ISLR</th>
                                 <th className="p-2 text-center">% ISLR</th>
                                 <th className="p-2 text-center">Ret ISLR</th>
                                 <th className="p-2 text-center font-semibold">Total</th>
@@ -409,7 +445,21 @@ export function BillForm() {
                                             onChange={e => updateItem(idx, 'islr_rate', parseFloat(e.target.value) || 0)}
                                             className="w-full text-right p-1 border rounded"
                                             placeholder="%"
+                                            readOnly
+                                            aria-label="Tasa ISLR"
                                         />
+                                    </td>
+                                    <td className="p-2">
+                                        <select
+                                            value={item.islr_concept_id || ''}
+                                            onChange={e => updateItem(idx, 'islr_concept_id', e.target.value)}
+                                            className="w-full p-1 border rounded text-xs"
+                                            aria-label="Concepto ISLR"
+                                        >
+                                            <option value="">(Ninguno)</option>
+                                            {islrConcepts.map(c => <option key={c.id} value={c.id}>{c.description}</option>)}
+                                        </select>
+
                                     </td>
                                     <td className="p-2 text-right">
                                         {item.islr_amount.toFixed(2)}

@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
                 phone,
                 address,
                 type: ThirdPartyType.PROVEEDOR,
+                taxpayer_type: body.taxpayer_type || undefined,
                 payable_account_id: payable_account_id || null
             }
         })

@@ -120,6 +120,13 @@ enum ThirdPartyType {
   AMBOS
 }
 
+enum TaxpayerType {
+  PN_RESIDENTE      // Persona Natural Residente
+  PN_NO_RESIDENTE   // Persona Natural No Residente
+  PJ_DOMICILIADA    // Persona Juridica Domiciliada
+  PJ_NO_DOMICILIADA // Persona Juridica No Domiciliada
+}
+
 model ThirdParty {
   id                   String   @id @default(uuid())
   company_id           String
@@ -130,6 +137,8 @@ model ThirdParty {
   phone                String?
   address              String?
   type                 ThirdPartyType @default(CLIENTE)
+  
+  taxpayer_type        TaxpayerType @default(PJ_DOMICILIADA) // New field
   
   is_tax_payer_special Boolean  @default(false)
   retention_agent_islr Boolean  @default(false)
