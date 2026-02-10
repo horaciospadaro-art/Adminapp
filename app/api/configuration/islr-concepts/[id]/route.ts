@@ -6,15 +6,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     try {
         const { id } = await params
         const body = await req.json()
-        const { description, rate, base_percentage, seniat_code } = body
+        const {
+            seniat_code,
+            description,
+            pn_resident_rate,
+            pj_domiciled_rate,
+            pn_non_resident_rate,
+            pj_non_domiciled_rate
+        } = body
 
         const concept = await prisma.iSLRConcept.update({
             where: { id },
             data: {
+                seniat_code,
                 description,
-                rate,
-                base_percentage,
-                seniat_code
+                pn_resident_rate,
+                pj_domiciled_rate,
+                pn_non_resident_rate,
+                pj_non_domiciled_rate
             }
         })
         return NextResponse.json(concept)
@@ -34,4 +43,3 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         return NextResponse.json({ error: 'Error deleting ISLR concept' }, { status: 500 })
     }
 }
-

@@ -249,13 +249,15 @@ model Tax {
 }
 
 model ISLRConcept {
-  id              String   @id @default(uuid())
-  seniat_code     String?
-  description     String
-  rate            Decimal  @db.Decimal(5, 2)
-  base_percentage Decimal  @default(100) @db.Decimal(5, 2)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  seniat_code           String?
+  description           String
+  pn_resident_rate      String?  // PN Residente
+  pj_domiciled_rate     String?  // PJ Domiciliada
+  pn_non_resident_rate  String?  // PN No Residente
+  pj_non_domiciled_rate String?  // PJ No Domiciliada
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 // Optimization: Single table for all document headers (Invoices, Bills, Credit Notes)

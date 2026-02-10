@@ -20,8 +20,10 @@ interface ISLRConcept {
     id: string
     seniat_code?: string
     description: string
-    rate: string
-    base_percentage: string
+    pn_resident_rate?: string
+    pj_domiciled_rate?: string
+    pn_non_resident_rate?: string
+    pj_non_domiciled_rate?: string
 }
 
 interface Account {
@@ -57,8 +59,10 @@ export default function TaxesPage() {
     const [islrForm, setIslrForm] = useState({
         seniat_code: '',
         description: '',
-        rate: '',
-        base_percentage: '100'
+        pn_resident_rate: '',
+        pj_domiciled_rate: '',
+        pn_non_resident_rate: '',
+        pj_non_domiciled_rate: ''
     })
 
     useEffect(() => {
@@ -140,12 +144,21 @@ export default function TaxesPage() {
             setIslrForm({
                 seniat_code: concept.seniat_code || '',
                 description: concept.description,
-                rate: concept.rate.toString(),
-                base_percentage: concept.base_percentage.toString()
+                pn_resident_rate: concept.pn_resident_rate || '',
+                pj_domiciled_rate: concept.pj_domiciled_rate || '',
+                pn_non_resident_rate: concept.pn_non_resident_rate || '',
+                pj_non_domiciled_rate: concept.pj_non_domiciled_rate || ''
             })
         } else {
             setEditingIslr(null)
-            setIslrForm({ seniat_code: '', description: '', rate: '', base_percentage: '100' })
+            setIslrForm({
+                seniat_code: '',
+                description: '',
+                pn_resident_rate: '',
+                pj_domiciled_rate: '',
+                pn_non_resident_rate: '',
+                pj_non_domiciled_rate: ''
+            })
         }
         setIsIslrModalOpen(true)
     }
@@ -158,11 +171,7 @@ export default function TaxesPage() {
             const method = editingIslr ? 'PUT' : 'POST'
             const res = await fetch(url, {
                 method,
-                body: JSON.stringify({
-                    ...islrForm,
-                    rate: parseFloat(islrForm.rate),
-                    base_percentage: parseFloat(islrForm.base_percentage)
-                }),
+                body: JSON.stringify(islrForm),
                 headers: { 'Content-Type': 'application/json' }
             })
             if (res.ok) {
@@ -224,7 +233,7 @@ export default function TaxesPage() {
     )
 
     return (
-        <div className="max-w-6xl mx-auto pb-20">
+        <div className="max-w-[98%] mx-auto pb-20">
             <div className="flex justify-between items-center mb-6">
                 <PageHeader title="Configuración de Impuestos" />
                 <div className="flex gap-2">
@@ -252,21 +261,25 @@ export default function TaxesPage() {
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
-                                        <th className="px-6 py-3 font-medium text-gray-700 w-24">Cód.</th>
-                                        <th className="px-6 py-3 font-medium text-gray-700">Descripción</th>
-                                        <th className="px-6 py-3 font-medium text-gray-700 text-right w-32">% Base</th>
-                                        <th className="px-6 py-3 font-medium text-gray-700 text-right w-32">% Retención</th>
-                                        <th className="px-6 py-3 font-medium text-gray-700 text-right w-24">Acciones</th>
+                                        <th className="px-4 py-3 font-medium text-gray-700 w-24">Cód.</th>
+                                        <th className="px-4 py-3 font-medium text-gray-700">Concepto de Retención</th>
+                                        <th className="px-4 py-3 font-medium text-gray-700 w-32">PN Residente</th>
+                                        <th className="px-4 py-3 font-medium text-gray-700 w-32">PJ Domicil.</th>
+                                        <th className="px-4 py-3 font-medium text-gray-700 w-32">PN No Res.</th>
+                                        <th className="px-4 py-3 font-medium text-gray-700 w-32">PJ No Dom.</th>
+                                        <th className="px-4 py-3 font-medium text-gray-700 text-right w-24">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {islrConcepts.map(item => (
                                         <tr key={item.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-mono text-gray-600">{item.seniat_code || '-'}</td>
-                                            <td className="px-6 py-4 text-gray-900">{item.description}</td>
-                                            <td className="px-6 py-4 text-gray-900 text-right font-mono">{Number(item.base_percentage).toFixed(2)}%</td>
-                                            <td className="px-6 py-4 text-gray-900 text-right font-mono font-bold">{Number(item.rate).toFixed(2)}%</td>
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-4 py-3 font-mono text-gray-600 text-xs">{item.seniat_code || '-'}</td>
+                                            <td className="px-4 py-3 text-gray-900">{item.description}</td>
+                                            <td className="px-4 py-3 text-gray-600 text-xs">{item.pn_resident_rate || '-'}</td>
+                                            <td className="px-4 py-3 text-gray-600 text-xs">{item.pj_domiciled_rate || '-'}</td>
+                                            <td className="px-4 py-3 text-gray-600 text-xs">{item.pn_non_resident_rate || '-'}</td>
+                                            <td className="px-4 py-3 text-gray-600 text-xs">{item.pj_non_domiciled_rate || '-'}</td>
+                                            <td className="px-4 py-3 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <button onClick={() => openIslrModal(item)} className="text-gray-400 hover:text-blue-600"><Pencil className="w-4 h-4" /></button>
                                                     <button onClick={() => deleteIslr(item.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
@@ -274,7 +287,7 @@ export default function TaxesPage() {
                                             </td>
                                         </tr>
                                     ))}
-                                    {islrConcepts.length === 0 && <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No hay conceptos de retención ISLR configurados.</td></tr>}
+                                    {islrConcepts.length === 0 && <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">No hay conceptos de retención ISLR configurados.</td></tr>}
                                 </tbody>
                             </table>
                         </div>
@@ -328,33 +341,45 @@ export default function TaxesPage() {
             {/* ISLR Modal */}
             {isIslrModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
                         <div className="flex justify-between items-center p-4 border-b">
                             <h3 className="font-bold text-lg">{editingIslr ? 'Editar Concepto ISLR' : 'Nuevo Concepto ISLR'}</h3>
                             <button onClick={() => setIsIslrModalOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleIslrSubmit} className="p-4 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Código SENIAT</label>
-                                <input value={islrForm.seniat_code} onChange={e => setIslrForm({ ...islrForm, seniat_code: e.target.value })} className="w-full border rounded p-2 font-mono" placeholder="Ej. 001" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                                <textarea required value={islrForm.description} onChange={e => setIslrForm({ ...islrForm, description: e.target.value })} className="w-full border rounded p-2" rows={2} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">% Base Imponible</label>
-                                    <input type="number" step="0.01" required value={islrForm.base_percentage} onChange={e => setIslrForm({ ...islrForm, base_percentage: e.target.value })} className="w-full border rounded p-2" />
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-1">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Cód.</label>
+                                    <input value={islrForm.seniat_code} onChange={e => setIslrForm({ ...islrForm, seniat_code: e.target.value })} className="w-full border rounded p-2 font-mono text-sm" placeholder="001" />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">% Retención</label>
-                                    <input type="number" step="0.01" required value={islrForm.rate} onChange={e => setIslrForm({ ...islrForm, rate: e.target.value })} className="w-full border rounded p-2" />
+                                <div className="col-span-3">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Concepto</label>
+                                    <input required value={islrForm.description} onChange={e => setIslrForm({ ...islrForm, description: e.target.value })} className="w-full border rounded p-2 text-sm" placeholder="Honorarios..." />
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-md border border-gray-100">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">PN Residente</label>
+                                    <input value={islrForm.pn_resident_rate} onChange={e => setIslrForm({ ...islrForm, pn_resident_rate: e.target.value })} className="w-full border rounded p-2 text-sm" placeholder="ej. 3% - Sust." />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">PJ Domiciliada</label>
+                                    <input value={islrForm.pj_domiciled_rate} onChange={e => setIslrForm({ ...islrForm, pj_domiciled_rate: e.target.value })} className="w-full border rounded p-2 text-sm" placeholder="ej. 5%" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">PN No Residente</label>
+                                    <input value={islrForm.pn_non_resident_rate} onChange={e => setIslrForm({ ...islrForm, pn_non_resident_rate: e.target.value })} className="w-full border rounded p-2 text-sm" placeholder="ej. 34%" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">PJ No Domiciliada</label>
+                                    <input value={islrForm.pj_non_domiciled_rate} onChange={e => setIslrForm({ ...islrForm, pj_non_domiciled_rate: e.target.value })} className="w-full border rounded p-2 text-sm" placeholder="ej. 34%" />
+                                </div>
+                            </div>
+
                             <div className="flex justify-end gap-2 pt-4">
-                                <button type="button" onClick={() => setIsIslrModalOpen(false)} className="px-4 py-2 border rounded">Cancelar</button>
-                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+                                <button type="button" onClick={() => setIsIslrModalOpen(false)} className="px-4 py-2 border rounded text-sm">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Guardar</button>
                             </div>
                         </form>
                     </div>

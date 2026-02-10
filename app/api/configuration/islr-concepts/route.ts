@@ -4,7 +4,7 @@ import prisma from '@/lib/db'
 export async function GET() {
     try {
         const concepts = await prisma.iSLRConcept.findMany({
-            orderBy: { description: 'asc' }
+            orderBy: { seniat_code: 'asc' }
         })
         return NextResponse.json(concepts)
     } catch (error) {
@@ -15,14 +15,23 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json()
-        const { description, rate, base_percentage, seniat_code } = body
+        const {
+            seniat_code,
+            description,
+            pn_resident_rate,
+            pj_domiciled_rate,
+            pn_non_resident_rate,
+            pj_non_domiciled_rate
+        } = body
 
         const concept = await prisma.iSLRConcept.create({
             data: {
+                seniat_code,
                 description,
-                rate,
-                base_percentage: base_percentage || 100,
-                seniat_code
+                pn_resident_rate,
+                pj_domiciled_rate,
+                pn_non_resident_rate,
+                pj_non_domiciled_rate
             }
         })
         return NextResponse.json(concept)
