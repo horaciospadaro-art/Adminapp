@@ -43,7 +43,10 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
 
     // Load suppliers
     useEffect(() => {
-        fetch('/api/operations/suppliers') // Ensure this route exists or similar
+        const params = new URLSearchParams()
+        params.set('companyId', bankAccount.company_id)
+
+        fetch(`/api/operations/suppliers?${params.toString()}`) // Ensure this route exists or similar
             .then(res => res.json())
             .then(data => setSuppliers(data))
             .catch(err => console.error(err))
@@ -140,8 +143,8 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                     type="button"
                     onClick={() => setMode('SUPPLIER')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'SUPPLIER'
-                            ? 'bg-red-100 text-red-700'
-                            : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-red-100 text-red-700'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                 >
                     Pago a Proveedores
@@ -150,8 +153,8 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                     type="button"
                     onClick={() => setMode('OTHER')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'OTHER'
-                            ? 'bg-red-100 text-red-700'
-                            : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-red-100 text-red-700'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                 >
                     Gasto / Otro Egreso
@@ -223,8 +226,8 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                                     type="button"
                                     onClick={() => handleSupplierToggle(supplier.id)}
                                     className={`px-3 py-1 text-xs rounded-full border transition-colors ${selectedSupplierIds.includes(supplier.id)
-                                            ? 'bg-red-600 text-white border-red-600'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                        ? 'bg-red-600 text-white border-red-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                                         }`}
                                 >
                                     {supplier.name}

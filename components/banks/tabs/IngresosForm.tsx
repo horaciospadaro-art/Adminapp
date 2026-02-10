@@ -43,7 +43,10 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
 
     // Load clients
     useEffect(() => {
-        fetch('/api/operations/clients')
+        const params = new URLSearchParams()
+        params.set('companyId', bankAccount.company_id)
+
+        fetch(`/api/operations/clients?${params.toString()}`)
             .then(res => res.json())
             .then(data => setClients(data))
             .catch(err => console.error(err))
@@ -143,8 +146,8 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
                     type="button"
                     onClick={() => setMode('CUSTOMER')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'CUSTOMER'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                 >
                     Cobro a Clientes
@@ -153,8 +156,8 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
                     type="button"
                     onClick={() => setMode('OTHER')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'OTHER'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                 >
                     Otro Ingreso
@@ -226,8 +229,8 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
                                     type="button"
                                     onClick={() => handleClientToggle(client.id)}
                                     className={`px-3 py-1 text-xs rounded-full border transition-colors ${selectedClientIds.includes(client.id)
-                                            ? 'bg-blue-600 text-white border-blue-600'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                                         }`}
                                 >
                                     {client.name}
