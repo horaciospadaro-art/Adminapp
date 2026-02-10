@@ -66,6 +66,13 @@ model ChartOfAccount {
   linkedReceivables ThirdParty[] @relation("ThirdPartyReceivable")
   linkedPayables    ThirdParty[] @relation("ThirdPartyPayable")
   taxes             Tax[]
+  
+  // Global Tax Config Relations
+  globalIvaDebit     GlobalTaxConfiguration[] @relation("IvaDebit")
+  globalIvaCredit    GlobalTaxConfiguration[] @relation("IvaCredit")
+  globalIvaRetention GlobalTaxConfiguration[] @relation("IvaRetention")
+  globalIslrRetention GlobalTaxConfiguration[] @relation("IslrRetention")
+  globalIgtf         GlobalTaxConfiguration[] @relation("IgtfAccount")
 
   @@unique([company_id, code])
 }
@@ -240,12 +247,50 @@ model Tax {
   description     String?
 
   // Connection to Accounting
-  gl_account_id   String
-  gl_account      ChartOfAccount @relation(fields: [gl_account_id], references: [id])
+  gl_account_id   String?
+  gl_account      ChartOfAccount? @relation(fields: [gl_account_id], references: [id])
 
   is_active       Boolean  @default(true)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
+}
+
+model GlobalTaxConfiguration {
+  id                            String          @id @default(uuid())
+  company_id                    String          @unique
+  company                       Company         @relation(fields: [company_id], references: [id])
+  
+  // Sales VAT (Debito Fiscal)
+  iva_fiscal_debit_account_id   String?
+  iva_fiscal_debit_account      ChartOfAccount? @relation("IvaDebit", fields: [iva_fiscal_debit_account_id], references: [id])
+
+  // Purchase VAT (Credito Fiscal)
+  iva_fiscal_credit_account_id  String?
+  iva_fiscal_credit_account     ChartOfAccount? @relation("IvaCredit", fields: [iva_fiscal_credit_account_id], references: [id])
+
+  // VAT Retention (Retenciones IVA)
+  iva_retention_account_id      String?
+  iva_retention_account         ChartOfAccount? @relation("IvaRetention", fields: [iva_retention_account_id], references: [id])
+
+  // ISLR Retention (Retenciones ISLR)
+  islr_retention_account_id     String?
+  islr_retention_account        ChartOfAccount? @relation("IslrRetention", fields: [islr_retention_account_id], references: [id])
+  
+  // IGTF (Impuesto a Grandes Transacciones Financieras)
+  igtf_account_id               String?
+  igtf_account                  ChartOfAccount? @relation("IgtfAccount", fields: [igtf_account_id], references: [id])
+
+  updatedAt                     DateTime        @updatedAt
+}
+
+model VATRetention {
+  id          String   @id @default(uuid())
+  seniat_code String?
+  description String
+  rate        Decimal  @db.Decimal(5, 2)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model ISLRConcept {
