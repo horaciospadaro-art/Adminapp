@@ -12,6 +12,7 @@ type BankAccount = {
     currency: string
     type: string
     balance: number
+    company_id: string
     transactions: any[]
 }
 

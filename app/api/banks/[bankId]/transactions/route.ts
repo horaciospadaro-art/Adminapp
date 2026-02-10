@@ -18,7 +18,8 @@ export async function POST(
             subtype, // DEPOSIT, WITHDRAWAL, TRANSFER_OUT, etc.
             contra_account_id, // Account to offset (e.g. Sales Income, Expense)
             isIgtfApplied,
-            related_bank_account_id // For transfers
+            related_bank_account_id, // For transfers
+            allocations // Array of { documentId: string, amount: number }
         } = body
 
         if (!date || !description || !amount || !type || !subtype) {
@@ -118,6 +119,115 @@ export async function POST(
                 where: { id: mainTransaction.id },
                 data: { journal_entry_id: mainJournal.id }
             })
+
+            // ---------------------------------------------------------
+            // PAYMENT ALLOCATION (Allocating to Invoices/Bills)
+            // ---------------------------------------------------------
+            if (allocations && Array.isArray(allocations) && allocations.length > 0) {
+                // Create a Payment Document (Receipt) to track these allocations?
+                // For simplicity, we will link the allocations directly to the transaction's journal entry?
+                // The schema requires a `payment_id` which is a Document.
+
+                // Strategy: Create a Document of type RECEIPT (for DEBIT) or PAYMENT (for CREDIT)
+                // This document represents the bank transaction in the documents module.
+
+                const docType = type === 'DEBIT' ? 'RECEIPT' : 'PAYMENT'
+
+                // Get third party from first allocation (assuming single customer/supplier per transaction for now, or mix?)
+                // Ideally we should group by third party, but let's take the first one found or create a generic one?
+                // Actually, if we selected multiple customers, we might need multiple Receipts.
+                // Simplified approach: One Receipt per Transaction (if possible), but Receipt needs a single `third_party_id`.
+
+                // New Approach: Iterate allocations and group by document's third_party_id.
+                // But we don't have document details here.
+                // We'd need to fetch them.
+
+                for (const allocation of allocations) {
+                    const { documentId, amount } = allocation
+                    const allocAmount = Number(amount)
+
+                    if (allocAmount <= 0) continue
+
+                    // Fetch Invoice/Bill
+                    const invoice = await tx.document.findUnique({
+                        where: { id: documentId }
+                    })
+
+                    if (!invoice) continue
+
+                    // Update Invoice Balance
+                    const newBalance = Number(invoice.balance) - allocAmount
+                    const newStatus = newBalance <= 0.01 ? 'PAID' : 'PARTIAL' // Tolerance for float errors
+
+                    await tx.document.update({
+                        where: { id: documentId },
+                        data: {
+                            balance: newBalance,
+                            status: newStatus
+                        }
+                    })
+
+                    // Create Payment Document (Receipt) if it doesn't exist for this flow?
+                    // We need a Document to satisfy `PaymentAllocation.payment_id`.
+                    // We can create a "Ghost" payment document linked to the Journal Entry.
+                    // But we can't create multiple documents for one JE easily if valid constraints exist (JE 1:1 Doc?).
+                    // Checking schema: `Document.journal_entry_id` is @unique.
+                    // So we can only have ONE document linked to this JE.
+                    // This implies 1 BankTransaction = 1 JournalEntry = 1 Document (Receipt/Payment).
+
+                    // IF there are multiple customers, this breaks the 1 Document = 1 Third Party rule.
+                    // Unless we create a "Various" third party?
+                    // OR we create multiple Journal Entries?
+
+                    // For now, let's assume 1 Bank Transaction -> 1 Payment Document -> Allocations.
+                    // If multiple customers, we'd need to handle that complexity.
+                    // Let's create the Payment Document linked to the Invoice's third party.
+
+                    // Check if we already created a Payment Document for this transaction/JE?
+                    // We can try to upsert a collection of payment documents? 
+                    // No, `PaymentAllocation` needs `payment_id`.
+
+                    // Let's create a Payment Document for EACH allocation? 
+                    // No, that would mean multiple documents. Can they all point to the same JE? No.
+                    // So they can't point to the JE.
+
+                    // Can we create a Payment Document WITHOUT a JE?
+                    // Yes, `journal_entry_id` is nullable on Document.
+                    // So we can create Payment Documents that are just wrappers for the allocation, 
+                    // while the GL impact is handled by the Bank Transaction's JE.
+
+                    // This seems the most flexible way. The Bank Transaction handles the GL.
+                    // The Payment Documents track the "Receipt" and link to the Invoice.
+
+                    const paymentDoc = await tx.document.create({
+                        data: {
+                            company_id: bankAccount.company_id,
+                            third_party_id: invoice.third_party_id,
+                            type: docType, // RECEIPT or PAYMENT
+                            date: new Date(date),
+                            number: reference + '-' + documentId.slice(0, 4), // Unique-ish number
+                            reference: reference,
+                            subtotal: allocAmount,
+                            tax_amount: 0,
+                            total: allocAmount,
+                            balance: 0,
+                            status: 'PAID',
+                            notes: `Allocated from Bank Transaction: ${description}`,
+                            currency_code: bankAccount.currency
+                            // No journal_entry_id, as the bank tx holds it.
+                        }
+                    })
+
+                    // Create Allocation Record
+                    await tx.paymentAllocation.create({
+                        data: {
+                            payment_id: paymentDoc.id,
+                            invoice_id: invoice.id,
+                            amount: allocAmount
+                        }
+                    })
+                }
+            }
 
             // ---------------------------------------------------------
             // IGTF LOGIC (Only for CREDIT/Payments in USD if checked)
