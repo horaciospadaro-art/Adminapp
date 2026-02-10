@@ -8,12 +8,20 @@ import { useRouter } from 'next/navigation'
 interface Tax {
     id: string
     name: string
-    rate: string // Decimal comes as string from JSON usually
+    rate: string
     type: string
     description?: string
     gl_account_id: string
     gl_account?: { id: string, code: string, name: string }
     is_active: boolean
+}
+
+interface ISLRConcept {
+    id: string
+    seniat_code?: string
+    description: string
+    rate: string
+    base_percentage: string
 }
 
 interface Account {
@@ -24,13 +32,21 @@ interface Account {
 
 export default function TaxesPage() {
     const router = useRouter()
-    const [taxes, setTaxes] = useState<Tax[]>([])
-    const [loading, setLoading] = useState(true)
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [editingTax, setEditingTax] = useState<Tax | null>(null)
 
-    // Form State
-    const [formData, setFormData] = useState({
+    // Data State
+    const [taxes, setTaxes] = useState<Tax[]>([])
+    const [islrConcepts, setIslrConcepts] = useState<ISLRConcept[]>([])
+    const [accounts, setAccounts] = useState<Account[]>([])
+
+    // UI State
+    const [loading, setLoading] = useState(true)
+    const [isTaxModalOpen, setIsTaxModalOpen] = useState(false)
+    const [isIslrModalOpen, setIsIslrModalOpen] = useState(false)
+    const [editingTax, setEditingTax] = useState<Tax | null>(null)
+    const [editingIslr, setEditingIslr] = useState<ISLRConcept | null>(null)
+
+    // Forms State
+    const [taxForm, setTaxForm] = useState({
         name: '',
         rate: '',
         type: 'IVA',
@@ -38,46 +54,44 @@ export default function TaxesPage() {
         gl_account_id: ''
     })
 
-    // Accounts for dropdown
-    const [accounts, setAccounts] = useState<Account[]>([])
+    const [islrForm, setIslrForm] = useState({
+        seniat_code: '',
+        description: '',
+        rate: '',
+        base_percentage: '100'
+    })
 
     useEffect(() => {
-        fetchTaxes()
-        fetchAccounts()
+        Promise.all([fetchTaxes(), fetchIslrConcepts(), fetchAccounts()])
+            .finally(() => setLoading(false))
     }, [])
 
     async function fetchTaxes() {
         try {
             const res = await fetch('/api/configuration/taxes')
-            if (res.ok) {
-                const data = await res.json()
-                setTaxes(data)
-            }
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
+            if (res.ok) setTaxes(await res.json())
+        } catch (error) { console.error(error) }
+    }
+
+    async function fetchIslrConcepts() {
+        try {
+            const res = await fetch('/api/configuration/islr-concepts')
+            if (res.ok) setIslrConcepts(await res.json())
+        } catch (error) { console.error(error) }
     }
 
     async function fetchAccounts() {
         try {
-            // Fetch LIABILITY or ASSET accounts ideally, but for now fetch all and filter client side or let user pick
-            // Better to refine this endpoint filter later
             const res = await fetch('/api/accounting/accounts')
-            if (res.ok) {
-                const data = await res.json()
-                setAccounts(data)
-            }
-        } catch (error) {
-            console.error(error)
-        }
+            if (res.ok) setAccounts(await res.json())
+        } catch (error) { console.error(error) }
     }
 
-    function handleOpenModal(tax?: Tax) {
+    // --- TAX HANDLERS ---
+    function openTaxModal(tax?: Tax) {
         if (tax) {
             setEditingTax(tax)
-            setFormData({
+            setTaxForm({
                 name: tax.name,
                 rate: tax.rate.toString(),
                 type: tax.type,
@@ -86,68 +100,89 @@ export default function TaxesPage() {
             })
         } else {
             setEditingTax(null)
-            setFormData({
-                name: '',
-                rate: '',
-                type: 'IVA',
-                description: '',
-                gl_account_id: ''
-            })
+            setTaxForm({ name: '', rate: '', type: 'IVA', description: '', gl_account_id: '' })
         }
-        setIsModalOpen(true)
+        setIsTaxModalOpen(true)
     }
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleTaxSubmit(e: React.FormEvent) {
         e.preventDefault()
         setLoading(true)
-
         try {
-            const url = editingTax
-                ? `/api/configuration/taxes/${editingTax.id}`
-                : '/api/configuration/taxes'
-
+            const url = editingTax ? `/api/configuration/taxes/${editingTax.id}` : '/api/configuration/taxes'
             const method = editingTax ? 'PUT' : 'POST'
+            const res = await fetch(url, {
+                method,
+                body: JSON.stringify({ ...taxForm, rate: parseFloat(taxForm.rate) }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            if (res.ok) {
+                setIsTaxModalOpen(false)
+                fetchTaxes()
+                router.refresh()
+            }
+        } catch (error) { console.error(error) }
+        setLoading(false)
+    }
 
+    async function deleteTax(id: string) {
+        if (!confirm('¿Estás seguro de eliminar este impuesto?')) return
+        try {
+            await fetch(`/api/configuration/taxes/${id}`, { method: 'DELETE' })
+            fetchTaxes()
+        } catch (error) { console.error(error) }
+    }
+
+    // --- ISLR HANDLERS ---
+    function openIslrModal(concept?: ISLRConcept) {
+        if (concept) {
+            setEditingIslr(concept)
+            setIslrForm({
+                seniat_code: concept.seniat_code || '',
+                description: concept.description,
+                rate: concept.rate.toString(),
+                base_percentage: concept.base_percentage.toString()
+            })
+        } else {
+            setEditingIslr(null)
+            setIslrForm({ seniat_code: '', description: '', rate: '', base_percentage: '100' })
+        }
+        setIsIslrModalOpen(true)
+    }
+
+    async function handleIslrSubmit(e: React.FormEvent) {
+        e.preventDefault()
+        setLoading(true)
+        try {
+            const url = editingIslr ? `/api/configuration/islr-concepts/${editingIslr.id}` : '/api/configuration/islr-concepts'
+            const method = editingIslr ? 'PUT' : 'POST'
             const res = await fetch(url, {
                 method,
                 body: JSON.stringify({
-                    ...formData,
-                    rate: parseFloat(formData.rate)
+                    ...islrForm,
+                    rate: parseFloat(islrForm.rate),
+                    base_percentage: parseFloat(islrForm.base_percentage)
                 }),
                 headers: { 'Content-Type': 'application/json' }
             })
-
             if (res.ok) {
-                setIsModalOpen(false)
-                fetchTaxes()
+                setIsIslrModalOpen(false)
+                fetchIslrConcepts()
                 router.refresh()
-            } else {
-                alert('Error al guardar impuesto')
             }
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
+        } catch (error) { console.error(error) }
+        setLoading(false)
     }
 
-    async function handleDelete(id: string) {
-        if (!confirm('¿Estás seguro de desactivar este impuesto?')) return
-
+    async function deleteIslr(id: string) {
+        if (!confirm('¿Estás seguro de eliminar este concepto?')) return
         try {
-            const res = await fetch(`/api/configuration/taxes/${id}`, {
-                method: 'DELETE'
-            })
-            if (res.ok) fetchTaxes()
-        } catch (error) {
-            console.error(error)
-        }
+            await fetch(`/api/configuration/islr-concepts/${id}`, { method: 'DELETE' })
+            fetchIslrConcepts()
+        } catch (error) { console.error(error) }
     }
 
-    const ivaTaxes = taxes.filter(t => t.type === 'IVA')
-    const igtfTaxes = taxes.filter(t => t.type === 'IGTF')
-    const otherTaxes = taxes.filter(t => !['IVA', 'IGTF'].includes(t.type))
-
+    // --- RENDER HELPERS ---
     const renderTaxTable = (title: string, data: Tax[], emptyMsg: string) => (
         <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-3">{title}</h3>
@@ -167,9 +202,7 @@ export default function TaxesPage() {
                             <tr key={tax.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 font-medium text-gray-900">{tax.name}</td>
                                 <td className="px-6 py-4 text-gray-500">
-                                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-mono">
-                                        {tax.type}
-                                    </span>
+                                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-mono">{tax.type}</span>
                                 </td>
                                 <td className="px-6 py-4 text-gray-900 text-right font-mono">{Number(tax.rate).toFixed(2)}%</td>
                                 <td className="px-6 py-4 text-gray-500">
@@ -177,29 +210,13 @@ export default function TaxesPage() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end gap-2">
-                                        <button
-                                            onClick={() => handleOpenModal(tax)}
-                                            className="text-gray-400 hover:text-blue-600"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(tax.id)}
-                                            className="text-gray-400 hover:text-red-600"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <button onClick={() => openTaxModal(tax)} className="text-gray-400 hover:text-blue-600"><Pencil className="w-4 h-4" /></button>
+                                        <button onClick={() => deleteTax(tax.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 </td>
                             </tr>
                         ))}
-                        {data.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                    {emptyMsg}
-                                </td>
-                            </tr>
-                        )}
+                        {data.length === 0 && <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">{emptyMsg}</td></tr>}
                     </tbody>
                 </table>
             </div>
@@ -207,73 +224,86 @@ export default function TaxesPage() {
     )
 
     return (
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto pb-20">
             <div className="flex justify-between items-center mb-6">
                 <PageHeader title="Configuración de Impuestos" />
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 bg-[#2ca01c] text-white px-4 py-2 rounded-md hover:bg-[#248217]"
-                >
-                    <Plus className="w-4 h-4" /> Nuevo Impuesto
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={() => openIslrModal()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
+                        <Plus className="w-4 h-4" /> Nuevo Concepto ISLR
+                    </button>
+                    <button onClick={() => openTaxModal()} className="flex items-center gap-2 bg-[#2ca01c] text-white px-4 py-2 rounded-md hover:bg-[#248217] text-sm">
+                        <Plus className="w-4 h-4" /> Nuevo Impuesto
+                    </button>
+                </div>
             </div>
 
             {loading ? (
-                <div className="flex justify-center p-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                </div>
+                <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-gray-400" /></div>
             ) : (
                 <>
-                    {renderTaxTable('Impuesto al Valor Agregado (IVA)', ivaTaxes, 'No hay impuestos de IVA configurados.')}
-                    {renderTaxTable('Impuesto a Grandes Transacciones Financieras (IGTF)', igtfTaxes, 'No hay impuestos IGTF configurados.')}
-                    {otherTaxes.length > 0 && renderTaxTable('Otros Impuestos / Retenciones', otherTaxes, 'No hay otros impuestos.')}
+                    {/* Tax Tables */}
+                    {renderTaxTable('Impuesto al Valor Agregado (IVA)', taxes.filter(t => t.type === 'IVA'), 'No hay impuestos de IVA configurados.')}
+                    {renderTaxTable('Impuesto a Grandes Transacciones Financieras (IGTF)', taxes.filter(t => t.type === 'IGTF'), 'No hay impuestos IGTF configurados.')}
+
+                    {/* ISLR Concepts Table */}
+                    <div className="mb-8">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-3">Conceptos de Retención ISLR</h3>
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-3 font-medium text-gray-700 w-24">Cód.</th>
+                                        <th className="px-6 py-3 font-medium text-gray-700">Descripción</th>
+                                        <th className="px-6 py-3 font-medium text-gray-700 text-right w-32">% Base</th>
+                                        <th className="px-6 py-3 font-medium text-gray-700 text-right w-32">% Retención</th>
+                                        <th className="px-6 py-3 font-medium text-gray-700 text-right w-24">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {islrConcepts.map(item => (
+                                        <tr key={item.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 font-mono text-gray-600">{item.seniat_code || '-'}</td>
+                                            <td className="px-6 py-4 text-gray-900">{item.description}</td>
+                                            <td className="px-6 py-4 text-gray-900 text-right font-mono">{Number(item.base_percentage).toFixed(2)}%</td>
+                                            <td className="px-6 py-4 text-gray-900 text-right font-mono font-bold">{Number(item.rate).toFixed(2)}%</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => openIslrModal(item)} className="text-gray-400 hover:text-blue-600"><Pencil className="w-4 h-4" /></button>
+                                                    <button onClick={() => deleteIslr(item.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {islrConcepts.length === 0 && <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No hay conceptos de retención ISLR configurados.</td></tr>}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </>
             )}
 
-            {/* Modal */}
-            {isModalOpen && (
+            {/* Tax Modal */}
+            {isTaxModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
                         <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="font-bold text-lg">
-                                {editingTax ? 'Editar Impuesto' : 'Nuevo Impuesto'}
-                            </h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <X className="w-5 h-5" />
-                            </button>
+                            <h3 className="font-bold text-lg">{editingTax ? 'Editar Impuesto' : 'Nuevo Impuesto'}</h3>
+                            <button onClick={() => setIsTaxModalOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                        <form onSubmit={handleTaxSubmit} className="p-4 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                                <input
-                                    required
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Ej. IVA General"
-                                    className="w-full border rounded-md p-2 focus:ring-[#2ca01c] focus:border-[#2ca01c]"
-                                />
+                                <input required value={taxForm.name} onChange={e => setTaxForm({ ...taxForm, name: e.target.value })} className="w-full border rounded p-2" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Tasa (%)</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        required
-                                        value={formData.rate}
-                                        onChange={e => setFormData({ ...formData, rate: e.target.value })}
-                                        className="w-full border rounded-md p-2 focus:ring-[#2ca01c] focus:border-[#2ca01c]"
-                                    />
+                                    <input type="number" step="0.01" required value={taxForm.rate} onChange={e => setTaxForm({ ...taxForm, rate: e.target.value })} className="w-full border rounded p-2" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                                    <select
-                                        value={formData.type}
-                                        onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                        className="w-full border rounded-md p-2 focus:ring-[#2ca01c] focus:border-[#2ca01c]"
-                                    >
+                                    <select value={taxForm.type} onChange={e => setTaxForm({ ...taxForm, type: e.target.value })} className="w-full border rounded p-2">
                                         <option value="IVA">IVA</option>
-                                        <option value="ISLR">ISLR</option>
                                         <option value="IGTF">IGTF</option>
                                         <option value="OTRO">Otro</option>
                                     </select>
@@ -281,45 +311,50 @@ export default function TaxesPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta Contable</label>
-                                <select
-                                    required
-                                    value={formData.gl_account_id}
-                                    onChange={e => setFormData({ ...formData, gl_account_id: e.target.value })}
-                                    className="w-full border rounded-md p-2 focus:ring-[#2ca01c] focus:border-[#2ca01c]"
-                                >
-                                    <option value="">Seleccionar Cuenta...</option>
-                                    {accounts.map(acc => (
-                                        <option key={acc.id} value={acc.id}>
-                                            {acc.code} - {acc.name}
-                                        </option>
-                                    ))}
+                                <select required value={taxForm.gl_account_id} onChange={e => setTaxForm({ ...taxForm, gl_account_id: e.target.value })} className="w-full border rounded p-2">
+                                    <option value="">Seleccionar...</option>
+                                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
                                 </select>
-                                <p className="text-xs text-gray-500 mt-1">Cuenta donde se registrará el pasivo/activo del impuesto.</p>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-4">
+                                <button type="button" onClick={() => setIsTaxModalOpen(false)} className="px-4 py-2 border rounded">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 bg-[#2ca01c] text-white rounded">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ISLR Modal */}
+            {isIslrModalOpen && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <div className="flex justify-between items-center p-4 border-b">
+                            <h3 className="font-bold text-lg">{editingIslr ? 'Editar Concepto ISLR' : 'Nuevo Concepto ISLR'}</h3>
+                            <button onClick={() => setIsIslrModalOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
+                        </div>
+                        <form onSubmit={handleIslrSubmit} className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Código SENIAT</label>
+                                <input value={islrForm.seniat_code} onChange={e => setIslrForm({ ...islrForm, seniat_code: e.target.value })} className="w-full border rounded p-2 font-mono" placeholder="Ej. 001" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (Opcional)</label>
-                                <textarea
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full border rounded-md p-2 focus:ring-[#2ca01c] focus:border-[#2ca01c]"
-                                    rows={2}
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                <textarea required value={islrForm.description} onChange={e => setIslrForm({ ...islrForm, description: e.target.value })} className="w-full border rounded p-2" rows={2} />
                             </div>
-
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">% Base Imponible</label>
+                                    <input type="number" step="0.01" required value={islrForm.base_percentage} onChange={e => setIslrForm({ ...islrForm, base_percentage: e.target.value })} className="w-full border rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">% Retención</label>
+                                    <input type="number" step="0.01" required value={islrForm.rate} onChange={e => setIslrForm({ ...islrForm, rate: e.target.value })} className="w-full border rounded p-2" />
+                                </div>
+                            </div>
                             <div className="flex justify-end gap-2 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-[#2ca01c] text-white rounded-md hover:bg-[#248217]"
-                                >
-                                    Guardar
-                                </button>
+                                <button type="button" onClick={() => setIsIslrModalOpen(false)} className="px-4 py-2 border rounded">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
                             </div>
                         </form>
                     </div>

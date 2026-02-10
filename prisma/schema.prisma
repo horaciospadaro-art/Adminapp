@@ -248,6 +248,16 @@ model Tax {
   updated_at      DateTime @updatedAt
 }
 
+model ISLRConcept {
+  id              String   @id @default(uuid())
+  seniat_code     String?
+  description     String
+  rate            Decimal  @db.Decimal(5, 2)
+  base_percentage Decimal  @default(100) @db.Decimal(5, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 // Optimization: Single table for all document headers (Invoices, Bills, Credit Notes)
 enum DocumentType {
   INVOICE        // Factura de Venta
