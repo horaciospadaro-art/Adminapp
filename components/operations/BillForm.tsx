@@ -237,7 +237,7 @@ export function BillForm() {
     if (pageLoading) return <div className="p-8"><Loader2 className="animate-spin" /></div>
 
     return (
-        <form onSubmit={handleSubmit} className="w-full px-4 mx-auto space-y-6 pb-20">
+        <form onSubmit={handleSubmit} className="w-full mx-auto space-y-6 pb-20">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-800">Registrar Factura de Compra</h1>
                 <Link href="/dashboard/operations/bills" className="text-sm text-blue-600 hover:underline">
