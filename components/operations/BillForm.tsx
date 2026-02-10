@@ -35,14 +35,14 @@ interface BillItem {
     tax_id: string
     // derived
     total: number
-    
+
     // New fields
     tax_rate: number
     tax_amount: number
 
     vat_retention_rate: number
     vat_retention_amount: number
-    
+
     islr_rate: number
     islr_amount: number
 }
@@ -62,8 +62,8 @@ export function BillForm() {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [accountingDate, setAccountingDate] = useState(new Date().toISOString().split('T')[0])
     const [dueDate, setDueDate] = useState('')
-    const [number, setNumber] = useState('') 
-    const [controlNumber, setControlNumber] = useState('') 
+    const [number, setNumber] = useState('')
+    const [controlNumber, setControlNumber] = useState('')
     const [reference, setReference] = useState('')
     const [thirdPartyId, setThirdPartyId] = useState('')
 
@@ -74,7 +74,7 @@ export function BillForm() {
         async function loadResources() {
             try {
                 const [supRes, prodRes, taxRes] = await Promise.all([
-                    fetch('/api/third-parties?type=PROVEEDOR'), 
+                    fetch('/api/third-parties?type=PROVEEDOR'),
                     fetch('/api/inventory/products'),
                     fetch('/api/configuration/taxes')
                 ])
@@ -129,21 +129,21 @@ export function BillForm() {
                 if (prod.tax_id) item.tax_id = prod.tax_id
             }
         }
-        
+
         // Auto-update tax rate if tax_id changes (or product changed)
         if (field === 'tax_id' || field === 'product_id') {
-             const tax = taxes.find(t => t.id === item.tax_id)
-             item.tax_rate = tax ? parseFloat(tax.rate) : 0
+            const tax = taxes.find(t => t.id === item.tax_id)
+            item.tax_rate = tax ? parseFloat(tax.rate) : 0
         }
 
         // Calculations per line
         const base = item.quantity * item.unit_price
         item.tax_amount = base * (item.tax_rate / 100)
-        
+
         // Retentions
         item.vat_retention_amount = item.tax_amount * (item.vat_retention_rate / 100)
         item.islr_amount = base * (item.islr_rate / 100)
-        
+
         item.total = base + item.tax_amount
 
         newItems[index] = item
@@ -237,7 +237,7 @@ export function BillForm() {
     if (pageLoading) return <div className="p-8"><Loader2 className="animate-spin" /></div>
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-[95%] mx-auto space-y-6 pb-20">
+        <form onSubmit={handleSubmit} className="w-full px-4 mx-auto space-y-6 pb-20">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-800">Registrar Factura de Compra</h1>
                 <Link href="/dashboard/operations/bills" className="text-sm text-blue-600 hover:underline">
@@ -263,7 +263,7 @@ export function BillForm() {
                     </div>
                     <div>
                         <div className="flex gap-2">
-                             <div className="flex-1">
+                            <div className="flex-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Factura <span className="text-red-500">*</span></label>
                                 <input
                                     value={number}
@@ -272,8 +272,8 @@ export function BillForm() {
                                     placeholder="000123"
                                     required
                                 />
-                             </div>
-                             <div className="flex-1">
+                            </div>
+                            <div className="flex-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Control</label>
                                 <input
                                     value={controlNumber}
@@ -281,7 +281,7 @@ export function BillForm() {
                                     className="w-full p-2 border rounded focus:ring-blue-500"
                                     placeholder="00-..."
                                 />
-                             </div>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -299,7 +299,7 @@ export function BillForm() {
                                     required
                                 />
                             </div>
-                             <div className="flex-1">
+                            <div className="flex-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">F. Contable <span className="text-red-500">*</span></label>
                                 <input
                                     type="date"
@@ -318,22 +318,22 @@ export function BillForm() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Detalle de Factura</h3>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left mb-4 min-w-[1200px]">
-                        <thead className="bg-gray-50 text-gray-600">
+                    <table className="w-full text-xs mb-4 table-auto">
+                        <thead className="bg-gray-100 text-gray-700">
                             <tr>
-                                <th className="p-2 pl-4 w-48">Producto / Descripción</th>
-                                <th className="p-2 w-16 text-right">Cant.</th>
-                                <th className="p-2 w-24 text-right">Precio Unit.</th>
-                                <th className="p-2 w-24 text-right bg-blue-50/50">Base Imp.</th>
-                                <th className="p-2 w-24">Tasa IVA</th>
-                                <th className="p-2 w-24 text-right bg-blue-50/50">Monto IVA</th>
-                                <th className="p-2 w-20">% Ret IVA</th>
-                                <th className="p-2 w-24 text-right bg-red-50/50">Ret IVA</th>
-                                <th className="p-2 w-20">% ISLR</th>
-                                <th className="p-2 w-24 text-right bg-red-50/50">Ret ISLR</th>
-                                <th className="p-2 w-24 text-right font-semibold">Total</th>
-                                <th className="p-2 w-24 text-right font-bold text-green-700">Neto</th>
-                                <th className="p-2 w-10"></th>
+                                <th className="p-2 pl-4 text-center">Producto / Descripción</th>
+                                <th className="p-2 text-center">Cant.</th>
+                                <th className="p-2 text-center">Precio Unit.</th>
+                                <th className="p-2 text-center">Base Imp.</th>
+                                <th className="p-2 text-center">Tasa IVA</th>
+                                <th className="p-2 text-center">Monto IVA</th>
+                                <th className="p-2 text-center">% Ret IVA</th>
+                                <th className="p-2 text-center">Ret IVA</th>
+                                <th className="p-2 text-center">% ISLR</th>
+                                <th className="p-2 text-center">Ret ISLR</th>
+                                <th className="p-2 text-center font-semibold">Total</th>
+                                <th className="p-2 text-center font-bold">Neto</th>
+                                <th className="p-2"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -373,7 +373,7 @@ export function BillForm() {
                                             className="w-full text-right p-1 border rounded"
                                         />
                                     </td>
-                                    <td className="p-2 text-right bg-blue-50/30">
+                                    <td className="p-2 text-right">
                                         {(item.quantity * item.unit_price).toFixed(2)}
                                     </td>
                                     <td className="p-2">
@@ -385,7 +385,7 @@ export function BillForm() {
                                             {taxes.map(t => <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>)}
                                         </select>
                                     </td>
-                                    <td className="p-2 text-right bg-blue-50/30">
+                                    <td className="p-2 text-right">
                                         {item.tax_amount.toFixed(2)}
                                     </td>
                                     <td className="p-2">
@@ -399,11 +399,11 @@ export function BillForm() {
                                             <option value="100">100%</option>
                                         </select>
                                     </td>
-                                    <td className="p-2 text-right bg-red-50/30 text-red-600">
+                                    <td className="p-2 text-right">
                                         {item.vat_retention_amount.toFixed(2)}
                                     </td>
                                     <td className="p-2">
-                                         <input
+                                        <input
                                             type="number" min="0" step="0.5"
                                             value={item.islr_rate}
                                             onChange={e => updateItem(idx, 'islr_rate', parseFloat(e.target.value) || 0)}
@@ -411,13 +411,13 @@ export function BillForm() {
                                             placeholder="%"
                                         />
                                     </td>
-                                    <td className="p-2 text-right bg-red-50/30 text-red-600">
+                                    <td className="p-2 text-right">
                                         {item.islr_amount.toFixed(2)}
                                     </td>
                                     <td className="p-2 text-right font-medium">
                                         {(item.quantity * item.unit_price + item.tax_amount).toFixed(2)}
                                     </td>
-                                    <td className="p-2 text-right font-bold text-green-700">
+                                    <td className="p-2 text-right font-bold">
                                         {(item.quantity * item.unit_price + item.tax_amount - item.vat_retention_amount - item.islr_amount).toFixed(2)}
                                     </td>
                                     <td className="p-2 text-center">
@@ -442,7 +442,7 @@ export function BillForm() {
             {/* Calculations & Submit */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                   {/* Left blank or for notes */}
+                    {/* Left blank or for notes */}
                 </div>
 
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
@@ -461,12 +461,12 @@ export function BillForm() {
                         </div>
 
                         <div className="flex justify-between text-red-600 text-xs mt-2">
-                             <span>(-) Total Retención IVA</span>
-                             <span>-{calculations.totalRetIVA.toFixed(2)}</span>
+                            <span>(-) Total Retención IVA</span>
+                            <span>-{calculations.totalRetIVA.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-red-600 text-xs mt-1">
-                             <span>(-) Total Retención ISLR</span>
-                             <span>-{calculations.totalRetISLR.toFixed(2)}</span>
+                            <span>(-) Total Retención ISLR</span>
+                            <span>-{calculations.totalRetISLR.toFixed(2)}</span>
                         </div>
 
                         <div className="border-t-2 border-gray-800 pt-3 mt-4">
