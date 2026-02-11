@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export function TopBar() {
+export function TopBar({ companyName }: { companyName?: string }) {
     return (
         <header className="h-14 bg-[#2c2c2c] text-white flex items-center justify-between px-4 shrink-0 z-20 relative shadow-sm">
             <div className="flex items-center gap-4">
@@ -10,6 +10,12 @@ export function TopBar() {
                         ABC
                     </div>
                     <span>ABC AdminApp</span>
+                    {companyName && (
+                        <>
+                            <span className="text-gray-500 mx-1">|</span>
+                            <span className="text-sm font-medium text-gray-300">{companyName}</span>
+                        </>
+                    )}
                 </Link>
 
                 {/* Search Bar (Visual Placeholder) */}

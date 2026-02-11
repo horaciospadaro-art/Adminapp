@@ -81,6 +81,7 @@ export function ChartOfAccountsManager({ companyId }: { companyId: string }) {
                     setIsCreating(false)
                 }}
                 title={editingAccount ? `Editar Cuenta: ${editingAccount.code}` : 'Nueva Cuenta Contable'}
+                maxWidth="2xl"
             >
                 <div className="">
                     <AccountForm
