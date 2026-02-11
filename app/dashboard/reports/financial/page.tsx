@@ -1,4 +1,4 @@
-import { ReportSelector } from '@/components/reports/ReportSelector'
+import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 import { FinancialTable } from '@/components/reports/FinancialTable'
 import { FinancialControlsWrapper } from './FinancialControlsWrapper'
 import { ReportService, ReportType } from '@/lib/services/report-service'
@@ -22,7 +22,9 @@ export default async function FinancialReportsPage(props: PageProps) {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Reportes Financieros (Contabilidad)</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Centro de Reportes</h1>
+
+            <UnifiedReportNavigation activeReport={reportType} />
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <FinancialControlsWrapper

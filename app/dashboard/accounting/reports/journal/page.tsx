@@ -1,8 +1,8 @@
-
 import { Suspense } from 'react'
 import prisma from '@/lib/db'
 import { MonthYearFilters } from '@/components/accounting/reports/MonthYearFilters'
 import { getLegalJournal } from '@/lib/actions/accounting-reports'
+import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
 async function getDemoCompanyId() {
     const company = await prisma.company.findFirst()
@@ -35,6 +35,8 @@ export default async function LegalJournalPage({
     return (
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-gray-800">Diario Legal</h1>
+
+            <UnifiedReportNavigation activeReport="journal" />
 
             <Suspense fallback={<div>Cargando filtros...</div>}>
                 <MonthYearFilters />

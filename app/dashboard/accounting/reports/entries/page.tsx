@@ -1,8 +1,8 @@
-
 import { Suspense } from 'react'
 import prisma from '@/lib/db'
 import { DateRangeFilters } from '@/components/accounting/reports/DateRangeFilters'
 import { getJournalEntryList } from '@/lib/actions/accounting-reports'
+import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
 async function getDemoCompanyId() {
     const company = await prisma.company.findFirst()
@@ -35,6 +35,8 @@ export default async function EntriesListPage({
     return (
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-gray-800">Listado de Asientos</h1>
+
+            <UnifiedReportNavigation activeReport="entries" />
 
             <Suspense fallback={<div>Cargando filtros...</div>}>
                 <DateRangeFilters />

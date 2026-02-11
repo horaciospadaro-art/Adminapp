@@ -29,10 +29,7 @@ export function FinancialControlsWrapper({ currentReport, startDate, endDate }: 
 
     return (
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <ReportSelector
-                currentReport={currentReport}
-                onSelect={(r) => updateParams({ report: r })}
-            />
+            {/* Report Selector removed - now handled by page level Unified Navigation */}
             <DateRangePicker
                 startDate={startDate}
                 endDate={endDate}

@@ -1,8 +1,8 @@
-
 import { Suspense } from 'react'
 import prisma from '@/lib/db'
 import { LedgerFilters } from '@/components/accounting/reports/LedgerFilters'
 import { getAnalyticalLedger } from '@/lib/actions/accounting-reports'
+import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
 async function getDemoCompanyId() {
     const company = await prisma.company.findFirst()
