@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { ChevronRight, ChevronDown, Edit, Plus, Folder, FileText, Search } from 'lucide-react'
 
 // Define stricter types matching Prisma
-type AccountType = 'ACTIVO' | 'PASIVO' | 'PATRIMONIO' | 'INGRESO' | 'GASTO' | 'COSTO_VENTA' | 'ORDEN'
+type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE' | 'COST' | 'OTHER'
 
 type Account = {
     id: string
@@ -180,7 +180,17 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                     {/* Type Column */}
                                     <div className="col-span-2 hidden md:flex items-center">
                                         <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium border border-gray-200">
-                                            {account.type}
+                                            {
+                                                {
+                                                    'ASSET': 'ACTIVO',
+                                                    'LIABILITY': 'PASIVO',
+                                                    'EQUITY': 'PATRIMONIO',
+                                                    'INCOME': 'INGRESOS',
+                                                    'EXPENSE': 'GASTOS',
+                                                    'COST': 'COSTOS',
+                                                    'OTHER': 'OTROS'
+                                                }[account.type] || account.type
+                                            }
                                         </span>
                                     </div>
 
