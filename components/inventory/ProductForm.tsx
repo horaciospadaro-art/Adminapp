@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Save, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { AccountSelector } from '@/components/accounting/AccountSelector'
 
 interface Tax {
     id: string
@@ -163,39 +164,33 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Cuenta de Ingresos (Ventas)</label>
-                                <select
+                                <AccountSelector
                                     value={formData.income_account_id}
-                                    onChange={e => setFormData({ ...formData, income_account_id: e.target.value })}
-                                    className="w-full border p-2 rounded text-sm bg-gray-50"
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {accounts.map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
-                                </select>
+                                    onChange={(val) => setFormData({ ...formData, income_account_id: val })}
+                                    typeFilter="INCOME"
+                                    placeholder="Seleccionar cuenta de ingresos..."
+                                />
                             </div>
 
                             {!isService && (
                                 <>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">Cuenta de Activo (Inventario)</label>
-                                        <select
+                                        <AccountSelector
                                             value={formData.asset_account_id}
-                                            onChange={e => setFormData({ ...formData, asset_account_id: e.target.value })}
-                                            className="w-full border p-2 rounded text-sm bg-gray-50"
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            {accounts.map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
-                                        </select>
+                                            onChange={(val) => setFormData({ ...formData, asset_account_id: val })}
+                                            typeFilter="ASSET"
+                                            placeholder="Seleccionar cuenta de activo..."
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">Cuenta de Costos (COGS)</label>
-                                        <select
+                                        <AccountSelector
                                             value={formData.cogs_account_id}
-                                            onChange={e => setFormData({ ...formData, cogs_account_id: e.target.value })}
-                                            className="w-full border p-2 rounded text-sm bg-gray-50"
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            {accounts.map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
-                                        </select>
+                                            onChange={(val) => setFormData({ ...formData, cogs_account_id: val })}
+                                            typeFilter="COST"
+                                            placeholder="Seleccionar cuenta de costos..."
+                                        />
                                     </div>
                                 </>
                             )}

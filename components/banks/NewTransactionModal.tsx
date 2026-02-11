@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AccountCombobox, Account } from '@/components/accounting/AccountCombobox'
+import { AccountSelector, Account } from '@/components/accounting/AccountSelector'
 
 export function NewTransactionModal({
     bankId,
@@ -143,13 +143,14 @@ export function NewTransactionModal({
 
                     <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta Contable (Contrapartida)</label>
-                        <AccountCombobox
-                            companyId="" // Not needed if preloadedAccounts provided
-                            label=""
+                        <AccountSelector
+                            companyId="" // Assuming companyId is not directly available or needed for preloaded accounts
                             value={contraAccountId}
                             onChange={setContraAccountId}
+                            label="Cuenta Contable del Movimiento"
                             preloadedAccounts={accounts}
                             placeholder="Buscar cuenta..."
+                            required
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             {type === 'CREDIT' ? 'Gasto, Pasivo (quien recibe el pago)' : 'Ingreso, Cuentas por Cobrar (origen del dinero)'}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AccountCombobox, Account } from '@/components/accounting/AccountCombobox'
+import { AccountSelector, Account } from '@/components/accounting/AccountSelector'
 
 type JournalLine = {
     accountCode: string
@@ -156,11 +156,10 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
                 {lines.map((line, idx) => (
                     <div key={idx} className="grid grid-cols-12 gap-2 items-start">
                         <div className="col-span-4">
-                            <AccountCombobox
+                            <AccountSelector
                                 companyId={companyId}
                                 value={line.accountId}
                                 onChange={(id) => updateLine(idx, 'accountId', id)}
-                                preloadedAccounts={accounts}
                                 placeholder="Buscar cuenta..."
                             />
                         </div>
