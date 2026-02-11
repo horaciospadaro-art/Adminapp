@@ -127,10 +127,11 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
 
             {/* Table Header */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <div className="col-span-6 md:col-span-5">Código / Nombre</div>
-                <div className="col-span-2 hidden md:block">tipo</div>
-                <div className="col-span-3 text-right">Saldo</div>
-                <div className="col-span-3 md:col-span-2 text-right">Acciones</div>
+                <div className="col-span-4 md:col-span-3">Código</div>
+                <div className="col-span-4 md:col-span-4">Descripción</div>
+                <div className="col-span-2 hidden md:block">Tipo</div>
+                <div className="col-span-2 text-right">Saldo</div>
+                <div className="col-span-1 text-right">Acciones</div>
             </div>
 
             {/* Scrollable Body */}
@@ -151,8 +152,8 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                     className={`grid grid-cols-12 gap-4 px-6 py-2 items-center hover:bg-[#f8f9fa] transition-colors group ${searchTerm ? '' : 'cursor-pointer'}`}
                                     onClick={() => !searchTerm && hasChildren && toggleExpand(account.id)}
                                 >
-                                    {/* Code & Name Column */}
-                                    <div className="col-span-6 md:col-span-5 flex items-center overflow-hidden">
+                                    {/* Code Column (with Indentation & Toggle) */}
+                                    <div className="col-span-4 md:col-span-3 flex items-center overflow-hidden">
                                         {/* Indentation */}
                                         <div style={{ paddingLeft: `${account.level * 20}px` }} className="flex-shrink-0" />
 
@@ -168,13 +169,15 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                             {isGroup ? <Folder className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                                         </div>
 
-                                        {/* Content */}
-                                        <div className="truncate">
-                                            <span className="font-mono text-xs font-bold text-gray-600 mr-2">{account.code}</span>
-                                            <span className={`text-sm ${isGroup ? 'font-semibold text-gray-800' : 'text-gray-700'}`}>
-                                                {account.name}
-                                            </span>
-                                        </div>
+                                        {/* Code Content */}
+                                        <span className="font-mono text-xs font-bold text-gray-600 truncate">{account.code}</span>
+                                    </div>
+
+                                    {/* Description Column */}
+                                    <div className="col-span-4 md:col-span-4 truncate">
+                                        <span className={`text-sm ${isGroup ? 'font-semibold text-gray-800' : 'text-gray-700'}`}>
+                                            {account.name}
+                                        </span>
                                     </div>
 
                                     {/* Type Column */}
@@ -195,12 +198,12 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                     </div>
 
                                     {/* Balance Column */}
-                                    <div className={`col-span-3 text-right font-mono text-sm ${account.balance < 0 ? 'text-red-600' : 'text-gray-700'}`}>
+                                    <div className={`col-span-2 text-right font-mono text-sm ${account.balance < 0 ? 'text-red-600' : 'text-gray-700'}`}>
                                         {Number(account.balance).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                                     </div>
 
                                     {/* Actions Column */}
-                                    <div className="col-span-3 md:col-span-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="col-span-1 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onEdit && onEdit(account); }}
                                             className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
@@ -208,12 +211,6 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
-                                        {/* 
-                                         Future: Add sub-account button
-                                         <button className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded">
-                                            <Plus className="w-4 h-4" />
-                                         </button> 
-                                        */}
                                     </div>
                                 </div>
                             )
