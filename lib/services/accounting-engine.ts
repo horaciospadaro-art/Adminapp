@@ -117,3 +117,8 @@ export class AccountingEngine {
             }
 
         }
+
+        const sequenceStr = String(sequence).padStart(3, '0')
+        return `${prefix}${sequenceStr}`
+    }
+}
