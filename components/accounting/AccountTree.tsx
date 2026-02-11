@@ -152,18 +152,10 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                     className={`grid grid-cols-12 gap-4 px-6 py-2 items-center hover:bg-[#f8f9fa] transition-colors group ${searchTerm ? '' : 'cursor-pointer'}`}
                                     onClick={() => !searchTerm && hasChildren && toggleExpand(account.id)}
                                 >
-                                    {/* Code Column (Strictly Left Aligned) */}
+                                    {/* Code Column (Strictly Left Aligned with Toggle) */}
                                     <div className="col-span-4 md:col-span-3 flex items-center overflow-hidden">
-                                        <span className="font-mono text-xs font-bold text-gray-600 truncate">{account.code}</span>
-                                    </div>
-
-                                    {/* Description Column (With Indentation & Hierarchy) */}
-                                    <div className="col-span-4 md:col-span-4 flex items-center overflow-hidden">
-                                        {/* Indentation */}
-                                        <div style={{ paddingLeft: `${account.level * 20}px` }} className="flex-shrink-0" />
-
-                                        {/* Expand Toggle */}
-                                        <div className="mr-2 w-5 h-5 flex items-center justify-center flex-shrink-0 text-gray-400">
+                                        {/* Expand Toggle - Fixed width container for alignment */}
+                                        <div className="mr-1 w-5 h-5 flex items-center justify-center flex-shrink-0 text-gray-400">
                                             {!searchTerm && hasChildren && (
                                                 expandedNodes.has(account.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
                                             )}
@@ -174,6 +166,11 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                             {isGroup ? <Folder className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                                         </div>
 
+                                        <span className="font-mono text-xs font-bold text-gray-600 truncate">{account.code}</span>
+                                    </div>
+
+                                    {/* Description Column (Flat) */}
+                                    <div className="col-span-4 md:col-span-4 flex items-center overflow-hidden">
                                         <span className={`text-sm truncate ${isGroup ? 'font-semibold text-gray-800' : 'text-gray-700'}`}>
                                             {account.name}
                                         </span>
