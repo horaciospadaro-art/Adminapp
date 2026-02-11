@@ -73,16 +73,7 @@ export function Sidebar() {
             items: [
                 { label: 'Plan de Cuentas', href: '/dashboard/accounting/chart-of-accounts', icon: BookOpen },
                 { label: 'Asientos Manuales', href: '/dashboard/accounting', icon: FileText },
-                {
-                    label: 'Reportes Contables',
-                    href: '#',
-                    icon: ChartBar,
-                    subItems: [
-                        { label: 'Diario Legal', href: '/dashboard/accounting/reports/journal' },
-                        { label: 'Mayor Analítico', href: '/dashboard/accounting/reports/ledger' },
-                        { label: 'Listado de Asientos', href: '/dashboard/accounting/reports/entries' }
-                    ]
-                },
+                { label: 'Asientos Manuales', href: '/dashboard/accounting', icon: FileText },
             ]
         },
         {

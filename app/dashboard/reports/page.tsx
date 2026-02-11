@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { FileBarChart, Calculator, ChevronRight, PieChart, FileText } from 'lucide-react'
+import { FileBarChart, Calculator, ChevronRight, PieChart, FileText, BookOpen, ScrollText } from 'lucide-react'
 
 export default function ReportsLandingPage() {
     return (
@@ -73,6 +73,21 @@ export default function ReportsLandingPage() {
                         href="/dashboard/reports/financial?report=balance_sheet"
                         icon={<Calculator className="w-4 h-4" />}
                         title="Balance General"
+                    />
+                    <QuickLink
+                        href="/dashboard/accounting/reports/journal"
+                        icon={<BookOpen className="w-4 h-4" />}
+                        title="Diario Legal"
+                    />
+                    <QuickLink
+                        href="/dashboard/accounting/reports/ledger"
+                        icon={<FileBarChart className="w-4 h-4" />}
+                        title="Mayor Analítico"
+                    />
+                    <QuickLink
+                        href="/dashboard/accounting/reports/entries"
+                        icon={<ScrollText className="w-4 h-4" />}
+                        title="Listado de Asientos"
                     />
                 </div>
             </div>
