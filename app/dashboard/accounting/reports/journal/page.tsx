@@ -1,4 +1,5 @@
 
+import { Suspense } from 'react'
 import prisma from '@/lib/db'
 import { MonthYearFilters } from '@/components/accounting/reports/MonthYearFilters'
 import { getLegalJournal } from '@/lib/actions/accounting-reports'
@@ -35,7 +36,9 @@ export default async function LegalJournalPage({
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-gray-800">Diario Legal</h1>
 
-            <MonthYearFilters />
+            <Suspense fallback={<div>Cargando filtros...</div>}>
+                <MonthYearFilters />
+            </Suspense>
 
             {error && (
                 <div className="p-4 bg-red-50 text-red-700 rounded-md border border-red-200">

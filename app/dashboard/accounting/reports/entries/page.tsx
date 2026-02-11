@@ -1,4 +1,5 @@
 
+import { Suspense } from 'react'
 import prisma from '@/lib/db'
 import { DateRangeFilters } from '@/components/accounting/reports/DateRangeFilters'
 import { getJournalEntryList } from '@/lib/actions/accounting-reports'
@@ -35,7 +36,9 @@ export default async function EntriesListPage({
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-gray-800">Listado de Asientos</h1>
 
-            <DateRangeFilters />
+            <Suspense fallback={<div>Cargando filtros...</div>}>
+                <DateRangeFilters />
+            </Suspense>
 
             {error && (
                 <div className="p-4 bg-red-50 text-red-700 rounded-md border border-red-200">

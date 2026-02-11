@@ -37,7 +37,9 @@ export default async function AnalyticalLedgerPage({
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-gray-800">Mayor Analítico</h1>
 
-            <LedgerFilters companyId={companyId} />
+            <Suspense fallback={<div>Cargando filtros...</div>}>
+                <LedgerFilters companyId={companyId} />
+            </Suspense>
 
             {error && (
                 <div className="p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
