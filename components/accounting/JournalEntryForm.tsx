@@ -161,6 +161,7 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
                                 value={line.accountId}
                                 onChange={(id) => updateLine(idx, 'accountId', id)}
                                 placeholder="Buscar cuenta..."
+                                label=""
                             />
                         </div>
                         <div className="col-span-3">
