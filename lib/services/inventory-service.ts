@@ -232,6 +232,7 @@ export class InventoryService {
                 data: {
                     company_id: companyId,
                     date,
+                    number: await this.accountingEngine.generateCorrelative(companyId, date, 'I'), // 'I' for Inventory
                     description,
                     status: 'POSTED',
                     lines: {

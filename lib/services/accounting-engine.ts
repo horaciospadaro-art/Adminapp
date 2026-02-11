@@ -18,7 +18,7 @@ export class AccountingEngine {
     /**
      * Creates a Journal Entry from a business event
      */
-    async createJournalEntry(event: TransactionEvent) {
+    async createJournalEntry(event: TransactionEvent, moduleCode: 'A' | 'B' | 'C' | 'I' | 'P' | 'F' = 'A') {
         // 1. Validate Balance
         const totalDebit = event.lines.reduce((sum, line) => sum + line.debit, 0)
         const totalCredit = event.lines.reduce((sum, line) => sum + line.credit, 0)
@@ -55,6 +55,7 @@ export class AccountingEngine {
             data: {
                 company_id: event.companyId,
                 date: event.date,
+                number: await this.generateCorrelative(event.companyId, event.date, moduleCode),
                 description: event.description,
                 status: 'POSTED', // Default to POSTED for auto-generated entries
                 lines: {
@@ -73,4 +74,46 @@ export class AccountingEngine {
 
         return entry
     }
-}
+
+    /**
+     * Generates a correlative number: Xddmmaa-xxx
+     * X: Module Code
+     * ddmmaa: Date
+     * xxx: Sequence (per day)
+     */
+    async generateCorrelative(companyId: string, date: Date, module: string): Promise<string> {
+        // Format date: ddmmaa
+        const d = new Date(date)
+        const day = String(d.getDate()).padStart(2, '0')
+        const month = String(d.getMonth() + 1).padStart(2, '0') // Month is 0-indexed
+        const year = String(d.getFullYear()).slice(-2)
+
+        const prefix = `${module}${day}${month}${year}-`
+
+        // Find last entry for this prefix
+        const lastEntry = await prisma.journalEntry.findFirst({
+            where: {
+                company_id: companyId,
+                number: {
+                    startsWith: prefix
+                }
+            },
+            orderBy: {
+                number: 'desc'
+            },
+            select: {
+                number: true
+            }
+        })
+
+        let sequence = 1
+        if (lastEntry && lastEntry.number) {
+            const parts = lastEntry.number.split('-')
+            if (parts.length === 2) {
+                const lastSeq = parseInt(parts[1], 10)
+                if (!isNaN(lastSeq)) {
+                    sequence = lastSeq + 1
+                }
+            }
+
+        }

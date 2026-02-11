@@ -133,7 +133,7 @@ export class IntegrationEngine {
             lines: lines
         }
 
-        await accountingEngine.createJournalEntry(transactionEvent)
+        await accountingEngine.createJournalEntry(transactionEvent, 'C')
     }
 
     private async handlePurchaseReceived(event: BusinessEvent) {

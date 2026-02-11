@@ -1,5 +1,8 @@
 import prisma from '@/lib/db'
 import { BankTransactionType, JournalStatus } from '@prisma/client'
+import { AccountingEngine } from './accounting-engine'
+
+const accountingEngine = new AccountingEngine()
 
 export const BankService = {
     /**
@@ -106,6 +109,7 @@ export const BankService = {
                 data: {
                     company_id: data.companyId,
                     date: data.date,
+                    number: await accountingEngine.generateCorrelative(data.companyId, data.date, 'B'),
                     description: `Banco ${data.type} - Ref: ${data.reference} - ${data.description}`,
                     status: JournalStatus.POSTED, // Automático = Publicado directo
                     lines: {

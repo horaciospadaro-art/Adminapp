@@ -89,6 +89,7 @@ model JournalEntry {
   company_id  String
   company     Company       @relation(fields: [company_id], references: [id])
   date        DateTime
+  number      String?       @unique // Correlative: Xddmmaa-xxx
   description String
   status      JournalStatus @default(DRAFT)
   created_at  DateTime      @default(now())
