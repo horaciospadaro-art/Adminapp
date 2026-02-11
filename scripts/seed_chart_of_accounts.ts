@@ -72,7 +72,8 @@ async function main() {
 
         console.log(`Using Company: ${company.name} (${company.id})`)
 
-        const basicAccounts = [
+        const accounts = [
+            // Roots
             { code: '1', name: 'ACTIVO', type: AccountType.ASSET },
             { code: '2', name: 'PASIVO', type: AccountType.LIABILITY },
             { code: '3', name: 'PATRIMONIO', type: AccountType.EQUITY },
@@ -80,9 +81,14 @@ async function main() {
             { code: '5', name: 'COSTOS', type: AccountType.COST },
             { code: '6', name: 'GASTOS', type: AccountType.EXPENSE },
             { code: '7', name: 'OTROS GASTOS', type: AccountType.OTHER },
+
+            // Pasivos Hierarchy (Standard V-Ledge)
+            { code: '2.1', name: 'Pasivo Corriente', type: AccountType.LIABILITY, parentCode: '2' },
+            { code: '2.1.01', name: 'Cuentas por Pagar Comerciales', type: AccountType.LIABILITY, parentCode: '2.1' },
+            { code: '2.1.01.00001', name: 'Cuentas por Pagar Proveedores Nacionales', type: AccountType.LIABILITY, parentCode: '2.1.01' },
         ]
 
-        for (const acc of basicAccounts) {
+        for (const acc of accounts) {
             // Check if it exists
             const existing = await prisma.chartOfAccount.findUnique({
                 where: {
@@ -94,18 +100,41 @@ async function main() {
             })
 
             if (!existing) {
+                // Find Parent ID if needed
+                let parentId = null
+                if (acc.parentCode) {
+                    const parent = await prisma.chartOfAccount.findUnique({
+                        where: {
+                            company_id_code: {
+                                company_id: company.id,
+                                code: acc.parentCode
+                            }
+                        }
+                    })
+                    if (parent) parentId = parent.id
+                }
+
                 await prisma.chartOfAccount.create({
                     data: {
                         company_id: company.id,
                         code: acc.code,
                         name: acc.name,
                         type: acc.type,
-                        parent_id: null, // Root account
+                        parent_id: parentId,
                     }
                 })
                 console.log(`Created: ${acc.code} - ${acc.name}`)
             } else {
-                console.log(`Exists: ${acc.code} - ${acc.name}`)
+                // Force update type to ensure consistency if it exists but is wrong
+                if (existing.type !== acc.type) {
+                    await prisma.chartOfAccount.update({
+                        where: { id: existing.id },
+                        data: { type: acc.type }
+                    })
+                    console.log(`Updated Type: ${acc.code} - ${acc.name}`)
+                } else {
+                    console.log(`Exists (Correct): ${acc.code} - ${acc.name}`)
+                }
             }
         }
     } catch (e) {
