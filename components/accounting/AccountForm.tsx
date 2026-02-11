@@ -155,7 +155,7 @@ export function AccountForm({ companyId, initialData, onCancel, onSuccess }: Acc
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                             Código (Formato: X.X.XX.XXXXX)
                         </label>
                         <input
@@ -164,17 +164,17 @@ export function AccountForm({ companyId, initialData, onCancel, onSuccess }: Acc
                             onChange={handleCodeChange}
                             onBlur={handleBlur}
                             placeholder="1.1.01.00001"
-                            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             maxLength={12} // 9 digits + 3 dots
                             required
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-[10px] text-gray-500 mt-1">
                             Ej: 1.1.01.00001 (Activo &rarr; Corriente &rarr; Efectivo &rarr; Caja Principal)
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                             Nombre de la Cuenta
                         </label>
                         <input
@@ -182,19 +182,19 @@ export function AccountForm({ companyId, initialData, onCancel, onSuccess }: Acc
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Ej: Banco Mercantil"
-                            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                             Tipo
                         </label>
                         <select
                             value={type}
                             onChange={(e) => setType(e.target.value as AccountType)}
-                            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             aria-label="Tipo de Cuenta"
                         >
                             <option value={AccountType.ASSET}>ACTIVO</option>
