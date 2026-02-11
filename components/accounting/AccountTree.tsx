@@ -152,8 +152,13 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                     className={`grid grid-cols-12 gap-4 px-6 py-2 items-center hover:bg-[#f8f9fa] transition-colors group ${searchTerm ? '' : 'cursor-pointer'}`}
                                     onClick={() => !searchTerm && hasChildren && toggleExpand(account.id)}
                                 >
-                                    {/* Code Column (with Indentation & Toggle) */}
+                                    {/* Code Column (Strictly Left Aligned) */}
                                     <div className="col-span-4 md:col-span-3 flex items-center overflow-hidden">
+                                        <span className="font-mono text-xs font-bold text-gray-600 truncate">{account.code}</span>
+                                    </div>
+
+                                    {/* Description Column (With Indentation & Hierarchy) */}
+                                    <div className="col-span-4 md:col-span-4 flex items-center overflow-hidden">
                                         {/* Indentation */}
                                         <div style={{ paddingLeft: `${account.level * 20}px` }} className="flex-shrink-0" />
 
@@ -169,13 +174,7 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                             {isGroup ? <Folder className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                                         </div>
 
-                                        {/* Code Content */}
-                                        <span className="font-mono text-xs font-bold text-gray-600 truncate">{account.code}</span>
-                                    </div>
-
-                                    {/* Description Column */}
-                                    <div className="col-span-4 md:col-span-4 truncate">
-                                        <span className={`text-sm ${isGroup ? 'font-semibold text-gray-800' : 'text-gray-700'}`}>
+                                        <span className={`text-sm truncate ${isGroup ? 'font-semibold text-gray-800' : 'text-gray-700'}`}>
                                             {account.name}
                                         </span>
                                     </div>
