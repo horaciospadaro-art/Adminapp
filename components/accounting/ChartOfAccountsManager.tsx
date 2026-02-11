@@ -3,19 +3,21 @@
 import { useState } from 'react'
 import { AccountForm } from '@/components/accounting/AccountForm'
 import { AccountTree } from '@/components/accounting/AccountTree'
+import { Modal } from '@/components/ui/Modal' // Import Modal
 import { AccountType } from '@prisma/client'
 
 type Account = {
     id: string
     code: string
     name: string
-    type: AccountType // Use prisma enum
+    type: AccountType
     parent_id: string | null
     balance: number
 }
 
 export function ChartOfAccountsManager({ companyId }: { companyId: string }) {
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
+    const [isCreating, setIsCreating] = useState(false) // New state
 
     const handleEdit = (account: any) => {
         // Ensure account matches expected type or partial
@@ -49,22 +51,52 @@ export function ChartOfAccountsManager({ companyId }: { companyId: string }) {
     }
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-                <AccountForm
-                    companyId={companyId}
-                    initialData={editingAccount}
-                    onCancel={handleCancelEdit}
-                    onSuccess={onFormSuccess}
-                />
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <div></div> {/* Spacer or filters could go here */}
+                <button
+                    onClick={() => {
+                        setEditingAccount(null)
+                        setIsCreating(true)
+                    }}
+                    className="bg-[#2ca01c] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#258b18] shadow-sm transition-all flex items-center gap-2"
+                >
+                    <span className="text-lg leading-none">+</span> Nueva Cuenta
+                </button>
             </div>
-            <div>
-                <AccountTree
-                    key={refreshKey}
-                    companyId={companyId}
-                    onEdit={handleEdit}
-                />
-            </div>
+
+            {/* Main Tree View (Full Width) */}
+            <AccountTree
+                key={refreshKey}
+                companyId={companyId}
+                onEdit={handleEdit}
+                refreshKey={refreshKey}
+            />
+
+            {/* Modal for Create/Edit */}
+            <Modal
+                isOpen={!!editingAccount || isCreating}
+                onClose={() => {
+                    handleCancelEdit()
+                    setIsCreating(false)
+                }}
+                title={editingAccount ? `Editar Cuenta: ${editingAccount.code}` : 'Nueva Cuenta Contable'}
+            >
+                <div className="">
+                    <AccountForm
+                        companyId={companyId}
+                        initialData={editingAccount}
+                        onCancel={() => {
+                            handleCancelEdit()
+                            setIsCreating(false)
+                        }}
+                        onSuccess={() => {
+                            onFormSuccess()
+                            setIsCreating(false)
+                        }}
+                    />
+                </div>
+            </Modal>
         </div>
     )
 }

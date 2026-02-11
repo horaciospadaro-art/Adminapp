@@ -2,6 +2,8 @@
 description: Commit and push changes to the repository
 ---
 
+// turbo-all
+
 1. Check the status of the repository
 
    git status
