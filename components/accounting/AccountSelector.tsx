@@ -9,6 +9,9 @@ export interface Account {
     name: string
     type: string
     balance?: number
+    _count?: {
+        children: number
+    }
 }
 
 interface AccountSelectorProps {
@@ -203,15 +206,25 @@ export function AccountSelector({
                             <li
                                 key={account.id}
                                 className={`
-                                    cursor-pointer px-3 py-2 flex items-center justify-between
-                                    hover:bg-blue-50 transition-colors
-                                    ${selectedAccount?.id === account.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                                    px-3 py-2 flex items-center justify-between
+                                    transition-colors
+                                    ${(account._count?.children || 0) > 0
+                                        ? 'text-gray-400 cursor-not-allowed bg-gray-50'
+                                        : 'cursor-pointer hover:bg-blue-50 text-gray-700'
+                                    }
+                                    ${selectedAccount?.id === account.id ? 'bg-blue-50 text-blue-700 font-medium' : ''}
                                 `}
-                                onClick={() => handleSelect(account)}
+                                onClick={() => {
+                                    if ((account._count?.children || 0) > 0) return
+                                    handleSelect(account)
+                                }}
                             >
-                                <span className="truncate">
+                                <span className="truncate flex items-center">
                                     <span className="font-mono text-xs mr-2 opacity-75">{account.code}</span>
                                     {account.name}
+                                    {(account._count?.children || 0) > 0 && (
+                                        <span className="ml-2 text-[10px] bg-gray-200 text-gray-600 px-1 rounded">Grupo</span>
+                                    )}
                                 </span>
                                 {selectedAccount?.id === account.id && (
                                     <Check className="h-4 w-4 text-blue-600 flex-shrink-0 ml-2" />

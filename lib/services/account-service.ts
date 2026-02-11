@@ -112,7 +112,12 @@ export class AccountService {
     async getAccountTree(companyId: string) {
         const accounts = await prisma.chartOfAccount.findMany({
             where: { company_id: companyId },
-            orderBy: { code: 'asc' }
+            orderBy: { code: 'asc' },
+            include: {
+                _count: {
+                    select: { children: true }
+                }
+            }
         })
         return accounts
     }
