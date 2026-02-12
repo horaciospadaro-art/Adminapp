@@ -42,6 +42,17 @@ export class AccountingEngine {
                 throw new Error(`Account code ${line.accountCode} not found for company ${event.companyId}`)
             }
 
+            // Validate that account is a leaf (no children)
+            // We need to fetch children count or check if it has children
+            const accountWithChildren = await prisma.chartOfAccount.findUnique({
+                where: { id: account.id },
+                include: { _count: { select: { children: true } } }
+            })
+
+            if (accountWithChildren && accountWithChildren._count.children > 0) {
+                throw new Error(`Cannot post to parent account ${line.accountCode} (${account.name}). Select a specific sub-account.`)
+            }
+
             return {
                 account_id: account.id,
                 debit: line.debit,

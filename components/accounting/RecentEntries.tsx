@@ -8,12 +8,16 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
     const entries = await prisma.journalEntry.findMany({
         where: { company_id: companyId },
         orderBy: { created_at: 'desc' },
-        take: 5,
+        take: 20, // Increased from 5 to 20
         include: {
             lines: {
                 where: { debit: { gt: 0 } }, // Get debit lines to estimate amount
                 select: { debit: true }
-            }
+            },
+            // Include relations to determine source
+            bankTransaction: { select: { id: true, subtype: true } },
+            document: { select: { id: true, type: true, number: true } },
+            inventory_movement: { select: { id: true, type: true } }
         }
     })
 
@@ -35,6 +39,7 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fuente</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
                             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
@@ -53,6 +58,31 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {/* @ts-ignore */}
                                         {entry.number || '-'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {/* @ts-ignore */}
+                                        {entry.bankTransaction ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                Banco
+                                            </span>
+                                        ) :
+                                            /* @ts-ignore */
+                                            entry.document ? (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                    {/* @ts-ignore */}
+                                                    {entry.document.type === 'INVOICE' ? 'Factura' : 'Documento'}
+                                                </span>
+                                            ) :
+                                                /* @ts-ignore */
+                                                entry.inventory_movement ? (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                                        Inventario
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                        Manual
+                                                    </span>
+                                                )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {entry.description}

@@ -1,6 +1,57 @@
+
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { DocumentType, PaymentStatus, ProductType } from '@prisma/client'
+import { createDocumentJournalEntry } from '@/lib/accounting-helpers'
+
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url)
+        const type = searchParams.get('type')
+        const status = searchParams.get('status') // Can be comma separated
+        const third_party_id = searchParams.get('third_party_id')
+        const company_id = searchParams.get('company_id')
+
+        let targetCompanyId = company_id
+        if (!targetCompanyId) {
+            const company = await prisma.company.findFirst()
+            targetCompanyId = company?.id
+        }
+
+        const where: any = {
+            company_id: targetCompanyId
+        }
+
+        if (type) {
+            where.type = type as DocumentType
+        }
+
+        if (status) {
+            const statuses = status.split(',')
+            where.status = { in: statuses.map(s => s.trim() as PaymentStatus) }
+        }
+
+        if (third_party_id) {
+            where.third_party_id = third_party_id
+        }
+
+        const documents = await prisma.document.findMany({
+            where,
+            include: {
+                third_party: true,
+                items: true
+            },
+            orderBy: {
+                date: 'desc'
+            }
+        })
+
+        return NextResponse.json(documents)
+    } catch (error) {
+        console.error('Error fetching documents:', error)
+        return NextResponse.json({ error: 'Error fetching documents' }, { status: 500 })
+    }
+}
 
 export async function POST(request: Request) {
     try {
@@ -153,6 +204,15 @@ export async function POST(request: Request) {
                         }
                     }
                 }
+            }
+
+            // 4. Accounting Entry (Auto-generate)
+            try {
+                await createDocumentJournalEntry(tx, doc.id, targetCompanyId)
+            } catch (accountingError) {
+                console.error('Accounting Error:', accountingError)
+                // Optional: throw to rollback transaction if accounting is strict
+                // throw accountingError 
             }
 
             return doc

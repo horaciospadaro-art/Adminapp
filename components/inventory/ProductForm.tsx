@@ -16,6 +16,10 @@ interface Account {
     id: string
     code: string
     name: string
+    type: string
+    _count?: {
+        children: number
+    }
 }
 
 interface ProductFormProps {
@@ -167,7 +171,7 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                                 <AccountSelector
                                     value={formData.income_account_id}
                                     onChange={(val) => setFormData({ ...formData, income_account_id: val })}
-                                    typeFilter="INCOME"
+                                    preloadedAccounts={accounts}
                                     placeholder="Seleccionar cuenta de ingresos..."
                                 />
                             </div>
@@ -179,7 +183,7 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                                         <AccountSelector
                                             value={formData.asset_account_id}
                                             onChange={(val) => setFormData({ ...formData, asset_account_id: val })}
-                                            typeFilter="ASSET"
+                                            preloadedAccounts={accounts}
                                             placeholder="Seleccionar cuenta de activo..."
                                         />
                                     </div>
@@ -188,7 +192,7 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                                         <AccountSelector
                                             value={formData.cogs_account_id}
                                             onChange={(val) => setFormData({ ...formData, cogs_account_id: val })}
-                                            typeFilter="COST"
+                                            preloadedAccounts={accounts}
                                             placeholder="Seleccionar cuenta de costos..."
                                         />
                                     </div>

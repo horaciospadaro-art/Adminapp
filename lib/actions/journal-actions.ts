@@ -48,11 +48,23 @@ export async function updateJournalEntry(id: string, data: any) {
                     description: data.description,
                     // Lines are re-created below
                     lines: {
-                        create: data.lines.map((l: any) => ({
-                            account_id: l.accountId, // Ensure we map back to account_id
-                            debit: l.debit,
-                            credit: l.credit,
-                            description: l.description
+                        create: await Promise.all(data.lines.map(async (l: any) => {
+                            // Check for leaf account
+                            const account = await tx.chartOfAccount.findUnique({
+                                where: { id: l.accountId },
+                                include: { _count: { select: { children: true } } }
+                            })
+
+                            if (account && account._count.children > 0) {
+                                throw new Error(`Cannot post to parent account ${account.code} (${account.name})`)
+                            }
+
+                            return {
+                                account_id: l.accountId,
+                                debit: l.debit,
+                                credit: l.credit,
+                                description: l.description
+                            }
                         }))
                     }
                 }
