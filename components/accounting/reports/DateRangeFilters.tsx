@@ -53,5 +53,6 @@ export function DateRangeFilters() {
                     Generar
                 </button>
             </div>
-            )
+        </div>
+    )
 }
