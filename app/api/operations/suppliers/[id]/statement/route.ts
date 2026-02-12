@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { DocumentType, WithholdingDirection } from '@prisma/client'
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { searchParams } = new URL(request.url)
-        const supplierId = params.id
+        const { id: supplierId } = await params
         const startDateParam = searchParams.get('startDate')
         const endDateParam = searchParams.get('endDate')
 
