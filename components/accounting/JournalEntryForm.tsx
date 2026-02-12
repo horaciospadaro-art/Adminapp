@@ -11,16 +11,27 @@ type JournalLine = {
     description: string
 }
 
-export function JournalEntryForm({ companyId }: { companyId: string }) {
+import { updateJournalEntry } from '@/lib/actions/journal-actions'
+import { DateInput } from '@/components/common/DateInput'
+
+export function JournalEntryForm({ companyId, initialData, entryId }: { companyId: string, initialData?: any, entryId?: string }) {
     const router = useRouter()
     const [accounts, setAccounts] = useState<Account[]>([])
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-    const [description, setDescription] = useState('')
-    // Changed accountCode to accountId in state
-    const [lines, setLines] = useState<any[]>([
+
+    // Initialize state with initialData if provided
+    const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10))
+    const [description, setDescription] = useState(initialData?.description || '')
+
+    const [lines, setLines] = useState<any[]>(initialData?.lines ? initialData.lines.map((l: any) => ({
+        accountId: l.account_id || l.accountId, // Handle both casing
+        debit: l.debit?.toString() || '0',
+        credit: l.credit?.toString() || '0',
+        description: l.description || ''
+    })) : [
         { accountId: '', debit: '0', credit: '0', description: '' },
         { accountId: '', debit: '0', credit: '0', description: '' }
     ])
+
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -77,33 +88,43 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
                 lines: lines.map(l => {
                     const acc = accounts.find(a => a.id === l.accountId)
                     return {
-                        accountCode: acc ? acc.code : '', // Resolve code from ID
+                        accountId: l.accountId, // For update action
+                        accountCode: acc ? acc.code : '', // For API create
                         debit: parseFloat(l.debit) || 0,
                         credit: parseFloat(l.credit) || 0,
                         description: l.description || description
                     }
-                }).filter(l => l.accountCode && (l.debit > 0 || l.credit > 0))
+                }).filter(l => (l.accountId || l.accountCode) && (l.debit > 0 || l.credit > 0))
             }
 
-            const res = await fetch('/api/transactions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
+            if (entryId) {
+                // UPDATE MODE
+                const res = await updateJournalEntry(entryId, payload)
+                if (!res.success) throw new Error(res.error)
+                alert('¡Asiento actualizado con éxito!')
+                router.push('/dashboard/accounting/reports/entries') // Redirect back to list
+            } else {
+                // CREATE MODE
+                const res = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
 
-            if (!res.ok) {
-                const err = await res.json()
-                throw new Error(err.error || 'Error al registrar la transacción')
+                if (!res.ok) {
+                    const err = await res.json()
+                    throw new Error(err.error || 'Error al registrar la transacción')
+                }
+
+                // Reset Form
+                setDescription('')
+                setLines([
+                    { accountId: '', debit: '0', credit: '0', description: '' },
+                    { accountId: '', debit: '0', credit: '0', description: '' }
+                ])
+                alert('¡Asiento registrado con éxito!')
+                router.refresh()
             }
-
-            // Reset Form
-            setDescription('')
-            setLines([
-                { accountId: '', debit: '0', credit: '0', description: '' },
-                { accountId: '', debit: '0', credit: '0', description: '' }
-            ])
-            alert('¡Asiento registrado con éxito!')
-            router.refresh()
 
         } catch (err: any) {
             setError(err.message)
@@ -114,7 +135,7 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
 
     return (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow border border-gray-100">
-            <h2 className="text-lg font-bold mb-4">Nuevo Asiento Contable</h2>
+            <h2 className="text-lg font-bold mb-4">{entryId ? 'Editar Asiento Contable' : 'Nuevo Asiento Contable'}</h2>
 
             {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm">
@@ -124,12 +145,10 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Fecha</label>
-                    <input
-                        type="date"
+                    <DateInput
+                        label="Fecha"
                         value={date}
                         onChange={e => setDate(e.target.value)}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                     />
                 </div>
                 <div>
@@ -231,7 +250,7 @@ export function JournalEntryForm({ companyId }: { companyId: string }) {
                     disabled={loading || !isBalanced}
                     className={`px-4 py-2 rounded text-white font-medium ${loading || !isBalanced ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
                 >
-                    {loading ? 'Registrando...' : 'Registrar Asiento'}
+                    {loading ? 'Procesando...' : (entryId ? 'Actualizar Asiento' : 'Registrar Asiento')}
                 </button>
             </div>
 

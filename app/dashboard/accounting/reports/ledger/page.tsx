@@ -4,17 +4,14 @@ import { LedgerFilters } from '@/components/accounting/reports/LedgerFilters'
 import { getAnalyticalLedger } from '@/lib/actions/accounting-reports'
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
-async function getDemoCompanyId() {
-    const company = await prisma.company.findFirst()
-    return company?.id || ''
-}
+import { getPersistentCompanyId } from '@/lib/company-utils'
 
 export default async function AnalyticalLedgerPage({
     searchParams
 }: {
     searchParams: { startDate?: string; endDate?: string; accountId?: string }
 }) {
-    const companyId = await getDemoCompanyId()
+    const companyId = await getPersistentCompanyId()
     const { startDate, endDate, accountId } = searchParams
 
     let reportData = null

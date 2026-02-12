@@ -3,18 +3,18 @@ import prisma from '@/lib/db'
 import { DateRangeFilters } from '@/components/accounting/reports/DateRangeFilters'
 import { getJournalEntryList } from '@/lib/actions/accounting-reports'
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
+import Link from 'next/link'
+import { Edit } from 'lucide-react'
+import { DeleteEntryButton } from '@/components/accounting/DeleteEntryButton'
 
-async function getDemoCompanyId() {
-    const company = await prisma.company.findFirst()
-    return company?.id || ''
-}
+import { getPersistentCompanyId } from '@/lib/company-utils'
 
 export default async function EntriesListPage({
     searchParams
 }: {
     searchParams: { startDate?: string; endDate?: string }
 }) {
-    const companyId = await getDemoCompanyId()
+    const companyId = await getPersistentCompanyId()
     const { startDate, endDate } = searchParams
 
     let entries: any[] = []
@@ -65,6 +65,7 @@ export default async function EntriesListPage({
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -90,6 +91,14 @@ export default async function EntriesListPage({
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-mono">
                                                 {total.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div className="flex justify-end gap-2">
+                                                    <Link href={`/dashboard/accounting/entries/${entry.id}/edit`} className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded" title="Editar">
+                                                        <Edit className="w-4 h-4" />
+                                                    </Link>
+                                                    <DeleteEntryButton id={entry.id} entryNumber={entry.number || 'Sin Número'} />
+                                                </div>
                                             </td>
                                         </tr>
                                     )

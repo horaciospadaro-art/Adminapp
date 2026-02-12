@@ -5,13 +5,10 @@ import { RecentEntries } from '@/components/accounting/RecentEntries'
 
 import prisma from '@/lib/db'
 
-async function getDemoCompanyId() {
-    const company = await prisma.company.findFirst()
-    return company?.id || ''
-}
+import { getPersistentCompanyId } from '@/lib/company-utils'
 
 export default async function AccountingPage() {
-    const companyId = await getDemoCompanyId()
+    const companyId = await getPersistentCompanyId()
 
     return (
         <div className="space-y-6">

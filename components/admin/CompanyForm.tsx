@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { DateInput } from '@/components/common/DateInput'
 
 interface CompanyFormProps {
     initialData?: any
@@ -113,13 +114,11 @@ export function CompanyForm({ initialData, onSuccess, onCancel }: CompanyFormPro
                     />
                 </div>
                 <div>
-                    <label htmlFor="fiscal-year" className="block text-sm font-medium text-gray-700 mb-1">Inicio Año Fiscal</label>
-                    <input
+                    <DateInput
                         id="fiscal-year"
-                        type="date"
+                        label="Inicio Año Fiscal"
                         value={fiscalYearStart}
                         onChange={e => setFiscalYearStart(e.target.value)}
-                        className="w-full border border-gray-300 rounded px-3 py-2"
                         required
                     />
                 </div>

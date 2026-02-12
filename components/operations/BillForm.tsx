@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Calendar, Upload, Plus, Trash2, Calculator, Save, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { DateInput } from '@/components/common/DateInput'
 
 interface Tax {
     id: string
@@ -322,25 +323,21 @@ export function BillForm() {
                     <div>
                         <div className="flex gap-2">
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Emisión <span className="text-red-500">*</span></label>
-                                <input
-                                    type="date"
+                                <DateInput
+                                    label="Fecha Emisión"
                                     value={date}
                                     onChange={e => {
                                         setDate(e.target.value)
                                         if (e.target.value) setAccountingDate(e.target.value)
                                     }}
-                                    className="w-full p-2 border rounded focus:ring-blue-500"
                                     required
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">F. Contable <span className="text-red-500">*</span></label>
-                                <input
-                                    type="date"
+                                <DateInput
+                                    label="F. Contable"
                                     value={accountingDate}
                                     onChange={e => setAccountingDate(e.target.value)}
-                                    className="w-full p-2 border rounded focus:ring-blue-500"
                                     required
                                 />
                             </div>

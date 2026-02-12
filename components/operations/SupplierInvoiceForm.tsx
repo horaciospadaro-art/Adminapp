@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Calendar, Upload, Plus, Trash2, Calculator } from 'lucide-react'
+import { DateInput } from '@/components/common/DateInput'
 
 // Mock Tax Data - In production this comes from API/DB
 const TAX_RATES = [
@@ -20,6 +21,7 @@ export function SupplierInvoiceForm() {
     // Form State
     const [baseAmount, setBaseAmount] = useState<number>(0)
     const [selectedTaxId, setSelectedTaxId] = useState<string>('1')
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 
     // Retention State
     const [applyRetentionIVA, setApplyRetentionIVA] = useState(false)
@@ -78,10 +80,11 @@ export function SupplierInvoiceForm() {
                     <input type="text" className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" placeholder="000123" />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Emisión</label>
-                    <div className="relative">
-                        <input type="date" className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
+                    <DateInput
+                        label="Fecha Emisión"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                    />
                 </div>
             </div>
 

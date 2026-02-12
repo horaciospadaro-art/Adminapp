@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BankAccount } from '../types'
 import { AccountSelector } from '@/components/accounting/AccountSelector'
+import { DateInput } from '@/components/common/DateInput'
 
 type NotasFormProps = {
     bankAccount: BankAccount
@@ -18,6 +19,7 @@ export function NotasForm({ bankAccount }: NotasFormProps) {
     const [type, setType] = useState<NotaType>('DEBIT_NOTE')
     const [reference, setReference] = useState('')
     const [description, setDescription] = useState('')
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [amount, setAmount] = useState<number>(0)
     const [contraAccountId, setContraAccountId] = useState('')
     const [isIgtfApplied, setIsIgtfApplied] = useState(false)
@@ -111,7 +113,7 @@ export function NotasForm({ bankAccount }: NotasFormProps) {
             const transactionType = type === 'DEBIT_NOTE' ? 'DEBIT' : 'CREDIT'
 
             const data = {
-                date: new Date().toISOString(),
+                date: new Date(date).toISOString(),
                 reference,
                 description,
                 amount,
@@ -152,8 +154,8 @@ export function NotasForm({ bankAccount }: NotasFormProps) {
                     type="button"
                     onClick={() => setType('DEBIT_NOTE')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${type === 'DEBIT_NOTE'
-                            ? 'bg-purple-100 text-purple-700'
-                            : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                 >
                     Nota de Débito (Aumento/Positivo)
@@ -162,15 +164,23 @@ export function NotasForm({ bankAccount }: NotasFormProps) {
                     type="button"
                     onClick={() => setType('CREDIT_NOTE')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${type === 'CREDIT_NOTE'
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                 >
                     Nota de Crédito (Disminución/Negativo)
                 </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <DateInput
+                        label="Fecha"
+                        value={date}
+                        onChange={e => setDate(e.target.value)}
+                        required
+                    />
+                </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Referencia <span className="text-red-500">*</span>

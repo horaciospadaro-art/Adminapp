@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { BankAccount } from '../types'
+import { DateInput } from '@/components/common/DateInput'
 
 type TransferenciasFormProps = {
     bankAccount: BankAccount
@@ -14,6 +15,7 @@ export function TransferenciasForm({ bankAccount }: TransferenciasFormProps) {
     const [loading, setLoading] = useState(false)
     const [reference, setReference] = useState('')
     const [description, setDescription] = useState('')
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [amount, setAmount] = useState<number>(0)
     const [targetBankId, setTargetBankId] = useState('')
     const [otherBanks, setOtherBanks] = useState<BankAccount[]>([])
@@ -33,7 +35,7 @@ export function TransferenciasForm({ bankAccount }: TransferenciasFormProps) {
 
         try {
             const data = {
-                date: new Date().toISOString(),
+                date: new Date(date).toISOString(),
                 reference,
                 description,
                 amount,
@@ -105,7 +107,15 @@ export function TransferenciasForm({ bankAccount }: TransferenciasFormProps) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <DateInput
+                        label="Fecha"
+                        value={date}
+                        onChange={e => setDate(e.target.value)}
+                        required
+                    />
+                </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Referencia <span className="text-red-500">*</span>

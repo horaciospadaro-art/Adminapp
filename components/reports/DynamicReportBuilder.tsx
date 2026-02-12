@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Calendar, ChevronDown, Download, Filter, Layout, Search, RefreshCw } from 'lucide-react'
 import { getDynamicReportData } from '@/app/actions/reports'
+import { DateInput } from '@/components/common/DateInput'
 
 // Field Definition
 type ReportField = {
@@ -147,20 +148,16 @@ export function DynamicReportBuilder() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Rango de Fecha</label>
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="relative">
-                                <input
-                                    type="date"
+                            <div>
+                                <DateInput
                                     value={startDate}
                                     onChange={e => setStartDate(e.target.value)}
-                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1.5"
                                 />
                             </div>
-                            <div className="relative">
-                                <input
-                                    type="date"
+                            <div>
+                                <DateInput
                                     value={endDate}
                                     onChange={e => setEndDate(e.target.value)}
-                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1.5"
                                 />
                             </div>
                         </div>

@@ -73,7 +73,7 @@ export function Sidebar() {
             items: [
                 { label: 'Plan de Cuentas', href: '/dashboard/accounting/chart-of-accounts', icon: BookOpen },
                 { label: 'Asientos Manuales', href: '/dashboard/accounting', icon: FileText },
-                { label: 'Asientos Manuales', href: '/dashboard/accounting', icon: FileText },
+
             ]
         },
         {

@@ -89,6 +89,7 @@ export async function getAnalyticalLedger({
             entry: {
                 select: {
                     date: true,
+                    // @ts-ignore
                     number: true,
                     description: true
                 }
@@ -136,12 +137,16 @@ export async function getJournalEntryList({
     startDate: Date
     endDate: Date
 }) {
+    // Ensure endDate covers the entire day
+    const endOfDay = new Date(endDate)
+    endOfDay.setHours(23, 59, 59, 999)
+
     const entries = await prisma.journalEntry.findMany({
         where: {
             company_id: companyId,
             date: {
                 gte: startDate,
-                lte: endDate
+                lte: endOfDay
             }
         },
         include: {
@@ -171,6 +176,7 @@ export async function getLegalJournal({
     // Construct start and end of month
     const start = new Date(year, month - 1, 1)
     const end = new Date(year, month, 0) // Last day of month
+    end.setHours(23, 59, 59, 999) // End of that day
 
     const entries = await prisma.journalEntry.findMany({
         where: {
@@ -189,6 +195,7 @@ export async function getLegalJournal({
             }
         },
         orderBy: {
+            // @ts-ignore
             number: 'asc' // Legal Journal usually ordered by correlative number
         }
     })

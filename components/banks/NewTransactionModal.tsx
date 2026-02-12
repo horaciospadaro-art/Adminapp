@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AccountSelector, Account } from '@/components/accounting/AccountSelector'
+import { DateInput } from '@/components/common/DateInput'
 
 export function NewTransactionModal({
     bankId,
@@ -109,7 +110,7 @@ export function NewTransactionModal({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                            <input type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
+                            <DateInput name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operación</label>

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { BankAccount } from '../types'
 import { AccountSelector } from '@/components/accounting/AccountSelector'
+import { DateInput } from '@/components/common/DateInput'
 
 type Invoice = {
     id: string
@@ -29,6 +30,7 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
     const [loading, setLoading] = useState(false)
     const [reference, setReference] = useState('')
     const [description, setDescription] = useState('')
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [amount, setAmount] = useState<number>(0)
 
     // SUPPLIER PAYMENT
@@ -100,7 +102,7 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                 .map(([docId, amt]) => ({ documentId: docId, amount: amt }))
 
             const data = {
-                date: new Date().toISOString(),
+                date: new Date(date).toISOString(),
                 reference,
                 description,
                 amount,
@@ -161,7 +163,15 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                 </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <DateInput
+                        label="Fecha"
+                        value={date}
+                        onChange={e => setDate(e.target.value)}
+                        required
+                    />
+                </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Referencia <span className="text-red-500">*</span>

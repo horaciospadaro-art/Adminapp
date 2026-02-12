@@ -4,17 +4,14 @@ import { MonthYearFilters } from '@/components/accounting/reports/MonthYearFilte
 import { getLegalJournal } from '@/lib/actions/accounting-reports'
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
-async function getDemoCompanyId() {
-    const company = await prisma.company.findFirst()
-    return company?.id || ''
-}
+import { getPersistentCompanyId } from '@/lib/company-utils'
 
 export default async function LegalJournalPage({
     searchParams
 }: {
     searchParams: { month?: string; year?: string }
 }) {
-    const companyId = await getDemoCompanyId()
+    const companyId = await getPersistentCompanyId()
     const { month, year } = searchParams
 
     let entries: any[] = []

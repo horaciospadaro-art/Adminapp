@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AccountSelector } from '@/components/accounting/AccountSelector'
+import { DateInput } from '@/components/common/DateInput'
 
 export function LedgerFilters({ companyId }: { companyId: string }) {
     const router = useRouter()
@@ -35,25 +36,17 @@ export function LedgerFilters({ companyId }: { companyId: string }) {
     return (
         <div className="bg-white p-4 rounded-lg shadow space-y-4 md:space-y-0 md:flex md:items-end md:space-x-4 border border-gray-200">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                <input
-                    type="date"
-                    title="Fecha Desde"
-                    placeholder="Desde"
+                <DateInput
+                    label="Desde"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                <input
-                    type="date"
-                    title="Fecha Hasta"
-                    placeholder="Hasta"
+                <DateInput
+                    label="Hasta"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
             <div className="flex-1 min-w-[300px]">

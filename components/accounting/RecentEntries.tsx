@@ -1,5 +1,8 @@
 
 import prisma from '@/lib/db'
+import Link from 'next/link'
+import { Edit } from 'lucide-react'
+import { DeleteEntryButton } from '@/components/accounting/DeleteEntryButton'
 
 export async function RecentEntries({ companyId }: { companyId: string }) {
     const entries = await prisma.journalEntry.findMany({
@@ -35,6 +38,7 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
                             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -47,6 +51,7 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
                                         {new Intl.DateTimeFormat('es-VE', { dateStyle: 'medium' }).format(new Date(entry.date))}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {/* @ts-ignore */}
                                         {entry.number || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -60,6 +65,15 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
                                             }`}>
                                             {entry.status === 'POSTED' ? 'Publicado' : 'Borrador'}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div className="flex justify-end gap-2">
+                                            <Link href={`/dashboard/accounting/entries/${entry.id}/edit`} className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded" title="Editar">
+                                                <Edit className="w-4 h-4" />
+                                            </Link>
+                                            {/* @ts-ignore */}
+                                            <DeleteEntryButton id={entry.id} entryNumber={entry.number || 'Sin Número'} />
+                                        </div>
                                     </td>
                                 </tr>
                             )
