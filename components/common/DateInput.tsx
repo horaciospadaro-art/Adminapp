@@ -18,7 +18,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                 <input
                     type="date"
                     ref={ref}
-                    lang="en-GB" // Forces DD/MM/YYYY format in most browsers
+                    lang="es-VE" // Forces DD/MM/YYYY format in Spanish-speaking locales
                     className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border ${error ? 'border-red-300' : ''
                         } ${className}`}
                     {...props}

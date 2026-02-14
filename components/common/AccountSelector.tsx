@@ -43,10 +43,16 @@ export function AccountSelector({
     useEffect(() => {
         async function fetchAccounts() {
             try {
-                const res = await fetch('/api/accounting/chart-of-accounts')
+                // Correct URL and ensuring it handles the flat array returned by AccountService
+                const res = await fetch('/api/accounting/accounts')
                 if (res.ok) {
                     const data = await res.json()
-                    const allAccounts = filter ? data.filter(filter) : data
+                    // Filter for accounts that allow movements (Level 4: X.X.XX.XXXXX)
+                    const movementAccounts = data.filter((acc: any) => {
+                        const parts = acc.code.split('.')
+                        return parts.length === 4 // Level 4 has 4 parts
+                    })
+                    const allAccounts = filter ? movementAccounts.filter(filter) : movementAccounts
                     setAccounts(allAccounts)
                     setFilteredAccounts(allAccounts)
                 }
