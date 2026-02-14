@@ -31,10 +31,12 @@ export async function POST(request: Request) {
                     company_id,
                     document_id,
                     third_party_id,
+                    direction: 'RECEIVED', // Default for withholdings we receive
                     type,
                     date: new Date(date || new Date()),
                     certificate_number,
                     base_amount: parseFloat(base_amount),
+                    tax_amount: 0, // Can be updated if needed
                     rate: parseFloat(rate),
                     amount: withholdingAmount
                 }
