@@ -3,6 +3,7 @@ import prisma from '@/lib/db'
 import Link from 'next/link'
 import { Edit } from 'lucide-react'
 import { DeleteEntryButton } from '@/components/accounting/DeleteEntryButton'
+import { formatDate } from '@/lib/date-utils'
 
 export async function RecentEntries({ companyId }: { companyId: string }) {
     const entries = await prisma.journalEntry.findMany({
