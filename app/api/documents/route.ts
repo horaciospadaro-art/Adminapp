@@ -15,7 +15,7 @@ export async function GET(request: Request) {
         let targetCompanyId = company_id
         if (!targetCompanyId) {
             const company = await prisma.company.findFirst()
-            targetCompanyId = company?.id
+            targetCompanyId = company?.id ?? null
         }
 
         const where: any = {
