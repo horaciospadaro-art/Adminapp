@@ -1,5 +1,7 @@
 'use client'
 
+import { formatDate } from '@/lib/date-utils'
+
 interface BankTransaction {
     id: string
     date: string
@@ -64,11 +66,6 @@ export function TransactionList({ transactions }: { transactions: BankTransactio
 
                         return (
                             <tr key={tx.id} className="hover:bg-gray-50 transaction-row">
-                                import {formatDate} from '@/lib/date-utils'
-                                // ...
-
-                                // ...
-
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {formatDate(tx.date)}
                                 </td>
