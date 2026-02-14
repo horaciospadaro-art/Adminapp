@@ -249,7 +249,7 @@ export function BillForm() {
                 })),
             }
 
-            const res = await fetch('/api/documents', {
+            const res = await fetch('/api/operations/suppliers/bills', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
