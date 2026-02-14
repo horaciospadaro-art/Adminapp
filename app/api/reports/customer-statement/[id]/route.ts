@@ -73,7 +73,7 @@ export async function GET(
             customer: {
                 id: customer.id,
                 name: customer.name,
-                tax_id: customer.tax_id,
+                tax_id: customer.rif,
                 email: customer.email,
                 phone: customer.phone,
                 address: customer.address
