@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Filter, Download, Eye, FileX, DollarSign, MoreVertical } from 'lucide-react'
+import { formatDate } from '@/lib/date-utils'
 
 interface ThirdParty {
     id: string
@@ -121,11 +122,6 @@ export function InvoiceList() {
                             filteredInvoices.map(inv => (
                                 <tr key={inv.id} className="hover:bg-gray-50 group">
                                     <td className="px-6 py-4 font-mono font-medium text-blue-600">{inv.number}</td>
-                                    import {formatDate} from '@/lib/date-utils'
-                                    // ... (imports)
-
-                                    // ...
-
                                     <td className="px-6 py-4 text-gray-600">{formatDate(inv.date)}</td>
                                     <td className="px-6 py-4 font-medium text-gray-800">{inv.third_party.name}</td>
                                     <td className="px-6 py-4 text-right font-medium text-gray-900">
