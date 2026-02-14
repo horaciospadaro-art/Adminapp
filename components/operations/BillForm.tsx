@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Calendar, Upload, Plus, Trash2, Calculator, Save, Loader2, ArrowLeft } from 'lucide-react'
+import { Calendar, Upload, Plus, Trash2, Calculator, Save, Loader2, ArrowLeft, Package, Receipt } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DateInput } from '@/components/common/DateInput'
+import { AccountSelector } from '@/components/common/AccountSelector'
 
 interface Tax {
     id: string
@@ -30,6 +31,7 @@ interface ThirdParty {
 
 interface BillItem {
     product_id: string
+    gl_account_id: string  // For expense bills
     description: string
     quantity: number
     unit_price: number
@@ -78,6 +80,7 @@ export function BillForm() {
     const [controlNumber, setControlNumber] = useState('')
     const [reference, setReference] = useState('')
     const [thirdPartyId, setThirdPartyId] = useState('')
+    const [billType, setBillType] = useState<'PURCHASE' | 'EXPENSE'>('PURCHASE')
 
     const [items, setItems] = useState<BillItem[]>([])
 
@@ -116,6 +119,7 @@ export function BillForm() {
     const addItem = () => {
         setItems([...items, {
             product_id: '',
+            gl_account_id: '',
             description: '',
             quantity: 1,
             unit_price: 0,
@@ -149,6 +153,12 @@ export function BillForm() {
         if (field === 'tax_id' || field === 'product_id') {
             const tax = taxes.find(t => t.id === item.tax_id)
             item.tax_rate = tax ? parseFloat(tax.rate) : 0
+        }
+
+        // Auto-fill description if gl_account_id selected and description is empty
+        if (field === 'gl_account_id' && !item.description) {
+            // We'd need account names here, but AccountSelector handles display.
+            // For now, let's just ensure it's selectable.
         }
 
         // Auto-update ISLR rate if concept or supplier changes (concept change handled here)
@@ -224,12 +234,25 @@ export function BillForm() {
             return
         }
 
+        // Validation for items based on type
+        for (const item of items) {
+            if (billType === 'PURCHASE' && !item.product_id && !item.description) {
+                alert('Cada línea de compra debe tener un producto o descripción')
+                return
+            }
+            if (billType === 'EXPENSE' && !item.gl_account_id) {
+                alert('Debe asignar una cuenta contable a cada línea de gasto')
+                return
+            }
+        }
+
         setLoading(true)
         try {
             const payload = {
                 company_id: '', // Backend resolves
                 third_party_id: thirdPartyId,
                 type: 'BILL',
+                bill_type: billType, // PURCHASE or EXPENSE
                 date,
                 accounting_date: accountingDate,
                 due_date: dueDate || null,
@@ -275,10 +298,42 @@ export function BillForm() {
     return (
         <form onSubmit={handleSubmit} className="w-full mx-auto space-y-6 pb-20">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-800">Registrar Factura de Compra</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Registrar Factura</h1>
                 <Link href="/dashboard/operations/bills" className="text-sm text-blue-600 hover:underline">
                     &larr; Volver
                 </Link>
+            </div>
+
+            {/* Bill Type Selector */}
+            <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
+                <button
+                    type="button"
+                    onClick={() => {
+                        setBillType('PURCHASE')
+                        setItems([]) // Clear items when switching
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${billType === 'PURCHASE'
+                        ? 'bg-white shadow text-blue-600 font-semibold'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Package className="w-4 h-4" />
+                    Compra de Inventario
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setBillType('EXPENSE')
+                        setItems([]) // Clear items when switching
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${billType === 'EXPENSE'
+                        ? 'bg-white shadow text-blue-600 font-semibold'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Receipt className="w-4 h-4" />
+                    Gasto Directo
+                </button>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -353,7 +408,7 @@ export function BillForm() {
                     <table className="w-full text-xs mb-4 table-auto">
                         <thead className="bg-gray-100 text-gray-700">
                             <tr>
-                                <th className="p-2 pl-4 text-center">Producto / Descripción</th>
+                                <th className="p-2 pl-4 text-left">{billType === 'PURCHASE' ? 'Producto' : 'Cuenta Contable'} / Descripción</th>
                                 <th className="p-2 text-center">Cant.</th>
                                 <th className="p-2 text-center">Precio Unit.</th>
                                 <th className="p-2 text-center">Base Imp.</th>
@@ -374,14 +429,23 @@ export function BillForm() {
                                 <tr key={idx} className="group hover:bg-gray-50 transition-colors">
                                     <td className="p-2 pl-4">
                                         <div className="space-y-1">
-                                            <select
-                                                value={item.product_id}
-                                                onChange={e => updateItem(idx, 'product_id', e.target.value)}
-                                                className="w-full p-1 border rounded text-xs mb-1"
-                                            >
-                                                <option value="">(Libre)</option>
-                                                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                            </select>
+                                            {billType === 'PURCHASE' ? (
+                                                <select
+                                                    value={item.product_id}
+                                                    onChange={e => updateItem(idx, 'product_id', e.target.value)}
+                                                    className="w-full p-1 border rounded text-xs mb-1"
+                                                >
+                                                    <option value="">(Libre)</option>
+                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                </select>
+                                            ) : (
+                                                <AccountSelector
+                                                    value={item.gl_account_id}
+                                                    onChange={val => updateItem(idx, 'gl_account_id', val)}
+                                                    placeholder="Seleccionar cuenta..."
+                                                    className="mb-1"
+                                                />
+                                            )}
                                             <input
                                                 value={item.description}
                                                 onChange={e => updateItem(idx, 'description', e.target.value)}

@@ -58,7 +58,8 @@ export async function POST(request: Request) {
         let subtotal = 0
         let totalTax = 0
 
-        const processedItems = items.map((item: any) => {
+        const processedItems: any[] = []
+        for (const item of items) {
             const qty = parseFloat(item.quantity)
             const price = parseFloat(item.unit_price)
             const lineTotal = qty * price
@@ -68,15 +69,29 @@ export async function POST(request: Request) {
             subtotal += lineTotal
             totalTax += taxAmount
 
-            return {
+            let glAccountId = item.gl_account_id
+
+            // If no GL account provided but product is linked, fetch product's GL account
+            if (!glAccountId && item.product_id) {
+                const product = await prisma.product.findUnique({
+                    where: { id: item.product_id },
+                    select: { asset_account_id: true, cogs_account_id: true, type: true }
+                })
+                if (product) {
+                    glAccountId = product.type === 'GOODS' ? product.asset_account_id : product.cogs_account_id
+                }
+            }
+
+            processedItems.push({
                 ...item,
                 quantity: qty,
                 unit_price: price,
                 tax_rate: taxRate,
                 tax_amount: taxAmount,
-                total: lineTotal + taxAmount
-            }
-        })
+                total: lineTotal + taxAmount,
+                gl_account_id: glAccountId
+            })
+        }
 
         const totalInvoice = subtotal + totalTax
 
