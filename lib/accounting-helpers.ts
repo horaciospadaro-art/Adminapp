@@ -241,6 +241,10 @@ export async function createWithholdingJournalEntry(
 
     if (!taxDef) throw new Error(`No Tax Definition found for ${w.type}`)
 
+    if (!taxDef.gl_account_id) {
+        throw new Error(`Tax ${taxDef.name} is missing GL Account configuration`)
+    }
+
     if (!w.third_party.receivable_account_id) throw new Error('Client missing Receivable Account')
 
     const journal = await tx.journalEntry.create({
@@ -252,7 +256,7 @@ export async function createWithholdingJournalEntry(
             lines: {
                 create: [
                     {
-                        account_id: taxDef.gl_account_id, // Asset Account
+                        account_id: taxDef.gl_account_id,
                         debit: w.amount,
                         credit: 0,
                         description: `Crédito Fiscal Retenido (${w.type})`
@@ -270,6 +274,171 @@ export async function createWithholdingJournalEntry(
 
     await tx.withholding.update({
         where: { id: withholdingId },
+        data: { journal_entry_id: journal.id }
+    })
+
+    return journal
+}
+
+/**
+ * Creates Journal Entry for Bill (Purchase Invoice from Supplier)
+ * Handles both service purchases (expense accounts) and inventory purchases
+ */
+export async function createBillJournalEntry(
+    tx: Prisma.TransactionClient,
+    billId: string,
+    companyId: string
+) {
+    const bill = await tx.document.findUnique({
+        where: { id: billId },
+        include: {
+            third_party: true,
+            items: true,
+            withholdings: true
+        }
+    })
+
+    if (!bill) throw new Error(`Bill not found: ${billId}`)
+    if (bill.total.toNumber() === 0) return // Skip zero amount bills
+
+    // Verify supplier has payable account
+    if (!bill.third_party.payable_account_id) {
+        throw new Error(`Supplier ${bill.third_party.name} missing Payable Account (Cuentas por Pagar)`)
+    }
+
+    let lines: any[] = []
+    const description = `${bill.type} #${bill.number} - ${bill.third_party.name}`
+
+    // 1. DEBIT: Inventory or Expense Accounts (one line per item)
+    for (const item of bill.items) {
+        if (!item.gl_account_id) {
+            throw new Error(`Item "${item.description}" missing GL Account. Please assign expense or inventory account.`)
+        }
+
+        // Net amount (excluding tax)
+        const netAmount = item.total.sub(item.tax_amount)
+
+        lines.push({
+            account_id: item.gl_account_id,
+            debit: netAmount,
+            credit: 0,
+            description: `Compra: ${item.description}`
+        })
+    }
+
+    // 2. DEBIT: VAT Recoverable (IVA Crédito Fiscal)
+    if (bill.tax_amount.toNumber() > 0) {
+        // Group taxes by tax_id
+        const taxGroups = new Map<string, Prisma.Decimal>()
+
+        for (const item of bill.items) {
+            if (item.tax_id && item.tax_amount.toNumber() > 0) {
+                const current = taxGroups.get(item.tax_id) || new Prisma.Decimal(0)
+                taxGroups.set(item.tax_id, current.add(item.tax_amount))
+            }
+        }
+
+        for (const [taxId, amount] of taxGroups.entries()) {
+            const tax = await tx.tax.findUnique({ where: { id: taxId } })
+            if (!tax) throw new Error(`Tax not found: ${taxId}`)
+            if (!tax.gl_account_id) throw new Error(`Tax ${tax.name} missing GL Account`)
+
+            lines.push({
+                account_id: tax.gl_account_id,
+                debit: amount,
+                credit: 0,
+                description: `IVA Crédito Fiscal`
+            })
+        }
+    }
+
+    // 3. CREDIT: Accounts Payable (full amount before withholdings)
+    lines.push({
+        account_id: bill.third_party.payable_account_id,
+        debit: 0,
+        credit: bill.total,
+        description: `Cuentas por Pagar - ${bill.third_party.name}`
+    })
+
+    // 4. CREDIT: Withholding Payables (if any)
+    // Note: Withholdings reduce the amount we actually pay, but from accounting perspective,
+    // they are liabilities we owe to tax authority, not to supplier
+    // The full amount is credited to CxP, then withholdings are credited as separate liabilities
+
+    if (bill.withholdings.length > 0) {
+        for (const withholding of bill.withholdings) {
+            // Find the tax account for this withholding type
+            const taxDef = await tx.tax.findFirst({
+                where: {
+                    company_id: companyId,
+                    type: withholding.type
+                }
+            })
+
+            if (!taxDef) {
+                throw new Error(`No Tax Definition found for withholding type ${withholding.type}`)
+            }
+            if (!taxDef.gl_account_id) {
+                throw new Error(`Tax ${taxDef.name} missing GL Account for withholding`)
+            }
+
+            lines.push({
+                account_id: taxDef.gl_account_id,
+                debit: 0,
+                credit: withholding.amount,
+                description: `Retención ${withholding.certificate_number}`
+            })
+        }
+
+        // Adjust: Since we credited both CxP (full) and Withholdings, 
+        // we need to DEBIT Withholdings to reduce CxP net effect
+        // Actually, the correct accounting is:
+        // DR Expense/Inventory + DR IVA CF = CR CxP (net) + CR Withholding Payable
+
+        // Let me reconsider: The bill.total already includes everything.
+        // The withholdings are amounts we withhold from the supplier but owe to tax authority.
+        // So we should:
+        // DR Expense + DR IVA = CR CxP (what we owe supplier after withholding) + CR Ret Payable
+
+        // But bill.total is the GROSS amount (before withholdings).
+        // bill.balance is the NET amount (after withholdings) that we actually owe supplier.
+
+        // So correct entry should be:
+        // DR Expense/Inventory (net of tax)
+        // DR IVA Crédito Fiscal  
+        // CR Cuentas por Pagar (net amount = bill.balance)
+        // CR Retención por Pagar (withholding amounts)
+
+        // Let me fix this:
+        // Remove the full CxP credit line and replace with net
+        const totalWithholdings = bill.withholdings.reduce(
+            (sum, w) => sum.add(w.amount),
+            new Prisma.Decimal(0)
+        )
+
+        // Find and update the CxP line
+        const cxpLineIndex = lines.findIndex(l => l.account_id === bill.third_party.payable_account_id)
+        if (cxpLineIndex >= 0) {
+            lines[cxpLineIndex].credit = bill.total.sub(totalWithholdings)
+        }
+    }
+
+    // Create Journal Entry
+    const journal = await tx.journalEntry.create({
+        data: {
+            company_id: companyId,
+            date: bill.accounting_date || bill.date,
+            description: description,
+            status: JournalStatus.POSTED,
+            lines: {
+                create: lines
+            }
+        }
+    })
+
+    // Link to Bill
+    await tx.document.update({
+        where: { id: billId },
         data: { journal_entry_id: journal.id }
     })
 

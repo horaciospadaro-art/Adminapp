@@ -1,0 +1,45 @@
+---
+description: Standard for Date Formatting (DD/MM/YYYY)
+globs: ["**/*.tsx", "**/*.ts", "lib/date-utils.ts"]
+---
+# Date Formatting Standard
+
+This rule enforces the standard date format **DD/MM/YYYY** (dd/MM/yyyy) across the entire application.
+
+## Core Principle
+
+All dates displayed to the user must follow the **DD/MM/YYYY** format.
+
+## Utilities
+
+Use the centralized utility in `lib/date-utils.ts` for all formatting needs.
+
+### Available Functions
+
+- `formatDate(date)`: Formats a date as `dd/MM/yyyy`. Use this for tables, reports, and text.
+- `toInputDate(date)`: Formats a date as `yyyy-MM-dd`. Use ONLY for `<input type="date" />` values.
+- `parseInputDate(dateString)`: Parses a `yyyy-MM-dd` string into a Date object.
+
+## Prohibited Patterns
+
+- **Do NOT** use `toLocaleDateString()` directly in components.
+- **Do NOT** use `date.toISOString().split('T')[0]` for display purposes (only for inputs/API).
+- **Do NOT** manually slice strings to format dates.
+
+## Examples
+
+### Correct
+
+```tsx
+import { formatDate } from '@/lib/date-utils'
+
+// Display in a table
+<td>{formatDate(transaction.date)}</td>
+```
+
+### Incorrect
+
+```tsx
+// ❌ Avoid this
+<td>{new Date(transaction.date).toLocaleDateString()}</td>
+```

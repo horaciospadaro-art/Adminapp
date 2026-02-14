@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus } from '@prisma/client'
+import { createBillJournalEntry } from '@/lib/accounting-helpers'
 
 // Helper function to generate retention numbers
 async function generateRetentionNumber(companyId: string, type: 'IVA' | 'ISLR') {
@@ -92,8 +93,7 @@ export async function POST(request: Request) {
             // Or specific base depending on concept. Assuming Subtotal for now.
             const baseForISLR = subtotal
             const calc = (baseForISLR * (parseFloat(retention_islr_rate) / 100)) - (parseFloat(retention_islr_subtract) || 0)
-            retention_islr_amount = Math.max(0, calc)
-            retentionISLRAmount = retention_islr_amount
+            retentionISLRAmount = Math.max(0, calc)
         }
 
         const totalPayable = totalInvoice - retentionIVAAmount - retentionISLRAmount
@@ -248,12 +248,8 @@ export async function POST(request: Request) {
                 }
             }
 
-            // D. Accounting Entries (Future: Implement JournalEntry creation here)
-            // TODO: Create Journal Entry linking:
-            // Debit: Inventory/Expense Accounts (from items)
-            // Debit: Tax Account (IVA Receivable)
-            // Credit: Accounts Payable (Supplier)
-            // Credit: Withholding Payable (if any)
+            // D. Accounting Entries
+            await createBillJournalEntry(tx, doc.id, company_id)
 
             return { document: doc, retentions: generatedRetentions }
         })

@@ -2,8 +2,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
 import { Printer, Download, Search } from 'lucide-react'
+import { formatDate } from '@/lib/date-utils'
 
 interface Movement {
     id: string
@@ -167,7 +167,7 @@ export function CustomerStatement({ customerId }: { customerId: string }) {
                             displayedTransactions.map((move) => (
                                 <tr key={move.id} className="hover:bg-gray-50">
                                     <td className="px-4 py-3 whitespace-nowrap">
-                                        {format(new Date(move.date), 'dd/MM/yyyy')}
+                                        {formatDate(move.date)}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium 

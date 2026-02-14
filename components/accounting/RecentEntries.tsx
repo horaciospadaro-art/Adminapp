@@ -53,7 +53,12 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
                             return (
                                 <tr key={entry.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Intl.DateTimeFormat('es-VE', { dateStyle: 'medium' }).format(new Date(entry.date))}
+                                        import {formatDate} from '@/lib/date-utils'
+                                        // ...
+
+                                        // ...
+
+                                        {formatDate(entry.date)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {/* @ts-ignore */}

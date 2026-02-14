@@ -1,0 +1,45 @@
+---
+description: Standard for Database Schema Management using Prisma
+globs: ["prisma/schema.prisma", "**/migrations/**"]
+---
+# Database Schema Management Rule
+
+This rule establishes the workflow for managing the database schema in the AdminApp project.
+
+## Core Principle
+
+The `prisma/schema.prisma` file is the **Single Source of Truth** for the database schema.
+
+## Prohibited Actions
+
+- **NEVER** execute `CREATE`, `ALTER`, or `DROP` statements manually in the Supabase SQL Editor.
+- **NEVER** use the Supabase Table Editor UI to modify columns or data types.
+
+## Required Workflow
+
+To modify the database schema:
+
+1. **Modify Schema File**: Edit `prisma/schema.prisma` to reflect the desired changes.
+2. **Generate Migration**: Run the following command locally:
+
+    ```bash
+    npx prisma migrate dev --name <description_of_change>
+    ```
+
+    This command will:
+    - Create a new SQL migration file in `prisma/migrations`.
+    - Apply the changes to the connected Supabase database.
+    - Regenerate the Prisma Client.
+3. **Commit**: Commit the changes including the new migration directory.
+
+## Handling Drift
+
+If `prisma migrate dev` detects drift, stop and assess. If the drift was caused by manual changes in development, it is generally safe to reset.
+
+## Pulling Changes
+
+When receiving new migrations from the repository:
+
+```bash
+npx prisma migrate dev
+```

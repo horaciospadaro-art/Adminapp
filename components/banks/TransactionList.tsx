@@ -64,8 +64,13 @@ export function TransactionList({ transactions }: { transactions: BankTransactio
 
                         return (
                             <tr key={tx.id} className="hover:bg-gray-50 transaction-row">
+                                import {formatDate} from '@/lib/date-utils'
+                                // ...
+
+                                // ...
+
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {new Date(tx.date).toLocaleDateString('es-VE')}
+                                    {formatDate(tx.date)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {subtypeLabels[subtype] && (
@@ -93,10 +98,10 @@ export function TransactionList({ transactions }: { transactions: BankTransactio
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${tx.status === 'RECONCILED'
-                                            ? 'bg-green-100 text-green-800'
-                                            : tx.status === 'PENDING'
-                                                ? 'bg-yellow-100 text-yellow-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                        ? 'bg-green-100 text-green-800'
+                                        : tx.status === 'PENDING'
+                                            ? 'bg-yellow-100 text-yellow-800'
+                                            : 'bg-gray-100 text-gray-800'
                                         }`}>
                                         {tx.status === 'RECONCILED' ? 'Conciliado' : tx.status === 'PENDING' ? 'Pendiente' : tx.status}
                                     </span>

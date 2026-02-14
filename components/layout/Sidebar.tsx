@@ -15,7 +15,9 @@ import {
     Package,
     ChevronDown,
     ChevronRight,
-    FileText
+    FileText,
+    ReceiptText,
+    Wallet
 } from 'lucide-react'
 
 export function Sidebar() {
@@ -66,6 +68,29 @@ export function Sidebar() {
                 },
                 { label: 'Clientes', href: '/dashboard/operations/clients', icon: Users },
                 { label: 'Proveedores', href: '/dashboard/operations/suppliers', icon: Truck },
+            ]
+        },
+        {
+            title: 'INGRESOS (VENTAS)',
+            items: [
+                {
+                    label: 'Ventas',
+                    href: '#',
+                    icon: ReceiptText,
+                    subItems: [
+                        { label: 'Facturas', href: '/dashboard/revenue/invoices' },
+                        { label: 'Nueva Factura', href: '/dashboard/revenue/invoices/new' }
+                    ]
+                },
+                {
+                    label: 'Cobranzas',
+                    href: '#',
+                    icon: Wallet,
+                    subItems: [
+                        { label: 'Recibos de Cobro', href: '/dashboard/revenue/collections' },
+                        { label: 'Nuevo Cobro', href: '/dashboard/revenue/collections/new' }
+                    ]
+                }
             ]
         },
         {
