@@ -30,7 +30,6 @@ export async function GET(
                 date: true,
                 type: true,
                 number: true,
-                description: true, // If exists or use type
                 total: true,
                 status: true,
                 created_at: true
