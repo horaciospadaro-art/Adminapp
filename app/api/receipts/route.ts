@@ -81,27 +81,34 @@ export async function POST(request: Request) {
                 }
             }
 
-            // 3. Generate Accounting Entry
-            try {
-                await createPaymentJournalEntry(
-                    tx,
-                    receipt.id,
-                    bank_account_id,
-                    cash_account_id,
-                    company_id
-                )
-            } catch (error) {
-                console.error('Accounting Error (Receipt):', error)
-                // throw error // Uncomment to enforce strict accounting
-            }
+            // 3. Accounting Entry (required - failure rolls back transaction)
+            await createPaymentJournalEntry(
+                tx,
+                receipt.id,
+                bank_account_id,
+                cash_account_id,
+                company_id
+            )
 
             return receipt
         })
 
         return NextResponse.json(result)
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating receipt:', error)
-        return NextResponse.json({ error: 'Error creating payment receipt' }, { status: 500 })
+        const message = error?.message ?? 'Error creating payment receipt'
+        if (
+            message.includes('Receivable Account') ||
+            message.includes('Bank') ||
+            message.includes('Cash') ||
+            message.includes('Account')
+        ) {
+            return NextResponse.json(
+                { error: 'Error contable: ' + message },
+                { status: 422 }
+            )
+        }
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }

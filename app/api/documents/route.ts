@@ -206,21 +206,30 @@ export async function POST(request: Request) {
                 }
             }
 
-            // 4. Accounting Entry (Auto-generate)
-            try {
-                await createDocumentJournalEntry(tx, doc.id, targetCompanyId)
-            } catch (accountingError) {
-                console.error('Accounting Error:', accountingError)
-                // Optional: throw to rollback transaction if accounting is strict
-                // throw accountingError 
-            }
+            // 4. Accounting Entry (required for integrity - failure rolls back transaction)
+            await createDocumentJournalEntry(tx, doc.id, targetCompanyId)
 
             return doc
         })
 
         return NextResponse.json(result)
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating document:', error)
-        return NextResponse.json({ error: 'Error creating document' }, { status: 500 })
+        const message = error?.message ?? 'Error creating document'
+        // Return user-friendly accounting errors with 422 so client can show them
+        if (
+            message.includes('Receivable Account') ||
+            message.includes('Payable Account') ||
+            message.includes('missing GL Account') ||
+            message.includes('GL Account') ||
+            message.includes('Tax') ||
+            message.includes('not found')
+        ) {
+            return NextResponse.json(
+                { error: 'Error contable: ' + message },
+                { status: 422 }
+            )
+        }
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }

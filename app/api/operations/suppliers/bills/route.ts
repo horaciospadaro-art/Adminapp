@@ -73,7 +73,6 @@ export async function GET(request: Request) {
     } catch (error: any) {
         console.error('Error fetching bills:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
-        return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }
 
@@ -337,6 +336,19 @@ export async function POST(request: Request) {
         return NextResponse.json(result)
     } catch (error: any) {
         console.error('Error creating bill:', error)
-        return NextResponse.json({ error: error.message || 'Error creating bill' }, { status: 500 })
+        const message = error?.message ?? 'Error creating bill'
+        if (
+            message.includes('Payable Account') ||
+            message.includes('missing GL Account') ||
+            message.includes('GL Account') ||
+            message.includes('Tax') ||
+            message.includes('not found')
+        ) {
+            return NextResponse.json(
+                { error: 'Error contable: ' + message },
+                { status: 422 }
+            )
+        }
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }

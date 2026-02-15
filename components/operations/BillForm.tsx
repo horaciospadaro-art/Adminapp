@@ -21,6 +21,8 @@ interface Product {
     sales_price: string
     type: string
     tax_id: string | null
+    asset_account_id?: string | null
+    cogs_account_id?: string | null
 }
 
 interface ThirdParty {
@@ -71,6 +73,7 @@ export function BillForm({ companyId }: BillFormProps) {
     const [pageLoading, setPageLoading] = useState(true)
 
     // Resources
+    const [resolvedCompanyId, setResolvedCompanyId] = useState<string>(companyId || '')
     const [suppliers, setSuppliers] = useState<ThirdParty[]>([])
     const [products, setProducts] = useState<Product[]>([])
     const [taxes, setTaxes] = useState<Tax[]>([])
@@ -146,6 +149,20 @@ export function BillForm({ companyId }: BillFormProps) {
     const [globalTaxId, setGlobalTaxId] = useState('')
     const [vatRetentionRate, setVatRetentionRate] = useState(0)
     const [islrConceptId, setIslrConceptId] = useState('')
+
+    // Resolve companyId when not provided
+    useEffect(() => {
+        if (companyId) {
+            setResolvedCompanyId(companyId)
+            return
+        }
+        fetch('/api/companies')
+            .then(res => res.ok ? res.json() : [])
+            .then((companies: { id: string }[]) => {
+                if (Array.isArray(companies) && companies.length > 0) setResolvedCompanyId(companies[0].id)
+            })
+            .catch(() => {})
+    }, [companyId])
 
     // Initial Load
     useEffect(() => {
@@ -275,6 +292,9 @@ export function BillForm({ companyId }: BillFormProps) {
             if (prod) {
                 item.description = prod.name
                 item.unit_price = parseFloat(prod.sales_price)
+                // Prefill GL account for purchase: inventory asset (goods) or COGS/expense (service)
+                const accountId = prod.type === 'GOODS' ? (prod.asset_account_id || '') : (prod.cogs_account_id || '')
+                if (accountId) item.gl_account_id = accountId
             }
         }
 
@@ -354,27 +374,31 @@ export function BillForm({ companyId }: BillFormProps) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+        if (!resolvedCompanyId) {
+            alert('No se encontró una empresa. Configure una empresa para continuar.')
+            return
+        }
         if (!thirdPartyId || !number || items.length === 0) {
-            alert('Por favor complete los campos obligatorios')
+            alert('Por favor complete los campos obligatorios.')
             return
         }
 
-        // Validation for items based on type
         for (const item of items) {
             if (billType === 'PURCHASE' && !item.product_id && !item.description) {
-                alert('Cada línea de compra debe tener un producto o descripción')
+                alert('Cada línea de compra debe tener un producto o descripción.')
                 return
             }
-            if (billType === 'EXPENSE' && !item.gl_account_id) {
-                alert('Debe asignar una cuenta contable a cada línea de gasto')
-                return
-            }
+        }
+        const missingAccount = items.find(i => !i.gl_account_id?.trim())
+        if (missingAccount) {
+            alert('Cada línea debe tener una cuenta contable (gasto o inventario). Asigne la cuenta en cada ítem o seleccione un producto con cuenta configurada.')
+            return
         }
 
         setLoading(true)
         try {
             const payload = {
-                company_id: companyId,
+                company_id: resolvedCompanyId,
                 third_party_id: thirdPartyId,
                 type: documentType, // Passed payload type
                 bill_type: billType, // PURCHASE or EXPENSE
@@ -633,21 +657,31 @@ export function BillForm({ companyId }: BillFormProps) {
                                     <td className="p-2 pl-4 w-1/2">
                                         <div className="space-y-1">
                                             {billType === 'PURCHASE' ? (
-                                                <select
-                                                    value={item.product_id}
-                                                    onChange={e => updateItem(idx, 'product_id', e.target.value)}
-                                                    className="w-full p-1 border rounded text-xs mb-1"
-                                                    title="Seleccionar Producto"
-                                                >
-                                                    <option value="">(Libre)</option>
-                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                                </select>
+                                                <>
+                                                    <select
+                                                        value={item.product_id}
+                                                        onChange={e => updateItem(idx, 'product_id', e.target.value)}
+                                                        className="w-full p-1 border rounded text-xs mb-1"
+                                                        title="Seleccionar Producto"
+                                                    >
+                                                        <option value="">(Libre)</option>
+                                                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                    </select>
+                                                    <AccountSelector
+                                                        value={item.gl_account_id}
+                                                        onChange={val => updateItem(idx, 'gl_account_id', val)}
+                                                        placeholder="Cuenta (inventario/gasto)..."
+                                                        className="mb-1"
+                                                        required
+                                                    />
+                                                </>
                                             ) : (
                                                 <AccountSelector
                                                     value={item.gl_account_id}
                                                     onChange={val => updateItem(idx, 'gl_account_id', val)}
                                                     placeholder="Seleccionar cuenta..."
                                                     className="mb-1"
+                                                    required
                                                 />
                                             )}
                                             <input

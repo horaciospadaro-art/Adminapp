@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+**ABC Admin App** – Software contable y administrativo multi-empresas. Plan de negocio, módulos y reglas de integridad contable: [docs/PLAN-NEGOCIO.md](docs/PLAN-NEGOCIO.md).
+
 ## Getting Started
 
 First, run the development server:

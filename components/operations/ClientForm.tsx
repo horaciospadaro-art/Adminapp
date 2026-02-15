@@ -37,6 +37,10 @@ export function ClientForm({ companyId, initialData, onSuccess, onCancel }: Clie
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (!accountId?.trim()) {
+            setError('La cuenta contable (Por Cobrar) es obligatoria para registrar facturas y cobros.')
+            return
+        }
         setLoading(true)
         setError(null)
 
@@ -145,6 +149,7 @@ export function ClientForm({ companyId, initialData, onSuccess, onCancel }: Clie
                         onChange={setAccountId}
                         typeFilter="ASSET"
                         placeholder="Buscar cuenta por código o nombre..."
+                        required
                     />
                     <p className="text-xs text-blue-600 mt-1">
                         Seleccione la cuenta de Activo donde se registrarán las deudas de este cliente.

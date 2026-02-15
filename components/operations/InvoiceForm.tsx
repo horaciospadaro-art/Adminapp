@@ -5,6 +5,7 @@ import { Plus, Trash2, Save, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DateInput } from '@/components/common/DateInput'
+import { AccountSelector } from '@/components/accounting/AccountSelector'
 
 interface Tax {
     id: string
@@ -20,6 +21,7 @@ interface Product {
     sales_price: string
     type: string
     tax_id: string | null
+    income_account_id?: string | null
 }
 
 interface ThirdParty {
@@ -34,6 +36,7 @@ interface InvoiceItem {
     quantity: number
     unit_price: number
     tax_id: string
+    gl_account_id: string
     // derived
     total: number
 }
@@ -45,6 +48,7 @@ export function InvoiceForm() {
     const [pageLoading, setPageLoading] = useState(true)
 
     // Resources
+    const [companyId, setCompanyId] = useState<string>('')
     const [clients, setClients] = useState<ThirdParty[]>([])
     const [products, setProducts] = useState<Product[]>([])
     const [taxes, setTaxes] = useState<Tax[]>([])
@@ -63,12 +67,17 @@ export function InvoiceForm() {
     useEffect(() => {
         async function loadResources() {
             try {
-                const [cliRes, prodRes, taxRes] = await Promise.all([
+                const [companiesRes, cliRes, prodRes, taxRes] = await Promise.all([
+                    fetch('/api/companies'),
                     fetch('/api/third-parties?type=CLIENTE'),
                     fetch('/api/inventory/products'),
                     fetch('/api/configuration/taxes')
                 ])
 
+                if (companiesRes.ok) {
+                    const companies = await companiesRes.json()
+                    if (Array.isArray(companies) && companies.length > 0) setCompanyId(companies[0].id)
+                }
                 if (cliRes.ok) setClients(await cliRes.json())
                 if (prodRes.ok) setProducts(await prodRes.json())
                 if (taxRes.ok) setTaxes(await taxRes.json())
@@ -96,11 +105,12 @@ export function InvoiceForm() {
             quantity: 1,
             unit_price: 0,
             tax_id: taxes.find(t => t.type === 'IVA')?.id || '',
+            gl_account_id: '',
             total: 0
         }])
     }
 
-    const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
+    const updateItem = (index: number, field: keyof InvoiceItem, value: unknown) => {
         const newItems = [...items]
         const item = { ...newItems[index], [field]: value }
 
@@ -110,6 +120,7 @@ export function InvoiceForm() {
                 item.description = prod.name
                 item.unit_price = parseFloat(prod.sales_price)
                 if (prod.tax_id) item.tax_id = prod.tax_id
+                if (prod.income_account_id) item.gl_account_id = prod.income_account_id
             }
         }
 
@@ -148,14 +159,19 @@ export function InvoiceForm() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         if (!thirdPartyId || !number || items.length === 0) {
-            alert('Por favor complete los campos obligatorios')
+            alert('Por favor complete los campos obligatorios.')
+            return
+        }
+        const missingAccount = items.find(i => !i.gl_account_id?.trim())
+        if (missingAccount) {
+            alert('Cada ítem debe tener una cuenta contable de ingreso. Asigne la cuenta en cada línea o seleccione un producto con cuenta configurada.')
             return
         }
 
         setLoading(true)
         try {
             const payload = {
-                company_id: '',
+                company_id: companyId || '',
                 third_party_id: thirdPartyId,
                 type: type, // Uses state
                 date,
@@ -166,6 +182,7 @@ export function InvoiceForm() {
                     const tax = taxes.find(t => t.id === item.tax_id)
                     return {
                         ...item,
+                        gl_account_id: item.gl_account_id,
                         tax_rate: tax ? parseFloat(tax.rate) : 0
                     }
                 })
@@ -282,6 +299,7 @@ export function InvoiceForm() {
                     <thead className="bg-gray-50 text-gray-600">
                         <tr>
                             <th className="p-2 pl-4">Producto / Servicio</th>
+                            <th className="p-2 w-40">Cuenta ingreso <span className="text-red-500">*</span></th>
                             <th className="p-2 w-24 text-right">Cant.</th>
                             <th className="p-2 w-32 text-right">Precio Unit.</th>
                             <th className="p-2 w-32">Impuesto</th>
@@ -311,6 +329,20 @@ export function InvoiceForm() {
                                             className="w-full p-1 border-b border-gray-300 focus:border-blue-500 focus:outline-none"
                                         />
                                     </div>
+                                </td>
+                                <td className="p-2">
+                                    {companyId ? (
+                                        <AccountSelector
+                                            companyId={companyId}
+                                            value={item.gl_account_id}
+                                            onChange={val => updateItem(idx, 'gl_account_id', val)}
+                                            typeFilter="INCOME"
+                                            placeholder="Cuenta..."
+                                            required
+                                        />
+                                    ) : (
+                                        <span className="text-gray-400 text-xs">Cargando...</span>
+                                    )}
                                 </td>
                                 <td className="p-2">
                                     <input

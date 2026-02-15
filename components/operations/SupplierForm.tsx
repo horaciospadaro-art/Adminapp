@@ -37,6 +37,10 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (!accountId?.trim()) {
+            setError('La cuenta contable (Por Pagar) es obligatoria para registrar facturas de compra y pagos.')
+            return
+        }
         setLoading(true)
         setError(null)
 
@@ -145,6 +149,7 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
                         onChange={setAccountId}
                         typeFilter="LIABILITY"
                         placeholder="Buscar cuenta por código o nombre..."
+                        required
                     />
                     <p className="text-xs text-orange-600 mt-1">
                         Seleccione la cuenta de Pasivo donde se registrarán las deudas con este proveedor.

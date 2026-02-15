@@ -60,20 +60,27 @@ export async function POST(request: Request) {
                 })
             }
 
-            // 3. Generate Accounting Entry
-            try {
-                await createWithholdingJournalEntry(tx, withholding.id, company_id)
-            } catch (error) {
-                console.error('Accounting Error (Withholding):', error)
-            }
+            // 3. Accounting Entry (required - failure rolls back transaction)
+            await createWithholdingJournalEntry(tx, withholding.id, company_id)
 
             return withholding
         })
 
         return NextResponse.json(result)
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating withholding:', error)
-        return NextResponse.json({ error: 'Error creating withholding' }, { status: 500 })
+        const message = error?.message ?? 'Error creating withholding'
+        if (
+            message.includes('Account') ||
+            message.includes('Tax') ||
+            message.includes('not found')
+        ) {
+            return NextResponse.json(
+                { error: 'Error contable: ' + message },
+                { status: 422 }
+            )
+        }
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }
