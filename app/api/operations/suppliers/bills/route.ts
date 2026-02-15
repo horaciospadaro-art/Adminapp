@@ -35,39 +35,48 @@ export async function POST(request: Request) {
             company_id,
             third_party_id,
             date,
+            accounting_date,
             due_date,
             number,
+            control_number,
             reference,
-            items, // Array of { product_id, description, quantity, unit_price, tax_rate, gl_account_id }
+            items, // Array of { product_id, description, quantity, unit_price, tax_rate, gl_account_id ... }
 
-            // Retention params
-            apply_retention_iva = false,
-            retention_iva_percentage = 0, // 75, 100
+            // Venezuelan specifics
+            is_igtf = false,
+            igtf_amount = 0,
 
-            apply_retention_islr = false,
-            retention_islr_concept_id,
-            retention_islr_rate = 0,
-            retention_islr_subtract = 0 // Sustraendo logic (if any)
+            // Note: Global rates for labels
+            vat_retention_rate = 0,
+            islr_concept_id = null
         } = body
 
         if (!company_id || !third_party_id || !date || !items || items.length === 0) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+            return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
         }
+
+        const islrConcepts = await prisma.iSLRConcept.findMany() // Fetch for naming 
 
         // 1. Calculations
         let subtotal = 0
         let totalTax = 0
+        let totalRetIVA = 0
+        let totalRetISLR = 0
 
         const processedItems: any[] = []
         for (const item of items) {
             const qty = parseFloat(item.quantity)
             const price = parseFloat(item.unit_price)
-            const lineTotal = qty * price
+            const lineBase = qty * price
             const taxRate = parseFloat(item.tax_rate) || 0
-            const taxAmount = lineTotal * (taxRate / 100)
+            const taxAmount = parseFloat(item.tax_amount) || 0
+            const retIVAAmount = parseFloat(item.vat_retention_amount) || 0
+            const retISLRAmount = parseFloat(item.islr_amount) || 0
 
-            subtotal += lineTotal
+            subtotal += lineBase
             totalTax += taxAmount
+            totalRetIVA += retIVAAmount
+            totalRetISLR += retISLRAmount
 
             let glAccountId = item.gl_account_id
 
@@ -88,30 +97,17 @@ export async function POST(request: Request) {
                 unit_price: price,
                 tax_rate: taxRate,
                 tax_amount: taxAmount,
-                total: lineTotal + taxAmount,
+                vat_retention_rate: parseFloat(item.vat_retention_rate) || 0,
+                vat_retention_amount: retIVAAmount,
+                islr_rate: parseFloat(item.islr_rate) || 0,
+                islr_amount: retISLRAmount,
+                total: lineBase + taxAmount,
                 gl_account_id: glAccountId
             })
         }
 
-        const totalInvoice = subtotal + totalTax
-
-        // Calculate Retentions
-        let retentionIVAAmount = 0
-        let retentionISLRAmount = 0
-
-        if (apply_retention_iva && totalTax > 0) {
-            retentionIVAAmount = totalTax * (parseFloat(retention_iva_percentage) / 100)
-        }
-
-        if (apply_retention_islr) {
-            // ISLR is usually calculated on base amount (subtotal)
-            // Or specific base depending on concept. Assuming Subtotal for now.
-            const baseForISLR = subtotal
-            const calc = (baseForISLR * (parseFloat(retention_islr_rate) / 100)) - (parseFloat(retention_islr_subtract) || 0)
-            retentionISLRAmount = Math.max(0, calc)
-        }
-
-        const totalPayable = totalInvoice - retentionIVAAmount - retentionISLRAmount
+        const totalInvoice = subtotal + totalTax + (is_igtf ? parseFloat(igtf_amount as any) : 0)
+        const totalPayable = totalInvoice - totalRetIVA - totalRetISLR
 
         // 2. Transaction
         const result = await prisma.$transaction(async (tx) => {
@@ -122,6 +118,7 @@ export async function POST(request: Request) {
                     third_party_id,
                     type: DocumentType.BILL,
                     date: new Date(date),
+                    accounting_date: accounting_date ? new Date(accounting_date) : new Date(date),
                     due_date: due_date ? new Date(due_date) : null,
                     number,
                     reference,
@@ -130,11 +127,10 @@ export async function POST(request: Request) {
                     subtotal,
                     tax_amount: totalTax,
                     total: totalInvoice,
-                    balance: totalPayable, // Initial balance is what remains after retentions (if retentions open)
-                    // OR totalInvoice if retentions are treated as payment?
-                    // Usually, balance = totalInvoice. Retentions are created as "Payment" or specific "Withholding" records that reduce balance.
-                    // Let's create Withholding records and link them. If we link them, we should reduce balance?
-                    // Yes, effectively they are a form of payment.
+                    balance: totalPayable,
+
+                    is_igtf,
+                    igtf_amount: is_igtf ? parseFloat(igtf_amount as any) : 0,
 
                     status: PaymentStatus.PENDING,
 
@@ -146,71 +142,47 @@ export async function POST(request: Request) {
                             unit_price: item.unit_price,
                             tax_rate: item.tax_rate,
                             tax_amount: item.tax_amount,
+                            vat_retention_rate: item.vat_retention_rate,
+                            vat_retention_amount: item.vat_retention_amount,
+                            islr_rate: item.islr_rate,
+                            islr_amount: item.islr_amount,
                             total: item.total,
                             gl_account_id: item.gl_account_id || null
                         }))
+                    },
+
+                    // Handle withholdings (Global values derived from items)
+                    withholdings: {
+                        create: [
+                            ...(totalRetIVA > 0 ? [{
+                                company: { connect: { id: company_id } },
+                                third_party: { connect: { id: third_party_id } },
+                                type: TaxType.RETENCION_IVA,
+                                base_amount: subtotal,
+                                tax_amount: totalTax,
+                                rate: vat_retention_rate,
+                                amount: totalRetIVA,
+                                direction: WithholdingDirection.ISSUED,
+                                certificate_number: await generateRetentionNumber(company_id, 'IVA'),
+                                date: new Date(date)
+                            }] : []),
+                            ...(totalRetISLR > 0 ? [{
+                                company: { connect: { id: company_id } },
+                                third_party: { connect: { id: third_party_id } },
+                                type: TaxType.RETENCION_ISLR,
+                                base_amount: subtotal,
+                                tax_amount: 0,
+                                rate: processedItems.find(i => i.islr_rate > 0)?.islr_rate || 0,
+                                amount: totalRetISLR,
+                                direction: WithholdingDirection.ISSUED,
+                                islr_concept_name: islrConcepts.find(c => c.id === processedItems.find(i => i.islr_concept_id)?.islr_concept_id)?.description || null,
+                                certificate_number: await generateRetentionNumber(company_id, 'ISLR'),
+                                date: new Date(date)
+                            }] : [])
+                        ]
                     }
                 }
             })
-
-            // B. Create Retentions
-            const generatedRetentions = []
-
-            if (retentionIVAAmount > 0) {
-                const retNumber = await generateRetentionNumber(company_id, 'IVA')
-                const retIVA = await tx.withholding.create({
-                    data: {
-                        company_id,
-                        document_id: doc.id,
-                        third_party_id,
-                        direction: WithholdingDirection.ISSUED, // We issue this retention to supplier
-                        type: TaxType.RETENCION_IVA,
-                        date: new Date(date),
-                        certificate_number: retNumber,
-                        base_amount: totalTax, // Base for IVA retention is the Tax Amount? Or Base Amount? Usually Tax Amount * 75%. 
-                        // But schema says base_amount. Let's store Tax Amount as base.
-                        // Wait, base_amount usually means the amount on which rate is applied.
-                        // For IVA retention: Rate applied on IVA Amount. So base = totalTax.
-                        tax_amount: totalTax, // Information purposes
-                        rate: retention_iva_percentage,
-                        amount: retentionIVAAmount
-                    }
-                })
-                generatedRetentions.push(retIVA)
-            }
-
-            if (retentionISLRAmount > 0) {
-                const retNumber = await generateRetentionNumber(company_id, 'ISLR')
-                const retISLR = await tx.withholding.create({
-                    data: {
-                        company_id,
-                        document_id: doc.id,
-                        third_party_id,
-                        direction: WithholdingDirection.ISSUED,
-                        type: TaxType.RETENCION_ISLR,
-                        date: new Date(date),
-                        certificate_number: retNumber,
-                        base_amount: subtotal,
-                        tax_amount: 0,
-                        rate: retention_islr_rate,
-                        amount: retentionISLRAmount,
-                        islr_concept_code: retention_islr_concept_id // Storing ID or Code
-                    }
-                })
-                generatedRetentions.push(retISLR)
-            }
-
-            // Update Document Balance (Subtract Retentions as they are "paid" via certificate)
-            if (generatedRetentions.length > 0) {
-                const totalRetained = retentionIVAAmount + retentionISLRAmount
-                await tx.document.update({
-                    where: { id: doc.id },
-                    data: {
-                        balance: { decrement: totalRetained }
-                        // Status update logic could be here (if balance becomes 0)
-                    }
-                })
-            }
 
             // C. Update Inventory (Moving Average Cost)
             for (const item of processedItems) {
@@ -266,7 +238,7 @@ export async function POST(request: Request) {
             // D. Accounting Entries
             await createBillJournalEntry(tx, doc.id, company_id)
 
-            return { document: doc, retentions: generatedRetentions }
+            return { document: doc }
         })
 
         return NextResponse.json(result)
