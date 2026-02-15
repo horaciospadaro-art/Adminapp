@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 const prismaClientSingleton = () => {
     return new PrismaClient()
@@ -18,11 +20,11 @@ const getPrisma = () => {
             return null
         }
 
-        // If URL IS present, we MUST initialize. If it fails, let it crash!
-        // Do NOT try/catch here, or we hide DB connection errors and return empty data (Silent Data Loss).
-        globalThis.prismaGlobal = new PrismaClient({
-            datasourceUrl: url
-        })
+        // Initialize with Postgres Adapter for robust connection in Vercel/Prisma 7
+        // This avoids validation errors with 'datasources' property
+        const pool = new Pool({ connectionString: url })
+        const adapter = new PrismaPg(pool)
+        globalThis.prismaGlobal = new PrismaClient({ adapter })
     }
     return globalThis.prismaGlobal
 }
