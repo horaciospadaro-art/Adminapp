@@ -103,7 +103,7 @@ export default async function AnalyticalLedgerPage({
                                         </td>
                                     </tr>
                                 ) : (
-                                    reportData.movements.map((move) => (
+                                    reportData.movements.map((move: any) => (
                                         <tr key={move.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {new Intl.DateTimeFormat('es-VE').format(new Date(move.date))}

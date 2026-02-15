@@ -17,7 +17,7 @@ export default async function BanksPage() {
 
     // Calculate totals
     // Calculate totals
-    const totalBalance = banks.reduce((sum, bank) => sum + Number((bank as any).balance), 0)
+    const totalBalance = banks.reduce((sum: number, bank: any) => sum + Number((bank as any).balance), 0)
 
     // We could format this per currency, but for summary cards we'll simplify for now
     // or just show main currency metrics.
@@ -37,7 +37,7 @@ export default async function BanksPage() {
             ]} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {banks.map((bank) => {
+                {banks.map((bank: any) => {
                     const b = bank as any
                     return (
                         <BankCard key={b.id} bank={{
