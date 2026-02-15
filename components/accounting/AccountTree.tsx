@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { ChevronRight, ChevronDown, Edit, Trash2, Folder, FileText, Search } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronRight, ChevronDown, Edit, Trash2, Folder, FileText, Search, BookOpen } from 'lucide-react'
 
 // Define stricter types matching Prisma
 type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE' | 'COST' | 'OTHER'
@@ -228,6 +229,23 @@ export function AccountTree({ companyId, onEdit, onDeleteSuccess, refreshKey }: 
 
                                     {/* Actions Column */}
                                     <div className="col-span-1 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Link
+                                            href={(() => {
+                                                const now = new Date()
+                                                const start = new Date(now.getFullYear(), now.getMonth(), 1)
+                                                const params = new URLSearchParams({
+                                                    accountId: account.id,
+                                                    startDate: start.toISOString().slice(0, 10),
+                                                    endDate: now.toISOString().slice(0, 10)
+                                                })
+                                                return `/dashboard/accounting/reports/ledger?${params}`
+                                            })()}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded transition-colors"
+                                            title="Ver mayor analítico"
+                                        >
+                                            <BookOpen className="w-4 h-4" />
+                                        </Link>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onEdit?.(account); }}
                                             className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"

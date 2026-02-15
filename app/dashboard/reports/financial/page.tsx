@@ -34,7 +34,7 @@ export default async function FinancialReportsPage(props: PageProps) {
                 />
             </div>
 
-            <FinancialTable rows={data.rows} title={data.title} />
+            <FinancialTable rows={data.rows} title={data.title} startDate={startDate} endDate={endDate} />
         </div>
     )
 }

@@ -1,3 +1,6 @@
+import Link from 'next/link'
+import { BookOpen } from 'lucide-react'
+
 export interface FinancialRow {
     id: string
     code: string
@@ -11,6 +14,9 @@ export interface FinancialRow {
 interface FinancialTableProps {
     rows: FinancialRow[]
     title: string
+    /** Si se pasan, se muestra enlace "Ver mayor analítico" por cuenta */
+    startDate?: string
+    endDate?: string
 }
 
 const INDENT_CLASSES: Record<number, string> = {
@@ -22,7 +28,9 @@ const INDENT_CLASSES: Record<number, string> = {
     6: 'pl-[7.5rem]',
 }
 
-export function FinancialTable({ rows, title }: FinancialTableProps) {
+export function FinancialTable({ rows, title, startDate, endDate }: FinancialTableProps) {
+    const showLedgerLink = Boolean(startDate && endDate)
+
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
@@ -40,6 +48,11 @@ export function FinancialTable({ rows, title }: FinancialTableProps) {
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                             Saldo
                         </th>
+                        {showLedgerLink && (
+                            <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                                Acciones
+                            </th>
+                        )}
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -63,11 +76,26 @@ export function FinancialTable({ rows, title }: FinancialTableProps) {
                             <td className={`px-6 py-3 text-sm text-right font-mono ${row.value < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                                 {row.value.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
+                            {showLedgerLink && (
+                                <td className="px-4 py-3 text-right">
+                                    {row.type === 'ACCOUNT' ? (
+                                        <Link
+                                            href={`/dashboard/accounting/reports/ledger?accountId=${encodeURIComponent(row.id)}&startDate=${startDate}&endDate=${endDate}`}
+                                            className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 text-xs font-medium"
+                                            title="Ver mayor analítico"
+                                        >
+                                            <BookOpen className="w-4 h-4" /> Mayor
+                                        </Link>
+                                    ) : (
+                                        <span className="text-gray-300">—</span>
+                                    )}
+                                </td>
+                            )}
                         </tr>
                     ))}
                     {rows.length === 0 && (
                         <tr>
-                            <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500 italic">
+                            <td colSpan={showLedgerLink ? 4 : 3} className="px-6 py-8 text-center text-sm text-gray-500 italic">
                                 No hay datos para mostrar en este período.
                             </td>
                         </tr>
