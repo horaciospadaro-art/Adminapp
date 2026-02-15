@@ -366,10 +366,6 @@ model Document {
   status PaymentStatus @default(PENDING)
   notes  String?
 
-  // Venezuelan specifics
-  is_igtf     Boolean @default(false)
-  igtf_amount Decimal @default(0.00) @db.Decimal(15, 2)
-
   // Items
   items DocumentItem[]
 
