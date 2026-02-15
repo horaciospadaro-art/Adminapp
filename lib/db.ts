@@ -11,48 +11,65 @@ declare const globalThis: {
 const getPrisma = () => {
     if (!globalThis.prismaGlobal) {
         const url = process.env.DATABASE_URL || process.env.DIRECT_URL
-        if (!url) {
-            // Never initialize without a URL. Return null to handle via Proxy.
+        // Avoid "undefined" or "null" strings which sometimes appear in build envs
+        if (!url || url === 'undefined' || url === 'null') {
             return null
         }
-        globalThis.prismaGlobal = new PrismaClient()
+        try {
+            // Create a new instance with the validated URL
+            // This prevents "PrismaClient needs to be constructed with a non-empty, valid PrismaClientOptions"
+            globalThis.prismaGlobal = new PrismaClient({
+                // @ts-ignore
+                datasources: { db: { url } }
+            })
+        } catch (e) {
+            console.warn("PrismaClient construction failed during build initialization:", e)
+            return null
+        }
     }
     return globalThis.prismaGlobal
+}
+
+const silentProps: Record<string, any> = {
+    'toJSON': () => '[PrismaClient Proxy]',
+    'toString': () => '[PrismaClient Proxy]',
+    'inspect': () => '[PrismaClient Proxy]',
+    'then': undefined,
+    '$$typeof': undefined, // React internal
+    'constructor': Object.prototype.constructor
+}
+
+const createDummy = (name: string): any => {
+    return new Proxy(() => { }, {
+        get(target, prop) {
+            if (typeof prop === 'symbol') {
+                if (prop === Symbol.toStringTag) return 'PrismaClientDummy'
+                return undefined
+            }
+            if (prop in silentProps) return silentProps[prop]
+            return createDummy(`${name}.${String(prop)}`)
+        },
+        apply() {
+            console.warn(`Prisma method ${name} called during build without DATABASE_URL. Returning dummy.`);
+            return Promise.resolve([])
+        }
+    })
 }
 
 // Lazy Proxy to prevent initialization during build-time module evaluation
 const prisma = new Proxy({} as any, {
     get(target, prop, receiver) {
-        // 1. Silent handling for serialization, introspection and symbols
         if (typeof prop === 'symbol') {
             if (prop === Symbol.toStringTag) return 'PrismaClient'
             return undefined
         }
 
-        const silentProps: Record<string, any> = {
-            'toJSON': () => '[PrismaClient Proxy]',
-            'toString': () => '[PrismaClient Proxy]',
-            'inspect': () => '[PrismaClient Proxy]',
-            'then': undefined,
-            '$$typeof': undefined, // React internal
-            'constructor': Object.prototype.constructor
-        }
-
         if (prop in silentProps) return silentProps[prop]
 
-        // 2. Safely get or return null
         const instance = getPrisma()
 
         if (!instance) {
-            // During build without URL, return a dummy object for models/properties
-            // so things like `prisma.user.findMany` don't crash
-            return new Proxy(() => { }, {
-                get: () => prisma, // recursive dummy
-                apply: () => {
-                    console.warn(`Prisma method ${String(prop)} called during build without DATABASE_URL. Returning empty array/null.`)
-                    return Promise.resolve([])
-                }
-            })
+            return createDummy(String(prop))
         }
 
         const value = Reflect.get(instance, prop, receiver)
