@@ -7,6 +7,7 @@ const connectionString = `${process.env.DATABASE_URL}`
 const pool = new Pool({
     connectionString,
     max: 1, // Limit connections to avoid exhaustion in serverless
+    // @ts-ignore
     statement_cache_size: 0 // Disable prepared statements to avoid 'column not available' errors with PgBouncer
 })
 // @ts-ignore
