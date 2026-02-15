@@ -12,6 +12,7 @@ interface SupplierListProps {
 export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProps) {
     const [suppliers, setSuppliers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState('')
     const router = useRouter()
 
     useEffect(() => {
@@ -42,10 +43,28 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
         router.push(`/dashboard/operations/bills/new?supplierId=${supplierId}`)
     }
 
+    const handleViewInvoices = (supplierId: string) => {
+        router.push(`/dashboard/operations/suppliers/${supplierId}/statement`)
+    }
+
+    const filteredSuppliers = suppliers.filter(supplier =>
+        supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        supplier.rif.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
     if (loading) return <div>Cargando proveedores...</div>
 
     return (
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+                <input
+                    type="text"
+                    placeholder="Buscar proveedor por Nombre o RIF..."
+                    className="w-full md:w-1/3 p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -65,7 +84,7 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {suppliers.map((supplier) => (
+                        {filteredSuppliers.map((supplier) => (
                             <tr key={supplier.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-base font-medium text-[#393a3d]">{supplier.name}</div>
@@ -87,6 +106,14 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">
                                     <div className="flex justify-end gap-2">
                                         <button
+                                            className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
+                                            onClick={() => handleViewInvoices(supplier.id)}
+                                            title="Ver Facturas"
+                                        >
+                                            Ver Facturas
+                                        </button>
+                                        <span className="text-gray-300">|</span>
+                                        <button
                                             className="text-[#2ca01c] hover:text-[#248217] font-semibold text-sm"
                                             onClick={() => onEdit(supplier)}
                                         >
@@ -106,7 +133,7 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
                     </tbody>
                 </table>
             </div>
-            {suppliers.length === 0 && (
+            {filteredSuppliers.length === 0 && (
                 <div className="p-12 text-center text-gray-500">
                     <p className="text-lg mb-2">No hay proveedores registrados aún.</p>
                 </div>

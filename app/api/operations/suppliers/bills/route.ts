@@ -42,6 +42,19 @@ export async function GET(request: Request) {
             status: { not: 'VOID' } // Don't return voided bills
         }
 
+        const id = searchParams.get('id')
+        if (id) {
+            const doc = await prisma.document.findUnique({
+                where: { id },
+                include: {
+                    third_party: true,
+                    items: true,
+                    withholdings: true
+                }
+            })
+            return NextResponse.json(doc ? [doc] : [])
+        }
+
         if (thirdPartyId) {
             whereClause.third_party_id = thirdPartyId
         }

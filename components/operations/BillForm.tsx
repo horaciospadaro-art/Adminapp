@@ -179,10 +179,72 @@ export function BillForm({ companyId }: BillFormProps) {
 
     // Pre-select supplier from URL
     useEffect(() => {
-        const supplierId = searchParams?.get('supplierId')
-        if (supplierId) {
-            setThirdPartyId(supplierId)
+        async function loadBill() {
+            const billId = searchParams.get('id')
+            if (billId) {
+                try {
+                    setPageLoading(true)
+                    const res = await fetch(`/api/operations/suppliers/bills?id=${billId}`)
+                    if (res.ok) {
+                        const data = await res.json()
+                        const bill = data[0]
+                        if (bill) {
+                            // Populate Form
+                            setDate(new Date(bill.date).toISOString().split('T')[0])
+                            setAccountingDate(new Date(bill.accounting_date || bill.date).toISOString().split('T')[0])
+                            setDueDate(bill.due_date ? new Date(bill.due_date).toISOString().split('T')[0] : '')
+                            setNumber(bill.number)
+                            setControlNumber(bill.control_number || '')
+                            setReference(bill.reference || '')
+                            setThirdPartyId(bill.third_party_id)
+                            setDocumentType(bill.type)
+                            setBillType(bill.bill_type || 'PURCHASE') // Fallback if missing
+
+                            // Load Items
+                            if (bill.items) {
+                                // Find ISLR Concept Name from Withholdings (if any)
+                                const islrRetention = bill.withholdings?.find((w: any) => w.type === 'RETENCION_ISLR')
+                                const islrConceptName = islrRetention?.islr_concept_name
+                                const islrConceptId = islrConceptName ? (islrConcepts.find((c: any) => c.description === islrConceptName)?.id || '') : ''
+
+                                if (islrConceptId) setIslrConceptId(islrConceptId) // Set global concept
+
+                                setItems(bill.items.map((item: any) => ({
+                                    product_id: item.product_id || '',
+                                    gl_account_id: item.gl_account_id || '',
+                                    description: item.description,
+                                    quantity: Number(item.quantity),
+                                    unit_price: Number(item.unit_price),
+                                    tax_id: '',
+                                    total: Number(item.total),
+                                    tax_rate: Number(item.tax_rate),
+                                    tax_amount: Number(item.tax_amount),
+                                    vat_retention_rate: Number(item.vat_retention_rate),
+                                    vat_retention_amount: Number(item.vat_retention_amount),
+                                    islr_rate: Number(item.islr_rate),
+                                    islr_amount: Number(item.islr_amount),
+                                    islr_concept_id: islrConceptId // Use resolved ID
+                                })))
+                            }
+
+                            // Set global tax based on first item tax rate if possible, or just default
+                            // Assuming all items have same tax rate for now or we just load what we have
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading bill:', error)
+                } finally {
+                    setPageLoading(false)
+                }
+            } else {
+                const supplierId = searchParams?.get('supplierId')
+                if (supplierId) {
+                    setThirdPartyId(supplierId)
+                }
+            }
         }
+
+        loadBill()
     }, [searchParams])
 
     const addItem = () => {

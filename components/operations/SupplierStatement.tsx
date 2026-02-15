@@ -4,8 +4,9 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 
-import { Calendar, Printer, Download, Search, ArrowRight } from 'lucide-react'
+import { Calendar, Printer, Download, Search, ArrowRight, Eye } from 'lucide-react'
 import { formatDate } from '@/lib/date-utils'
+import Link from 'next/link'
 
 interface Movement {
     id: string
@@ -136,13 +137,14 @@ export function SupplierStatement({ supplierId }: { supplierId: string }) {
                             <th className="px-4 py-3 text-right">Cargos</th>
                             <th className="px-4 py-3 text-right">Abonos</th>
                             <th className="px-4 py-3 text-right">Saldo</th>
+                            <th className="px-4 py-3"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {loading ? (
-                            <tr><td colSpan={7} className="p-8 text-center text-gray-500">Cargando movimientos...</td></tr>
+                            <tr><td colSpan={8} className="p-8 text-center text-gray-500">Cargando movimientos...</td></tr>
                         ) : data?.movements.length === 0 ? (
-                            <tr><td colSpan={7} className="p-8 text-center text-gray-500">No hay movimientos en el periodo seleccionado.</td></tr>
+                            <tr><td colSpan={8} className="p-8 text-center text-gray-500">No hay movimientos en el periodo seleccionado.</td></tr>
                         ) : (
                             data?.movements.map((move) => (
                                 <tr key={move.id} className="hover:bg-gray-50">
@@ -167,6 +169,17 @@ export function SupplierStatement({ supplierId }: { supplierId: string }) {
                                     </td>
                                     <td className="px-4 py-3 text-right font-bold text-gray-800">
                                         {formatCurrency(move.balance)}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        {move.type === 'BILL' && (
+                                            <Link
+                                                href={`/dashboard/operations/bills/new?id=${move.id}&supplierId=${supplierId}`}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Ver Detalle"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Link>
+                                        )}
                                     </td>
                                 </tr>
                             ))
