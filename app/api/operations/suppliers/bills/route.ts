@@ -203,10 +203,10 @@ export async function POST(request: Request) {
                                 type: TaxType.RETENCION_ISLR,
                                 base_amount: subtotal,
                                 tax_amount: 0,
-                                rate: processedItems.find(i => i.islr_rate > 0)?.islr_rate || 0,
+                                rate: processedItems.find((i: any) => i.islr_rate > 0)?.islr_rate || 0,
                                 amount: totalRetISLR,
                                 direction: WithholdingDirection.ISSUED,
-                                islr_concept_name: islrConcepts.find(c => c.id === processedItems.find(i => i.islr_concept_id)?.islr_concept_id)?.description || null,
+                                islr_concept_name: islrConcepts.find((c: any) => c.id === processedItems.find((i: any) => i.islr_concept_id)?.islr_concept_id)?.description || null,
                                 certificate_number: await generateRetentionNumber(tx, company_id, 'ISLR'),
                                 date: new Date(date)
                             }] : [])
