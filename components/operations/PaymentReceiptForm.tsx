@@ -6,6 +6,7 @@ import { Search, Save, Loader2, ArrowLeft, Plus, Check } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { DateInput } from '@/components/common/DateInput'
+import { formatDate } from '@/lib/date-utils'
 
 interface ThirdParty {
     id: string
@@ -352,7 +353,7 @@ export function PaymentReceiptForm() {
                                         return (
                                             <tr key={inv.id} className="hover:bg-gray-50">
                                                 <td className="p-3 font-medium">{inv.number}</td>
-                                                <td className="p-3 text-gray-600">{new Date(inv.date).toLocaleDateString()}</td>
+                                                <td className="p-3 text-gray-600">{formatDate(inv.date)}</td>
                                                 <td className="p-3 text-right text-gray-600">{Number(inv.total).toFixed(2)}</td>
                                                 <td className="p-3 text-right font-bold">{Number(inv.balance).toFixed(2)}</td>
                                                 <td className="p-3 text-right">

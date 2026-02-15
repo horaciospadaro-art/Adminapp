@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DateInput } from '@/components/common/DateInput'
 import { AccountSelector } from '@/components/common/AccountSelector'
+import { formatDate } from '@/lib/date-utils'
 
 interface Tax {
     id: string
@@ -545,7 +546,7 @@ export function BillForm({ companyId }: BillFormProps) {
                         <option value="">Seleccione la factura a la que se refiere la devolución...</option>
                         {supplierBills.map((bill: any) => (
                             <option key={bill.id} value={bill.id}>
-                                {bill.number} - {new Date(bill.date).toLocaleDateString()} - Total: {Number(bill.total).toFixed(2)}
+                                {bill.number} - {formatDate(bill.date)} - Total: {Number(bill.total).toFixed(2)}
                             </option>
                         ))}
                     </select>

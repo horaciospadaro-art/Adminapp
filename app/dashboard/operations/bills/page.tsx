@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Plus, Search, FileText, Loader2, Receipt, Calendar, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { formatDate } from '@/lib/date-utils'
+import { paymentStatusLabel } from '@/lib/labels'
 import { useRouter } from 'next/navigation'
 
 interface Bill {
@@ -271,11 +273,11 @@ export default function BillsPage() {
                         ) : (
                             bills.map((bill: any) => (
                                 <tr key={bill.id}>
-                                    <td className="px-6 py-3">{new Date(bill.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-3">{formatDate(bill.date)}</td>
                                     <td className="px-6 py-3">{bill.number || bill.control_number || '—'}</td>
                                     <td className="px-6 py-3">{bill.third_party?.name ?? '—'}</td>
                                     <td className="px-6 py-3 text-right">{bill.total ?? '0'}</td>
-                                    <td className="px-6 py-3 text-center">{bill.status ?? '—'}</td>
+                                    <td className="px-6 py-3 text-center">{paymentStatusLabel(bill.status)}</td>
                                     <td className="px-6 py-3 text-right">
                                         <Link
                                             href={`/dashboard/operations/bills/new?id=${bill.id}`}

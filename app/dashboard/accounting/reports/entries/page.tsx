@@ -7,6 +7,8 @@ import { Edit } from 'lucide-react'
 import { DeleteEntryButton } from '@/components/accounting/DeleteEntryButton'
 
 import { getPersistentCompanyId } from '@/lib/company-utils'
+import { formatDate } from '@/lib/date-utils'
+import { journalEntryStatusLabel } from '@/lib/labels'
 
 export default async function EntriesListPage(props: {
     searchParams: Promise<{ startDate?: string; endDate?: string }> | { startDate?: string; endDate?: string }
@@ -79,7 +81,7 @@ export default async function EntriesListPage(props: {
                                     return (
                                         <tr key={entry.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {entry.date ? new Intl.DateTimeFormat('es-VE').format(new Date(entry.date)) : '-'}
+                                                {entry.date ? formatDate(entry.date) : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                                                 {entry.number || '-'}
@@ -90,7 +92,7 @@ export default async function EntriesListPage(props: {
                                             <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${entry.status === 'POSTED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                                     }`}>
-                                                    {entry.status}
+                                                    {journalEntryStatusLabel(entry.status)}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-mono">

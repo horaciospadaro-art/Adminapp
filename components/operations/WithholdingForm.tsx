@@ -6,6 +6,7 @@ import { Save, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { DateInput } from '@/components/common/DateInput'
+import { formatDate } from '@/lib/date-utils'
 
 interface ThirdParty {
     id: string
@@ -207,7 +208,7 @@ export function WithholdingForm() {
                             <option value="">Seleccionar Factura...</option>
                             {invoices.map(inv => (
                                 <option key={inv.id} value={inv.id}>
-                                    {inv.number} - {new Date(inv.date).toLocaleDateString()} - Saldo: {Number(inv.balance).toFixed(2)}
+                                    {inv.number} - {formatDate(inv.date)} - Saldo: {Number(inv.balance).toFixed(2)}
                                 </option>
                             ))}
                         </select>

@@ -1,6 +1,7 @@
 'use client'
 
 import { formatDate } from '@/lib/date-utils'
+import { bankTxStatusLabel } from '@/lib/labels'
 
 interface BankTransaction {
     id: string
@@ -100,7 +101,7 @@ export function TransactionList({ transactions }: { transactions: BankTransactio
                                             ? 'bg-yellow-100 text-yellow-800'
                                             : 'bg-gray-100 text-gray-800'
                                         }`}>
-                                        {tx.status === 'RECONCILED' ? 'Conciliado' : tx.status === 'PENDING' ? 'Pendiente' : tx.status}
+                                        {bankTxStatusLabel(tx.status)}
                                     </span>
                                 </td>
                             </tr>

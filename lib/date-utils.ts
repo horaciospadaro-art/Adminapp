@@ -24,7 +24,7 @@ export const formatDate = (
     date: string | number | Date | null | undefined,
     formatStr: string = STANDARD_DATE_FORMAT
 ): string => {
-    if (!date) return 'N/A'
+    if (!date) return '—'
 
     const dateObj = new Date(date)
     if (!isValid(dateObj)) return 'Fecha inválida'

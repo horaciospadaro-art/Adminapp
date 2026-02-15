@@ -2,10 +2,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
-
 import { Calendar, Printer, Download, Search, ArrowRight, Eye } from 'lucide-react'
 import { formatDate } from '@/lib/date-utils'
+import { documentTypeLabel } from '@/lib/labels'
 import Link from 'next/link'
 
 interface Movement {
@@ -158,7 +157,7 @@ export function SupplierStatement({ supplierId }: { supplierId: string }) {
                                                     move.type === 'RETENTION' ? 'bg-purple-100 text-purple-800' :
                                                         move.type === 'CREDIT_NOTE' ? 'bg-teal-100 text-teal-800' :
                                                             move.type === 'DEBIT_NOTE' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'}`}>
-                                            {move.type}
+                                            {documentTypeLabel(move.type)}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 font-mono text-xs">{move.number}</td>

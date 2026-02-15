@@ -4,6 +4,7 @@ import { getLegalJournal, type LegalJournalEntry } from '@/lib/actions/accountin
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
 import { getPersistentCompanyId } from '@/lib/company-utils'
+import { formatDate } from '@/lib/date-utils'
 
 export default async function LegalJournalPage(props: {
     searchParams: Promise<{ month?: string; year?: string }> | { month?: string; year?: string }
@@ -75,7 +76,7 @@ export default async function LegalJournalPage(props: {
                                         {/* Entry Header/Description Row */}
                                         <tr key={`h-${entry.id}`} className="bg-gray-50">
                                             <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                                {entry.date ? new Intl.DateTimeFormat('es-VE').format(new Date(entry.date)) : '-'}
+                                                {entry.date ? formatDate(entry.date) : '-'}
                                             </td>
                                             <td className="px-6 py-2 whitespace-nowrap text-sm text-blue-800 font-bold">
                                                 {entry.number}

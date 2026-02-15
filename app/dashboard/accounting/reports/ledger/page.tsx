@@ -5,6 +5,7 @@ import { getAnalyticalLedger } from '@/lib/actions/accounting-reports'
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
 import { getPersistentCompanyId } from '@/lib/company-utils'
+import { formatDate } from '@/lib/date-utils'
 
 export default async function AnalyticalLedgerPage(props: {
     searchParams: Promise<{ startDate?: string; endDate?: string; accountId?: string }> | { startDate?: string; endDate?: string; accountId?: string }
@@ -62,7 +63,7 @@ export default async function AnalyticalLedgerPage(props: {
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900">{reportData.accountCode} - {reportData.accountName}</h2>
                                 <p className="text-sm text-gray-500 mt-1">
-                                    Del {new Intl.DateTimeFormat('es-VE').format(new Date(startDate!))} al {new Intl.DateTimeFormat('es-VE').format(new Date(endDate!))}
+                                    Del {formatDate(startDate!)} al {formatDate(endDate!)}
                                 </p>
                             </div>
                             <div className="text-right">
@@ -90,7 +91,7 @@ export default async function AnalyticalLedgerPage(props: {
                                 {/* Initial Balance Row */}
                                 <tr className="bg-gray-50 italic">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Intl.DateTimeFormat('es-VE').format(new Date(startDate!))}
+                                        {formatDate(startDate!)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Saldo Inicial</td>
@@ -111,7 +112,7 @@ export default async function AnalyticalLedgerPage(props: {
                                     reportData.movements.map((move: any) => (
                                         <tr key={move.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {move.date ? new Intl.DateTimeFormat('es-VE').format(new Date(move.date)) : '-'}
+                                                {move.date ? formatDate(move.date) : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:underline cursor-pointer">
                                                 {move.reference || move.entryNumber || '-'}

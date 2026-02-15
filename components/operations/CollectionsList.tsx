@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Filter, Download, Eye, Trash2 } from 'lucide-react'
+import { formatDate } from '@/lib/date-utils'
 
 interface ThirdParty {
     id: string
@@ -105,7 +106,7 @@ export function CollectionsList() {
                             filteredReceipts.map(receipt => (
                                 <tr key={receipt.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 font-mono font-medium text-blue-600">{receipt.number}</td>
-                                    <td className="px-6 py-4 text-gray-600">{new Date(receipt.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 text-gray-600">{formatDate(receipt.date)}</td>
                                     <td className="px-6 py-4 font-medium text-gray-800">{receipt.third_party.name}</td>
                                     <td className="px-6 py-4 text-gray-600">{receipt.reference || '-'}</td>
                                     <td className="px-6 py-4 text-right font-bold text-gray-900">

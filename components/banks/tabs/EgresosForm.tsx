@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { BankAccount } from '../types'
 import { AccountSelector } from '@/components/accounting/AccountSelector'
 import { DateInput } from '@/components/common/DateInput'
+import { formatDate } from '@/lib/date-utils'
 
 type Invoice = {
     id: string
@@ -276,7 +277,7 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                                             <td className="px-4 py-2">{bill.number}</td>
                                             <td className="px-4 py-2 text-xs text-gray-500">{bill.third_party.name}</td>
                                             <td className="px-4 py-2 text-xs text-gray-500">
-                                                {new Date(bill.date).toLocaleDateString()}
+                                                {formatDate(bill.date)}
                                             </td>
                                             <td className="px-4 py-2 text-right font-medium">
                                                 {Number(bill.balance).toFixed(2)}
