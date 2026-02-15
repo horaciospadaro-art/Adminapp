@@ -44,7 +44,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
         let initialBalance = 0
 
-        prevDocs.forEach(doc => {
+        prevDocs.forEach((doc: any) => {
             const amount = Number(doc.total)
             if (doc.type === DocumentType.BILL || doc.type === DocumentType.DEBIT_NOTE) {
                 initialBalance += amount // Increases Debt
@@ -53,7 +53,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             }
         })
 
-        prevRetentions.forEach(ret => {
+        prevRetentions.forEach((ret: any) => {
             initialBalance -= Number(ret.amount)
         })
 
@@ -78,7 +78,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
         // Combine and Sort
         const movements = [
-            ...docs.map(d => ({
+            ...docs.map((d: any) => ({
                 id: d.id,
                 date: d.date,
                 type: d.type,
@@ -88,7 +88,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                 credit: (d.type === DocumentType.BILL || d.type === DocumentType.DEBIT_NOTE) ? Number(d.total) : 0,
                 description: d.type === DocumentType.BILL ? 'Factura de Compra' : d.type
             })),
-            ...retentions.map(r => ({
+            ...retentions.map((r: any) => ({
                 id: r.id,
                 date: r.date,
                 type: 'RETENTION',
@@ -102,7 +102,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
         // Calculate Running Balance
         let currentBalance = initialBalance
-        const movementsWithBalance = movements.map(m => {
+        const movementsWithBalance = movements.map((m: any) => {
             currentBalance = currentBalance + m.credit - m.debit
             return { ...m, balance: currentBalance }
         })
