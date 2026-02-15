@@ -80,10 +80,6 @@ export async function POST(request: Request) {
             bill_type, // PURCHASE or EXPENSE
             items, // Array of { product_id, description, quantity, unit_price, tax_rate, gl_account_id ... }
 
-            // Venezuelan specifics
-            is_igtf = false,
-            igtf_amount = 0,
-
             // Note: Global rates for labels
             vat_retention_rate = 0,
             islr_concept_id = null
@@ -144,7 +140,7 @@ export async function POST(request: Request) {
             })
         }
 
-        const totalInvoice = subtotal + totalTax + (is_igtf ? parseFloat(igtf_amount as any) : 0)
+        const totalInvoice = subtotal + totalTax
         const totalPayable = totalInvoice - totalRetIVA - totalRetISLR
 
         // 2. Transaction
@@ -166,9 +162,6 @@ export async function POST(request: Request) {
                     tax_amount: totalTax,
                     total: totalInvoice,
                     balance: totalPayable,
-
-                    is_igtf,
-                    igtf_amount: is_igtf ? parseFloat(igtf_amount as any) : 0,
 
                     status: PaymentStatus.PENDING,
 
