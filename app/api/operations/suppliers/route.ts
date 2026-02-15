@@ -6,14 +6,18 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url)
         const companyId = searchParams.get('companyId')
+        const q = searchParams.get('q')?.trim()
 
         if (!companyId) return NextResponse.json({ error: 'Company ID required' }, { status: 400 })
 
+        const where: { company_id: string; type: { in: ThirdPartyType[] }; name?: { contains: string; mode: 'insensitive' } } = {
+            company_id: companyId,
+            type: { in: [ThirdPartyType.PROVEEDOR, ThirdPartyType.AMBOS] }
+        }
+        if (q) where.name = { contains: q, mode: 'insensitive' }
+
         const suppliers = await prisma.thirdParty.findMany({
-            where: {
-                company_id: companyId,
-                type: { in: [ThirdPartyType.PROVEEDOR, ThirdPartyType.AMBOS] }
-            },
+            where,
             orderBy: { name: 'asc' },
             include: {
                 payable_account: true

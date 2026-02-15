@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Search, FileText } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Plus, Search, FileText, Loader2, Receipt } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface Bill {
     id: string
@@ -13,16 +14,102 @@ interface Bill {
     status: string
 }
 
+interface Supplier {
+    id: string
+    name: string
+    rif: string
+}
+
+const DEBOUNCE_MS = 300
+
 export default function BillsPage() {
+    const router = useRouter()
     const [bills, setBills] = useState<Bill[]>([])
     const [loading, setLoading] = useState(true)
+    const [companyId, setCompanyId] = useState<string>('')
+    const [searchText, setSearchText] = useState('')
+    const [supplierResults, setSupplierResults] = useState<Supplier[]>([])
+    const [supplierSearching, setSupplierSearching] = useState(false)
+    const [showDropdown, setShowDropdown] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
-    // TODO: Create a GET /api/documents endpoint that supports filtering by Type='BILL'
-    // For now, we'll placeholder the fetch
+    // Obtener empresa activa (primera de la lista, como en otras páginas)
     useEffect(() => {
-        // fetchBills()
-        setLoading(false) // Remove when real fetch added
+        fetch('/api/companies')
+            .then(res => res.json())
+            .then((data: { id: string }[]) => {
+                if (Array.isArray(data) && data.length > 0) {
+                    setCompanyId(data[0].id)
+                }
+            })
+            .catch(() => {})
     }, [])
+
+    // Cargar facturas (todas o filtradas por q)
+    const fetchBills = useCallback(async (q?: string) => {
+        if (!companyId) return
+        setLoading(true)
+        const params = new URLSearchParams({ companyId })
+        if (q?.trim()) params.set('q', q.trim())
+        try {
+            const res = await fetch(`/api/operations/suppliers/bills?${params}`)
+            const data = await res.json()
+            setBills(Array.isArray(data) ? data : [])
+        } catch {
+            setBills([])
+        } finally {
+            setLoading(false)
+        }
+    }, [companyId])
+
+    useEffect(() => {
+        fetchBills()
+    }, [companyId, fetchBills])
+
+    // Búsqueda de proveedores (debounce) y filtro de facturas
+    useEffect(() => {
+        if (!companyId) return
+
+        const t = setTimeout(() => {
+            const q = searchText.trim()
+            if (q.length >= 2) {
+                setSupplierSearching(true)
+                fetch(`/api/operations/suppliers?companyId=${companyId}&q=${encodeURIComponent(q)}`)
+                    .then(res => res.json())
+                    .then((data: Supplier[]) => {
+                        setSupplierResults(Array.isArray(data) ? data : [])
+                        setShowDropdown(true)
+                    })
+                    .catch(() => setSupplierResults([]))
+                    .finally(() => setSupplierSearching(false))
+                fetchBills(q)
+            } else {
+                setSupplierResults([])
+                setShowDropdown(false)
+                if (!q) fetchBills()
+            }
+        }, DEBOUNCE_MS)
+
+        return () => clearTimeout(t)
+    }, [companyId, searchText, fetchBills])
+
+    // Cerrar dropdown al hacer clic fuera
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    const handleSelectSupplier = (supplier: Supplier) => {
+        setShowDropdown(false)
+        setSearchText('')
+        setSupplierResults([])
+        router.push(`/dashboard/operations/bills/new?supplierId=${supplier.id}`)
+    }
 
     return (
         <div className="space-y-6">
@@ -39,14 +126,43 @@ export default function BillsPage() {
                 </Link>
             </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 relative" ref={dropdownRef}>
                 <div className="relative max-w-md">
                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     <input
-                        placeholder="Buscar por proveedor o número..."
-                        className="pl-10 w-full border rounded-md p-2 focus:ring-blue-500"
+                        value={searchText}
+                        onChange={e => setSearchText(e.target.value)}
+                        onFocus={() => searchText.trim().length >= 2 && setShowDropdown(true)}
+                        placeholder="Buscar proveedor para registrar factura o filtrar listado..."
+                        className="pl-10 w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
+                    {supplierSearching && (
+                        <Loader2 className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 animate-spin" />
+                    )}
                 </div>
+                {showDropdown && supplierResults.length > 0 && (
+                    <ul className="absolute z-10 mt-1 w-full max-w-md bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {supplierResults.map(s => (
+                            <li key={s.id}>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSelectSupplier(s)}
+                                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-2 text-sm"
+                                >
+                                    <Receipt className="w-4 h-4 text-gray-500" />
+                                    <span className="font-medium">{s.name}</span>
+                                    <span className="text-gray-500 text-xs">({s.rif})</span>
+                                    <span className="ml-auto text-xs text-[#2ca01c]">Registrar factura</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+                {showDropdown && searchText.trim().length >= 2 && !supplierSearching && supplierResults.length === 0 && (
+                    <div className="absolute z-10 mt-1 max-w-md px-4 py-3 bg-white border border-gray-200 rounded-md shadow-lg text-sm text-gray-500">
+                        No se encontraron proveedores. Puedes registrar una factura sin filtrar desde el botón verde.
+                    </div>
+                )}
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -67,9 +183,21 @@ export default function BillsPage() {
                         ) : bills.length === 0 ? (
                             <tr><td colSpan={6} className="p-8 text-center text-gray-500">No hay facturas registradas.</td></tr>
                         ) : (
-                            bills.map(bill => (
+                            bills.map((bill: any) => (
                                 <tr key={bill.id}>
-                                    {/* Map rows here */}
+                                    <td className="px-6 py-3">{new Date(bill.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-3">{bill.number || bill.control_number || '—'}</td>
+                                    <td className="px-6 py-3">{bill.third_party?.name ?? '—'}</td>
+                                    <td className="px-6 py-3 text-right">{bill.total ?? '0'}</td>
+                                    <td className="px-6 py-3 text-center">{bill.status ?? '—'}</td>
+                                    <td className="px-6 py-3 text-right">
+                                        <Link
+                                            href={`/dashboard/operations/bills/new?id=${bill.id}`}
+                                            className="text-blue-600 hover:underline"
+                                        >
+                                            Ver
+                                        </Link>
+                                    </td>
                                 </tr>
                             ))
                         )}

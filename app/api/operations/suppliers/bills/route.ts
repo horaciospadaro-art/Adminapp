@@ -33,9 +33,11 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url)
         const thirdPartyId = searchParams.get('third_party_id')
         const type = searchParams.get('type') // optional filter
+        const companyId = searchParams.get('companyId')
+        const q = searchParams.get('q')?.trim()
 
-        const whereClause: any = {
-            company_id: '1', // Hardcoded for now
+        const whereClause: Prisma.DocumentWhereInput = {
+            company_id: companyId || '1',
             // if type is not provided, we might want all supplier documents, or just BILLs
             // For returns, we want BILLs.
             type: type ? (type as DocumentType) : DocumentType.BILL,
@@ -57,6 +59,14 @@ export async function GET(request: Request) {
 
         if (thirdPartyId) {
             whereClause.third_party_id = thirdPartyId
+        }
+
+        if (q) {
+            whereClause.OR = [
+                { number: { contains: q, mode: 'insensitive' } },
+                { control_number: { contains: q, mode: 'insensitive' } },
+                { third_party: { name: { contains: q, mode: 'insensitive' } } }
+            ]
         }
 
         const documents = await prisma.document.findMany({
