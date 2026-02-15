@@ -67,6 +67,10 @@ async function main() {
         { code: '6.1', name: 'GASTOS OPERATIVOS', type: AccountType.EXPENSE, parentCode: '6' },
         { code: '6.1.01', name: 'GASTOS GENERALES', type: AccountType.EXPENSE, parentCode: '6.1' },
         { code: '6.1.01.00001', name: 'GASTO IGTF', type: AccountType.EXPENSE, parentCode: '6.1.01' },
+
+        // Cuentas Adicionales para Retenciones (Solución Error 500)
+        { code: '2.1.02.00002', name: 'RETENCIONES IVA POR PAGAR', type: AccountType.LIABILITY, parentCode: '2.1.02' },
+        { code: '2.1.02.00003', name: 'RETENCIONES ISLR POR PAGAR', type: AccountType.LIABILITY, parentCode: '2.1.02' },
     ]
 
     for (const acc of accounts) {
@@ -230,6 +234,61 @@ async function main() {
         }
     }
     console.log('Siembra de datos (Seed) de Retenciones IVA finalizada.')
+
+    // ==========================================
+    // SEED: TAX DEFINITIONS (Definiciones de Impuestos y Retenciones)
+    // ==========================================
+    // Necesario para que el sistema sepa a qué cuenta contable enviar las retenciones
+
+    // 1. Get Accounts
+    const retIvaAccount = await prisma.chartOfAccount.findUnique({
+        where: { company_id_code: { company_id: company.id, code: '2.1.02.00002' } }
+    })
+
+    const retIslrAccount = await prisma.chartOfAccount.findUnique({
+        where: { company_id_code: { company_id: company.id, code: '2.1.02.00003' } }
+    })
+
+    // 2. Create Tax Definitions
+    if (retIvaAccount) {
+        const existingIVARet = await prisma.tax.findFirst({
+            where: { company_id: company.id, type: 'RETENCION_IVA' }
+        })
+
+        if (!existingIVARet) {
+            await prisma.tax.create({
+                data: {
+                    company_id: company.id,
+                    name: 'Retención IVA',
+                    rate: 0, // Variable
+                    type: 'RETENCION_IVA',
+                    gl_account_id: retIvaAccount.id,
+                    is_active: true
+                }
+            })
+        }
+    }
+
+    if (retIslrAccount) {
+        const existingISLRRet = await prisma.tax.findFirst({
+            where: { company_id: company.id, type: 'RETENCION_ISLR' }
+        })
+
+        if (!existingISLRRet) {
+            await prisma.tax.create({
+                data: {
+                    company_id: company.id,
+                    name: 'Retención ISLR',
+                    rate: 0, // Variable
+                    type: 'RETENCION_ISLR',
+                    gl_account_id: retIslrAccount.id,
+                    is_active: true
+                }
+            })
+        }
+    }
+
+    console.log('Siembra de datos (Seed) de Definiciones de Impuestos (Tax) finalizada.')
 }
 
 main()
