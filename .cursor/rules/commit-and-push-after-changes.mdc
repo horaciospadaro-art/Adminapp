@@ -1,0 +1,30 @@
+---
+description: Hacer commit y push tras cambios para ver el despliegue en Vercel
+globs: ["**/*.ts", "**/*.tsx", "**/*.json", "**/*.css", "**/*.md", "prisma/**"]
+---
+# Commit y push tras cambios
+
+## Regla
+
+Cada vez que se modifique código, configuración o recursos del proyecto (archivos en `v-ledge` que afecten la aplicación desplegable), **al terminar esos cambios** se debe:
+
+1. **Hacer commit** de los archivos modificados en el repositorio **v-ledge** (el repo con la app está en la carpeta `v-ledge`, no en la raíz Adminapp).
+2. **Hacer push** a la rama remota (por ejemplo `main`) para que Vercel dispare el despliegue y el usuario pueda ver los cambios en producción con rapidez.
+
+## Dónde ejecutar
+
+- **Directorio:** siempre dentro de `v-ledge` (ahí está el `git` del proyecto que se despliega en Vercel).
+- Comandos típicos:
+  - `git status` para ver qué cambió.
+  - `git add <archivos>` o `git add .` (evitando lo que esté en `.gitignore`).
+  - `git commit -m "tipo: descripción breve"` (ej. `feat: numeración en asientos de facturas y banco`, `fix: saldos cuentas madre en plan de cuentas`).
+  - `git push`.
+
+## Cuándo aplica
+
+- Después de implementar una funcionalidad, corregir un bug o ajustar configuración/UI que deba reflejarse en Vercel.
+- No es necesario hacer commit/push en medio de una tarea si aún se van a hacer más cambios relacionados en la misma sesión; se puede hacer **al finalizar** el conjunto de cambios que forman una unidad lógica.
+
+## Formato del mensaje de commit
+
+Preferir convención breve: `feat:`, `fix:`, `chore:`, etc., seguido de una descripción clara en español o inglés.

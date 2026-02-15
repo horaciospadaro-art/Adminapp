@@ -1,5 +1,5 @@
-
 import { Prisma, DocumentType, JournalStatus } from '@prisma/client'
+import { generateJournalEntryNumber } from '@/lib/services/accounting-engine'
 
 /**
  * Creates a Journal Entry for a Document (Invoice, Credit Note, Bill, etc.)
@@ -131,12 +131,14 @@ export async function createDocumentJournalEntry(
 
     // Create Header and Lines
     if (lines.length > 0) {
+        const journalDate = doc.accounting_date || doc.date
         const journal = await tx.journalEntry.create({
             data: {
                 company_id: companyId,
-                date: doc.accounting_date || doc.date,
+                date: journalDate,
+                number: await generateJournalEntryNumber(tx, companyId, journalDate, 'C'), // C = Cliente/ventas
                 description: description,
-                status: JournalStatus.POSTED, // Auto-post automated entries
+                status: JournalStatus.POSTED,
                 lines: {
                     create: lines
                 }
@@ -185,6 +187,7 @@ export async function createPaymentJournalEntry(
         data: {
             company_id: companyId,
             date: receipt.date,
+            number: await generateJournalEntryNumber(tx, companyId, receipt.date, 'C'), // C = Cobro
             description: `Cobro Recibo #${receipt.number}`,
             status: JournalStatus.POSTED,
             lines: {
@@ -251,6 +254,7 @@ export async function createWithholdingJournalEntry(
         data: {
             company_id: companyId,
             date: w.date,
+            number: await generateJournalEntryNumber(tx, companyId, w.date, 'F'), // F = Fiscal/retenciones
             description: `Comp. Retención ${w.certificate_number} - ${w.third_party.name}`,
             status: JournalStatus.POSTED,
             lines: {
@@ -433,11 +437,12 @@ export async function createBillJournalEntry(
         }))
     }
 
-    // Create Journal Entry
+    const billDate = bill.accounting_date || bill.date
     const journal = await tx.journalEntry.create({
         data: {
             company_id: companyId,
-            date: bill.accounting_date || bill.date,
+            date: billDate,
+            number: await generateJournalEntryNumber(tx, companyId, billDate, 'P'), // P = Proveedor/compras
             description: description,
             status: JournalStatus.POSTED,
             lines: {

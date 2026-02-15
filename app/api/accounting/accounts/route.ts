@@ -37,7 +37,6 @@ export async function GET(req: NextRequest) {
     let companyId = searchParams.get('companyId')
 
     if (!companyId) {
-        // Default to first company
         const company = await prisma.company.findFirst()
         if (!company) {
             return NextResponse.json({ error: 'No company found' }, { status: 404 })
@@ -48,7 +47,53 @@ export async function GET(req: NextRequest) {
     const service = new AccountService()
     const accounts = await service.getAccountTree(companyId!)
 
-    return NextResponse.json(accounts)
+    // Saldos desde JournalLine (solo asientos POSTED)
+    const aggregates = await prisma.$queryRaw<{ account_id: string; debit: number; credit: number }[]>`
+        SELECT jl.account_id,
+               COALESCE(SUM(jl.debit), 0)::float AS debit,
+               COALESCE(SUM(jl.credit), 0)::float AS credit
+        FROM "JournalLine" jl
+        INNER JOIN "JournalEntry" je ON je.id = jl.entry_id
+        WHERE je.company_id = ${companyId!}
+          AND je.status = 'POSTED'
+        GROUP BY jl.account_id
+    `
+    const ledgerBalanceByAccount = new Map<string, number>()
+    for (const row of aggregates) {
+        ledgerBalanceByAccount.set(row.account_id, Number(row.debit) - Number(row.credit))
+    }
+
+    // Cuentas con hijos (parent_id -> hijos)
+    const childrenByParent = new Map<string | null, typeof accounts>()
+    for (const acc of accounts) {
+        const pid = acc.parent_id
+        if (!childrenByParent.has(pid)) childrenByParent.set(pid, [])
+        childrenByParent.get(pid)!.push(acc)
+    }
+
+    // Saldo computado: hoja = saldo ledger; madre = suma de hijos (procesar de más profundo a raíz)
+    const codeDepth = (code: string) => code.split('.').length
+    const sortedByDepth = [...accounts].sort((a, b) => {
+        const d = codeDepth(b.code) - codeDepth(a.code)
+        return d !== 0 ? d : a.code.localeCompare(b.code)
+    })
+    const computedBalance = new Map<string, number>()
+    for (const acc of sortedByDepth) {
+        const children = childrenByParent.get(acc.id) || []
+        if (children.length === 0) {
+            computedBalance.set(acc.id, ledgerBalanceByAccount.get(acc.id) ?? 0)
+        } else {
+            const sum = children.reduce((s, c) => s + (computedBalance.get(c.id) ?? 0), 0)
+            computedBalance.set(acc.id, sum)
+        }
+    }
+
+    const result = accounts.map((acc) => ({
+        ...acc,
+        balance: computedBalance.get(acc.id) ?? 0
+    }))
+
+    return NextResponse.json(result)
 }
 
 export async function PUT(req: NextRequest) {

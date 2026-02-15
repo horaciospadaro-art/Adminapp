@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { generateJournalEntryNumber } from '@/lib/services/accounting-engine'
 
 // POST: Create a new bank transaction AND update accounting
 export async function POST(
@@ -99,10 +100,12 @@ export async function POST(
                 creditAccountId = bankAccount.gl_account_id
             }
 
+            const txDate = new Date(date)
             const mainJournal = await tx.journalEntry.create({
                 data: {
                     company_id: bankAccount.company_id,
-                    date: new Date(date),
+                    date: txDate,
+                    number: await generateJournalEntryNumber(tx, bankAccount.company_id, txDate, 'B'),
                     description: `${getSubtypeLabel(subtype)}: ${description}`,
                     status: 'POSTED',
                     lines: {
@@ -275,10 +278,12 @@ export async function POST(
                 })
 
                 // 3. Create IGTF Journal Entry
+                const igtfDate = new Date(date)
                 const igtfJournal = await tx.journalEntry.create({
                     data: {
                         company_id: bankAccount.company_id,
-                        date: new Date(date),
+                        date: igtfDate,
+                        number: await generateJournalEntryNumber(tx, bankAccount.company_id, igtfDate, 'B'),
                         description: `IGTF ${rate}% s/ ${description}`,
                         status: 'POSTED',
                         lines: {
@@ -413,6 +418,7 @@ async function handleTransfer(
             data: {
                 company_id: sourceBankAccount.company_id,
                 date: data.date,
+                number: await generateJournalEntryNumber(tx, sourceBankAccount.company_id, data.date, 'B'),
                 description: `Transferencia: ${sourceBankAccount.bank_name} → ${targetBankAccount.bank_name}`,
                 status: 'POSTED',
                 lines: {
@@ -478,6 +484,7 @@ async function handleTransfer(
                     data: {
                         company_id: sourceBankAccount.company_id,
                         date: data.date,
+                        number: await generateJournalEntryNumber(tx, sourceBankAccount.company_id, data.date, 'B'),
                         description: `IGTF ${rate}% s/ transferencia`,
                         status: 'POSTED',
                         lines: {

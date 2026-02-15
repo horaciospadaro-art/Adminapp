@@ -1,5 +1,43 @@
-import { AccountType } from '@prisma/client'
+import { AccountType, Prisma } from '@prisma/client'
 import prisma from '../db'
+
+export type JournalModuleCode = 'A' | 'B' | 'C' | 'I' | 'P' | 'F'
+
+/**
+ * Genera número correlativo para asiento: Xddmmaa-xxx (ej. C150226-001).
+ * Usar dentro de una transacción (tx) para que la secuencia sea correcta.
+ */
+export async function generateJournalEntryNumber(
+    tx: Prisma.TransactionClient,
+    companyId: string,
+    date: Date,
+    moduleCode: string
+): Promise<string> {
+    const d = new Date(date)
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = String(d.getFullYear()).slice(-2)
+    const prefix = `${moduleCode}${day}${month}${year}-`
+
+    const lastEntry = await tx.journalEntry.findFirst({
+        where: {
+            company_id: companyId,
+            number: { startsWith: prefix }
+        },
+        orderBy: { number: 'desc' },
+        select: { number: true }
+    })
+
+    let sequence = 1
+    if (lastEntry?.number) {
+        const parts = lastEntry.number.split('-')
+        if (parts.length === 2) {
+            const lastSeq = parseInt(parts[1], 10)
+            if (!isNaN(lastSeq)) sequence = lastSeq + 1
+        }
+    }
+    return `${prefix}${String(sequence).padStart(3, '0')}`
+}
 
 export type TransactionEvent = {
     companyId: string
@@ -93,43 +131,24 @@ export class AccountingEngine {
      * xxx: Sequence (per day)
      */
     async generateCorrelative(companyId: string, date: Date, module: string): Promise<string> {
-        // Format date: ddmmaa
         const d = new Date(date)
         const day = String(d.getDate()).padStart(2, '0')
-        const month = String(d.getMonth() + 1).padStart(2, '0') // Month is 0-indexed
+        const month = String(d.getMonth() + 1).padStart(2, '0')
         const year = String(d.getFullYear()).slice(-2)
-
         const prefix = `${module}${day}${month}${year}-`
-
-        // Find last entry for this prefix
         const lastEntry = await prisma.journalEntry.findFirst({
-            where: {
-                company_id: companyId,
-                number: {
-                    startsWith: prefix
-                }
-            },
-            orderBy: {
-                number: 'desc'
-            },
-            select: {
-                number: true
-            }
+            where: { company_id: companyId, number: { startsWith: prefix } },
+            orderBy: { number: 'desc' },
+            select: { number: true }
         })
-
         let sequence = 1
-        if (lastEntry && lastEntry.number) {
+        if (lastEntry?.number) {
             const parts = lastEntry.number.split('-')
             if (parts.length === 2) {
                 const lastSeq = parseInt(parts[1], 10)
-                if (!isNaN(lastSeq)) {
-                    sequence = lastSeq + 1
-                }
+                if (!isNaN(lastSeq)) sequence = lastSeq + 1
             }
-
         }
-
-        const sequenceStr = String(sequence).padStart(3, '0')
-        return `${prefix}${sequenceStr}`
+        return `${prefix}${String(sequence).padStart(3, '0')}`
     }
 }
