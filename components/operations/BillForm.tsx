@@ -226,7 +226,7 @@ export function BillForm({ companyId }: BillFormProps) {
     }
 
     const calculations = useMemo(() => {
-        const subtotal = items.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unit_price)), 0)
+        const subtotal = items.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0)
 
         // 1. IVA
         let totalTax = 0

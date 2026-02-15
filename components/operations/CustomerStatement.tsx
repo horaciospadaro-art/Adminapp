@@ -67,8 +67,8 @@ export function CustomerStatement({ customerId }: { customerId: string }) {
     }) || []
 
     // Calculate totals for displayed range
-    const totalCharges = displayedTransactions.reduce((sum, m) => sum + m.charge, 0) || 0
-    const totalPayments = displayedTransactions.reduce((sum, m) => sum + m.payment, 0) || 0
+    const totalCharges = displayedTransactions.reduce((sum: number, m: any) => sum + m.charge, 0) || 0
+    const totalPayments = displayedTransactions.reduce((sum: number, m: any) => sum + m.payment, 0) || 0
 
 
     return (

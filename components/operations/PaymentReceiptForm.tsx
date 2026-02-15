@@ -125,7 +125,7 @@ export function PaymentReceiptForm() {
         return allocations.find(a => a.invoice_id === invoiceId)?.amount || 0
     }
 
-    const totalAllocated = allocations.reduce((sum, a) => sum + a.amount, 0)
+    const totalAllocated = allocations.reduce((sum: number, a: any) => sum + a.amount, 0)
     const remainingAmount = (parseFloat(amount) || 0) - totalAllocated
 
     const autoDistribute = () => {

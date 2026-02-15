@@ -54,8 +54,8 @@ export function JournalEntryForm({ companyId, initialData, entryId }: { companyI
         setLines(newLines)
     }
 
-    const totalDebit = lines.reduce((sum, line) => sum + (parseFloat(line.debit) || 0), 0)
-    const totalCredit = lines.reduce((sum, line) => sum + (parseFloat(line.credit) || 0), 0)
+    const totalDebit = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.debit) || 0), 0)
+    const totalCredit = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.credit) || 0), 0)
     const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01
 
     const handleSubmit = async (e: React.FormEvent) => {

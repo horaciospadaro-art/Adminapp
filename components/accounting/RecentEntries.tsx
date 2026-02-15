@@ -48,8 +48,8 @@ export async function RecentEntries({ companyId }: { companyId: string }) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {entries.map((entry) => {
-                            const totalAmount = entry.lines.reduce((sum, line) => sum + Number(line.debit), 0)
+                        {entries.map((entry: any) => {
+                            const totalAmount = entry.lines.reduce((sum: number, line: any) => sum + Number(line.debit), 0)
 
                             return (
                                 <tr key={entry.id}>

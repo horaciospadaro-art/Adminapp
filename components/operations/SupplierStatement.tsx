@@ -58,8 +58,8 @@ export function SupplierStatement({ supplierId }: { supplierId: string }) {
         return new Intl.NumberFormat('es-VE', { style: 'currency', currency: 'VES' }).format(amount)
     }
 
-    const totalDebits = data?.movements.reduce((sum, m) => sum + m.debit, 0) || 0
-    const totalCredits = data?.movements.reduce((sum, m) => sum + m.credit, 0) || 0
+    const totalDebits = data?.movements.reduce((sum: number, m: any) => sum + m.debit, 0) || 0
+    const totalCredits = data?.movements.reduce((sum: number, m: any) => sum + m.credit, 0) || 0
 
     return (
         <div className="space-y-6">

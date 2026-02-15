@@ -74,7 +74,7 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
     // Update total amount from allocations
     useEffect(() => {
         if (mode === 'CUSTOMER') {
-            const total = Object.values(allocations).reduce((sum, val) => sum + val, 0)
+            const total = Object.values(allocations).reduce((sum: number, val: number) => sum + val, 0)
             setAmount(total)
         }
     }, [allocations, mode])

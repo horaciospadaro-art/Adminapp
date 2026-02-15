@@ -73,7 +73,7 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
     // Update total amount from allocations
     useEffect(() => {
         if (mode === 'SUPPLIER') {
-            const total = Object.values(allocations).reduce((sum, val) => sum + val, 0)
+            const total = Object.values(allocations).reduce((sum: number, val: number) => sum + val, 0)
             setAmount(total)
         }
     }, [allocations, mode])
