@@ -43,14 +43,16 @@ export default function BillsPage() {
     const [supplierResults, setSupplierResults] = useState<Supplier[]>([])
     const [supplierSearching, setSupplierSearching] = useState(false)
     const [showDropdown, setShowDropdown] = useState(false)
+    const [showFallbackMessage, setShowFallbackMessage] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
+    // Usar la misma empresa activa que el resto de la app (layout, formulario de facturas)
     useEffect(() => {
-        fetch('/api/companies')
+        fetch('/api/companies/active')
             .then(res => res.json())
-            .then((data: { id: string }[]) => {
-                if (Array.isArray(data) && data.length > 0) {
-                    setCompanyId(data[0].id)
+            .then((data: { id?: string; error?: string }) => {
+                if (data && data.id) {
+                    setCompanyId(data.id)
                 }
             })
             .catch(() => {})
@@ -81,17 +83,37 @@ export default function BillsPage() {
             const q = searchText.trim()
             if (q.length >= 2) {
                 setSupplierSearching(true)
-                fetch(`/api/operations/suppliers?companyId=${companyId}&q=${encodeURIComponent(q)}`)
+                const url = `/api/operations/suppliers?companyId=${companyId}&q=${encodeURIComponent(q)}`
+                fetch(url)
                     .then(res => res.json())
-                    .then((data: Supplier[]) => {
-                        setSupplierResults(Array.isArray(data) ? data : [])
-                        setShowDropdown(true)
+                    .then((data: Supplier[] | { error?: string }) => {
+                        const list = Array.isArray(data) ? data : []
+                        if (list.length === 0 && q) {
+                            // Sin coincidencias: mostrar todos los proveedores de la empresa para que pueda elegir
+                            return fetch(`/api/operations/suppliers?companyId=${companyId}`)
+                                .then(r => r.json())
+                                .then((all: Supplier[] | { error?: string }) => ({
+                                    list: Array.isArray(all) ? all : [],
+                                    fallback: true
+                                }))
+                                .catch(() => ({ list: [], fallback: false }))
+                        }
+                        return { list, fallback: false }
                     })
-                    .catch(() => setSupplierResults([]))
+                    .then(({ list, fallback }: { list: Supplier[]; fallback: boolean }) => {
+                        setSupplierResults(list)
+                        setShowDropdown(true)
+                        setShowFallbackMessage(fallback && list.length > 0)
+                    })
+                    .catch(() => {
+                        setSupplierResults([])
+                        setShowFallbackMessage(false)
+                    })
                     .finally(() => setSupplierSearching(false))
             } else {
                 setSupplierResults([])
                 setShowDropdown(false)
+                setShowFallbackMessage(false)
             }
         }, DEBOUNCE_MS)
         return () => clearTimeout(t)
@@ -179,7 +201,13 @@ export default function BillsPage() {
                     )}
                 </div>
                 {showDropdown && supplierResults.length > 0 && (
-                    <ul className="absolute z-10 mt-1 w-full max-w-md bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="absolute z-10 mt-1 w-full max-w-md bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {showFallbackMessage && (
+                            <p className="px-4 py-2 text-sm text-amber-700 bg-amber-50 border-b">
+                                No hay coincidencias con &quot;{searchText.trim()}&quot;. Mostrando todos los proveedores de la empresa:
+                            </p>
+                        )}
+                        <ul>
                         {supplierResults.map(s => (
                             <li key={s.id}>
                                 <button
@@ -194,7 +222,8 @@ export default function BillsPage() {
                                 </button>
                             </li>
                         ))}
-                    </ul>
+                        </ul>
+                    </div>
                 )}
                 {showDropdown && searchText.trim().length >= 2 && !supplierSearching && supplierResults.length === 0 && (
                     <div className="absolute z-10 mt-1 max-w-md px-4 py-3 bg-white border border-gray-200 rounded-md shadow-lg text-sm text-gray-500">

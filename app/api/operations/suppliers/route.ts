@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
             company_id: companyId,
             type: { in: [ThirdPartyType.PROVEEDOR, ThirdPartyType.AMBOS] }
         }
-        if (q) where.name = { contains: q, mode: 'insensitive' }
+        // Búsqueda por nombre: normalizar espacios para que "FARMATODO" coincida con "Farma Todo"
+        if (q) {
+            const normalized = q.replace(/\s+/g, ' ').trim()
+            where.name = { contains: normalized, mode: 'insensitive' }
+        }
 
         const suppliers = await prisma.thirdParty.findMany({
             where,
