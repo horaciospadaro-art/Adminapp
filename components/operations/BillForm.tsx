@@ -60,7 +60,11 @@ interface ISLRConcept {
     pj_non_domiciled_rate: number
 }
 
-export function BillForm() {
+interface BillFormProps {
+    companyId?: string
+}
+
+export function BillForm({ companyId }: BillFormProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
@@ -308,7 +312,7 @@ export function BillForm() {
         setLoading(true)
         try {
             const payload = {
-                company_id: '68de82f4-7252-403c-cf80-4df2a5de04ae', // Empresa Demo C.A.
+                company_id: companyId,
                 third_party_id: thirdPartyId,
                 type: documentType, // Passed payload type
                 bill_type: billType, // PURCHASE or EXPENSE
