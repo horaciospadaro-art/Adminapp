@@ -264,6 +264,8 @@ export function BillForm() {
         const totalInvoice = subtotal + totalTax + igtfAmount
         const totalPayable = totalInvoice - totalRetIVA - totalRetISLR
 
+        const islrConceptName = islrConceptId ? (islrConcepts.find(c => c.id === islrConceptId)?.description || '') : ''
+
         return {
             subtotal,
             totalTax,
@@ -273,7 +275,8 @@ export function BillForm() {
             totalInvoice,
             totalPayable,
             taxRate: taxRateValue,
-            islrRate: islrRateValue
+            islrRate: islrRateValue,
+            islrConceptName
         }
     }, [items, globalTaxId, vatRetentionRate, islrConceptId, isIgtfApplied, taxes, islrConcepts, thirdPartyId, suppliers])
 
@@ -746,8 +749,8 @@ export function BillForm() {
                                 <span>-{calculations.totalRetIVA.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                             </div>
                             <div className="flex justify-between text-red-600 text-xs italic">
-                                <span>(-) Retención ISLR</span>
-                                <span>-{calculations.totalRetISLR.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                <span>(-) Retención ISLR ({calculations.islrRate}%){calculations.islrConceptName && ` - ${calculations.islrConceptName}`}</span>
+                                <span>-{(calculations.totalRetISLR || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
 
