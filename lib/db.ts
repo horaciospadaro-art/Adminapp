@@ -11,21 +11,18 @@ declare const globalThis: {
 const getPrisma = () => {
     if (!globalThis.prismaGlobal) {
         const url = process.env.DATABASE_URL || process.env.DIRECT_URL
-        // Avoid "undefined" or "null" strings which sometimes appear in build envs
+
+        // If NO URL is present, we are likely in a build environment without secrets.
+        // Return null to trigger the Dummy Proxy.
         if (!url || url === 'undefined' || url === 'null') {
             return null
         }
-        try {
-            // Create a new instance with the validated URL
-            // This prevents "PrismaClient needs to be constructed with a non-empty, valid PrismaClientOptions"
-            globalThis.prismaGlobal = new PrismaClient({
-                // @ts-ignore
-                datasources: { db: { url } }
-            })
-        } catch (e) {
-            console.warn("PrismaClient construction failed during build initialization:", e)
-            return null
-        }
+
+        // If URL IS present, we MUST initialize. If it fails, let it crash!
+        // Do NOT try/catch here, or we hide DB connection errors and return empty data (Silent Data Loss).
+        globalThis.prismaGlobal = new PrismaClient({
+            datasourceUrl: url
+        })
     }
     return globalThis.prismaGlobal
 }
