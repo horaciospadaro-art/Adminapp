@@ -5,11 +5,11 @@ import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus
 import { createBillJournalEntry } from '@/lib/accounting-helpers'
 
 // Helper function to generate retention numbers
-async function generateRetentionNumber(companyId: string, type: 'IVA' | 'ISLR') {
+async function generateRetentionNumber(tx: any, companyId: string, type: 'IVA' | 'ISLR') {
     const prefix = type === 'IVA' ? 'RET-IVA' : 'RET-ISLR'
 
     // Find the last retention of this type for this company
-    const lastRetention = await prisma.withholding.findFirst({
+    const lastRetention = await tx.withholding.findFirst({
         where: {
             company_id: companyId,
             type: type === 'IVA' ? TaxType.RETENCION_IVA : TaxType.RETENCION_ISLR,
@@ -194,7 +194,7 @@ export async function POST(request: Request) {
                                 rate: vat_retention_rate,
                                 amount: totalRetIVA,
                                 direction: WithholdingDirection.ISSUED,
-                                certificate_number: await generateRetentionNumber(company_id, 'IVA'),
+                                certificate_number: await generateRetentionNumber(tx, company_id, 'IVA'),
                                 date: new Date(date)
                             }] : []),
                             ...(totalRetISLR > 0 ? [{
@@ -207,7 +207,7 @@ export async function POST(request: Request) {
                                 amount: totalRetISLR,
                                 direction: WithholdingDirection.ISSUED,
                                 islr_concept_name: islrConcepts.find(c => c.id === processedItems.find(i => i.islr_concept_id)?.islr_concept_id)?.description || null,
-                                certificate_number: await generateRetentionNumber(company_id, 'ISLR'),
+                                certificate_number: await generateRetentionNumber(tx, company_id, 'ISLR'),
                                 date: new Date(date)
                             }] : [])
                         ]
