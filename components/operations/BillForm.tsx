@@ -80,7 +80,61 @@ export function BillForm() {
     const [controlNumber, setControlNumber] = useState('')
     const [reference, setReference] = useState('')
     const [thirdPartyId, setThirdPartyId] = useState('')
+    const [documentType, setDocumentType] = useState('BILL') // BILL, DEBIT_NOTE, CREDIT_NOTE
     const [billType, setBillType] = useState<'PURCHASE' | 'EXPENSE'>('PURCHASE')
+
+    // Effect: Debit/Credit Notes are strictly Expense/Financial type
+    // Effect: Debit Notes are strictly Expense. Credit Notes can be both (Financial or Return).
+    useEffect(() => {
+        if (documentType === 'DEBIT_NOTE') {
+            setBillType('EXPENSE')
+        }
+    }, [documentType])
+
+    // Origin Bill Logic (For Returns)
+    const [originBillId, setOriginBillId] = useState('')
+    const [supplierBills, setSupplierBills] = useState<any[]>([])
+
+    useEffect(() => {
+        if (thirdPartyId && documentType === 'CREDIT_NOTE' && billType === 'PURCHASE') {
+            fetch(`/api/operations/suppliers/bills?third_party_id=${thirdPartyId}&type=BILL`)
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) setSupplierBills(data)
+                })
+                .catch(err => console.error(err))
+        } else {
+            setSupplierBills([])
+        }
+    }, [thirdPartyId, documentType, billType])
+
+    // Load items from origin bill
+    const handleOriginBillChange = (billId: string) => {
+        setOriginBillId(billId)
+        const bill = supplierBills.find(b => b.id === billId)
+        if (bill && bill.items) {
+            // Map items
+            const newItems = bill.items.map((item: any) => ({
+                product_id: item.product_id,
+                gl_account_id: item.gl_account_id,
+                description: item.description,
+                quantity: Number(item.quantity), // Default to full return? Or 0? Let's default to full for convenience.
+                unit_price: Number(item.unit_price), // Lock price?
+                tax_id: '',
+                total: 0,
+                // Taxes need to be recalculated or loaded?
+                // For simplicity, we assume same tax structure.
+                tax_rate: Number(item.tax_rate),
+                tax_amount: Number(item.tax_amount),
+                vat_retention_rate: Number(item.vat_retention_rate),
+                vat_retention_amount: Number(item.vat_retention_amount),
+                islr_rate: Number(item.islr_rate),
+                islr_amount: Number(item.islr_amount),
+                islr_concept_id: '' // Need to find logic for this
+            }))
+            setItems(newItems)
+        }
+    }
 
     const [items, setItems] = useState<BillItem[]>([])
 
@@ -245,10 +299,11 @@ export function BillForm() {
         setLoading(true)
         try {
             const payload = {
-                company_id: '', // Backend resolves
+                company_id: '1', // Hardcoded for now
                 third_party_id: thirdPartyId,
-                type: 'BILL',
+                type: documentType, // Passed payload type
                 bill_type: billType, // PURCHASE or EXPENSE
+                related_document_id: originBillId || null, // Link to origin
                 date,
                 accounting_date: accountingDate,
                 due_date: dueDate || null,
@@ -309,37 +364,115 @@ export function BillForm() {
                 </Link>
             </div>
 
-            {/* Bill Type Selector */}
-            <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setBillType('PURCHASE')
-                        setItems([]) // Clear items when switching
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${billType === 'PURCHASE'
-                        ? 'bg-white shadow text-blue-600 font-semibold'
-                        : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                >
-                    <Package className="w-4 h-4" />
-                    Compra de Inventario
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setBillType('EXPENSE')
-                        setItems([]) // Clear items when switching
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${billType === 'EXPENSE'
-                        ? 'bg-white shadow text-blue-600 font-semibold'
-                        : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                >
-                    <Receipt className="w-4 h-4" />
-                    Gasto Directo
-                </button>
+            <h2 className="text-lg font-semibold text-gray-900">Detalles de Factura</h2>
+
+            {/* Document Type Selector */}
+            <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                    <div className="flex rounded-md shadow-sm">
+                        <button
+                            type="button"
+                            onClick={() => setDocumentType('BILL')}
+                            className={`relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${documentType === 'BILL' ? 'bg-indigo-50 text-indigo-700 border-indigo-500 z-10' : ''}`}
+                        >
+                            Factura
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setDocumentType('DEBIT_NOTE')}
+                            className={`relative inline-flex items-center px-4 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${documentType === 'DEBIT_NOTE' ? 'bg-indigo-50 text-indigo-700 border-indigo-500 z-10' : ''}`}
+                        >
+                            Nota de Débito
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setDocumentType('CREDIT_NOTE')}
+                            className={`relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${documentType === 'CREDIT_NOTE' ? 'bg-indigo-50 text-indigo-700 border-indigo-500 z-10' : ''}`}
+                        >
+                            Nota de Crédito (Rebaja)
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            {/* Mode Selector */}
+            {(documentType === 'BILL' || documentType === 'CREDIT_NOTE') && (
+                <div className="flex gap-4 mb-4">
+                    <button
+                        type="button"
+                        onClick={() => setBillType('PURCHASE')}
+                        className={`flex-1 py-2 px-4 text-center rounded-lg border ${billType === 'PURCHASE'
+                            ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium'
+                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <Package className="w-4 h-4 inline-block mr-2" />
+                        {documentType === 'CREDIT_NOTE' ? 'Devolución de Mercancía' : 'Compra de Inventario'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setBillType('EXPENSE')}
+                        className={`flex-1 py-2 px-4 text-center rounded-lg border ${billType === 'EXPENSE'
+                            ? 'bg-purple-50 border-purple-200 text-purple-700 font-medium'
+                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <Receipt className="w-4 h-4 inline-block mr-2" />
+                        {documentType === 'CREDIT_NOTE' ? 'Rebaja / Descuento Financiero' : 'Gasto / Servicio'}
+                    </button>
+                </div>
+            )}
+
+            {/* Origin Invoice Selector (For Returns) */}
+            {documentType === 'CREDIT_NOTE' && billType === 'PURCHASE' && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <label htmlFor="originBill" className="block text-sm font-medium text-blue-900 mb-2">Factura de Origen (Para Devolución)</label>
+                    <select
+                        id="originBill"
+                        value={originBillId}
+                        onChange={(e) => handleOriginBillChange(e.target.value)}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                        <option value="">Seleccione Factura a Devolver...</option>
+                        {supplierBills.map((bill: any) => (
+                            <option key={bill.id} value={bill.id}>
+                                {bill.number} - {new Date(bill.date).toLocaleDateString()} - Total: {Number(bill.total).toFixed(2)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+            {/* Info Banner for Notes */}
+            {documentType === 'DEBIT_NOTE' && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <Receipt className="h-5 w-5 text-yellow-400" />
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm text-yellow-700">
+                                Nota de Débito: Registra un cargo adicional al proveedor (aumenta tu deuda). Selecciona la cuenta de gasto correspondiente.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {documentType === 'CREDIT_NOTE' && (
+                <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <Receipt className="h-5 w-5 text-green-400" />
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm text-green-700">
+                                Nota de Crédito: Registra una rebaja o descuento (disminuye tu deuda). Selecciona la cuenta de "Descuentos en Compras" o similar.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

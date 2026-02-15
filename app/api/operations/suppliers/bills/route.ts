@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus } from '@prisma/client'
+import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus, Prisma } from '@prisma/client'
 import { createBillJournalEntry } from '@/lib/accounting-helpers'
 
 // Helper function to generate retention numbers
@@ -28,6 +28,42 @@ async function generateRetentionNumber(companyId: string, type: 'IVA' | 'ISLR') 
     return `${prefix}-${nextNum.toString().padStart(6, '0')}`
 }
 
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url)
+        const thirdPartyId = searchParams.get('third_party_id')
+        const type = searchParams.get('type') // optional filter
+
+        const whereClause: any = {
+            company_id: '1', // Hardcoded for now
+            // if type is not provided, we might want all supplier documents, or just BILLs
+            // For returns, we want BILLs.
+            type: type ? (type as DocumentType) : DocumentType.BILL,
+            status: { not: 'VOID' } // Don't return voided bills
+        }
+
+        if (thirdPartyId) {
+            whereClause.third_party_id = thirdPartyId
+        }
+
+        const documents = await prisma.document.findMany({
+            where: whereClause,
+            include: {
+                third_party: true,
+                items: true,
+                withholdings: true // just in case
+            },
+            orderBy: { date: 'desc' }
+        })
+
+        return NextResponse.json(documents)
+    } catch (error: any) {
+        console.error('Error fetching bills:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json()
@@ -40,6 +76,8 @@ export async function POST(request: Request) {
             number,
             control_number,
             reference,
+            type = 'BILL', // Default to BILL if not provided
+            bill_type, // PURCHASE or EXPENSE
             items, // Array of { product_id, description, quantity, unit_price, tax_rate, gl_account_id ... }
 
             // Venezuelan specifics
@@ -116,7 +154,7 @@ export async function POST(request: Request) {
                 data: {
                     company_id,
                     third_party_id,
-                    type: DocumentType.BILL,
+                    type: type as DocumentType,
                     date: new Date(date),
                     accounting_date: accounting_date ? new Date(accounting_date) : new Date(date),
                     due_date: due_date ? new Date(due_date) : null,
@@ -185,52 +223,99 @@ export async function POST(request: Request) {
             })
 
             // C. Update Inventory (Moving Average Cost)
-            for (const item of processedItems) {
-                if (item.product_id) {
-                    const product = await tx.product.findUnique({ where: { id: item.product_id } })
+            // Only for BILLs or specific types that affect inventory. 
+            // Debit Notes usually don't move stock. Credit Notes (Financial) don't move stock.
+            // Purchase Returns (Physical) will move stock but they are handled separately or via type='PURCHASE_RETURN' (future)
+            if (type === 'BILL') {
+                for (const item of processedItems) {
+                    if (item.product_id) {
+                        const product = await tx.product.findUnique({ where: { id: item.product_id } })
 
-                    if (product?.track_inventory && product.type === ProductType.GOODS) {
-                        // Calculate new Weighted Average Cost
-                        const currentQty = Number(product.quantity_on_hand)
-                        const currentCost = Number(product.avg_cost)
-                        const newQty = item.quantity
-                        const newCost = item.unit_price
+                        if (product?.track_inventory && product.type === ProductType.GOODS) {
+                            // Calculate new Weighted Average Cost
+                            const currentQty = Number(product.quantity_on_hand)
+                            const currentCost = Number(product.avg_cost)
+                            const newQty = item.quantity
+                            const newCost = item.unit_price
 
-                        // Formula: ((CurrentQty * CurrentCost) + (NewQty * NewCost)) / (CurrentQty + NewQty)
-                        const totalValue = (currentQty * currentCost) + (newQty * newCost)
-                        const totalQty = currentQty + newQty
+                            // Formula: ((CurrentQty * CurrentCost) + (NewQty * NewCost)) / (CurrentQty + NewQty)
+                            const totalValue = (currentQty * currentCost) + (newQty * newCost)
+                            const totalQty = currentQty + newQty
 
-                        let newAvgCost = currentCost
-                        if (totalQty > 0) {
-                            newAvgCost = totalValue / totalQty
+                            let newAvgCost = currentCost
+                            if (totalQty > 0) {
+                                newAvgCost = totalValue / totalQty
+                            }
+
+                            // Create Movement Record
+                            await tx.inventoryMovement.create({
+                                data: {
+                                    company_id,
+                                    product_id: item.product_id,
+                                    date: new Date(date),
+                                    type: 'PURCHASE', // Assuming enum fits
+                                    quantity: newQty,
+                                    unit_cost: newCost,
+                                    total_value: newQty * newCost,
+                                    avg_cost_before: currentCost,
+                                    avg_cost_after: newAvgCost,
+                                    document_id: doc.id,
+                                    description: `Compra Factura ${number}`
+                                }
+                            })
+
+                            // Update Product
+                            await tx.product.update({
+                                where: { id: item.product_id },
+                                data: {
+                                    quantity_on_hand: { increment: newQty },
+                                    avg_cost: newAvgCost,
+                                    last_purchase_date: new Date(date)
+                                }
+                            })
                         }
+                    }
+                }
+            } else if (type === 'CREDIT_NOTE' && bill_type === 'PURCHASE') {
+                for (const item of processedItems) {
+                    if (item.product_id) {
+                        const product = await tx.product.findUnique({ where: { id: item.product_id } })
 
-                        // Create Movement Record
-                        await tx.inventoryMovement.create({
-                            data: {
-                                company_id,
-                                product_id: item.product_id,
-                                date: new Date(date),
-                                type: 'PURCHASE', // Assuming enum fits
-                                quantity: newQty,
-                                unit_cost: newCost,
-                                total_value: newQty * newCost,
-                                avg_cost_before: currentCost,
-                                avg_cost_after: newAvgCost,
-                                document_id: doc.id,
-                                description: `Compra Factura ${number}`
-                            }
-                        })
+                        if (product?.track_inventory && product.type === ProductType.GOODS) {
+                            // Returns: Exit at Current Average Cost
+                            const currentCost = Number(product.avg_cost)
+                            const returnQty = item.quantity // Quantity to return
 
-                        // Update Product
-                        await tx.product.update({
-                            where: { id: item.product_id },
-                            data: {
-                                quantity_on_hand: { increment: newQty },
-                                avg_cost: newAvgCost,
-                                last_purchase_date: new Date(date)
-                            }
-                        })
+                            // Create Movement Record (PURCHASE_RETURN)
+                            // Note: We use PURCHASE_RETURN if available in enum, else ADJUSTMENT_OUT or similar.
+                            // Assuming PURCHASE_RETURN was added to schema as per task.
+                            // If enum not updated in types yet, we might need cast or use generic string if enum allows.
+                            // But usually prisma generates types.
+                            await tx.inventoryMovement.create({
+                                data: {
+                                    company_id,
+                                    product_id: item.product_id,
+                                    date: new Date(date),
+                                    type: 'PURCHASE_RETURN',
+                                    quantity: returnQty,
+                                    unit_cost: currentCost,
+                                    total_value: returnQty * currentCost,
+                                    avg_cost_before: currentCost,
+                                    avg_cost_after: currentCost,
+                                    document_id: doc.id,
+                                    description: `Devolución Compra ${number}`
+                                }
+                            })
+
+                            // Update Product Stock (Decrement)
+                            await tx.product.update({
+                                where: { id: item.product_id },
+                                data: {
+                                    quantity_on_hand: { decrement: returnQty },
+                                    last_purchase_date: new Date(date)
+                                }
+                            })
+                        }
                     }
                 }
             }

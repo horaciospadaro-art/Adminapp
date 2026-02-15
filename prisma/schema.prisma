@@ -20,14 +20,14 @@ model Company {
   updated_at        DateTime @updatedAt
 
   // Relations
-  accounts       ChartOfAccount[]
-  journalEntries JournalEntry[]
-  thirdParties   ThirdParty[]
-  products       Product[]
-  bankAccounts   BankAccount[]
-  taxes          Tax[]
-  documents      Document[]
-  withholdings   Withholding[]
+  accounts        ChartOfAccount[]
+  journalEntries  JournalEntry[]
+  thirdParties    ThirdParty[]
+  products        Product[]
+  bankAccounts    BankAccount[]
+  taxes           Tax[]
+  documents       Document[]
+  withholdings    Withholding[]
   globalTaxConfig GlobalTaxConfiguration?
 }
 
@@ -43,18 +43,18 @@ enum AccountType {
 }
 
 model ChartOfAccount {
-  id         String      @id @default(uuid())
+  id         String           @id @default(uuid())
   company_id String
-  company    Company     @relation(fields: [company_id], references: [id])
+  company    Company          @relation(fields: [company_id], references: [id])
   code       String // Hierarchical: 1.1.01
   name       String
   type       AccountType
   parent_id  String?
-  parent     ChartOfAccount? @relation("AccountHierarchy", fields: [parent_id], references: [id])
+  parent     ChartOfAccount?  @relation("AccountHierarchy", fields: [parent_id], references: [id])
   children   ChartOfAccount[] @relation("AccountHierarchy")
-  balance    Decimal     @default(0.00) @db.Decimal(20, 2)
-  created_at DateTime    @default(now())
-  updated_at DateTime    @updatedAt
+  balance    Decimal          @default(0.00) @db.Decimal(20, 2)
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
 
   // Relations
   journalLines    JournalLine[]
@@ -62,18 +62,18 @@ model ChartOfAccount {
   linkedCOGS      Product[]     @relation("COGS")
   linkedIncome    Product[]     @relation("SalesIncome")
   linkedBankAccts BankAccount[]
-  
+
   // ThirdParty Relations
   linkedReceivables ThirdParty[] @relation("ThirdPartyReceivable")
   linkedPayables    ThirdParty[] @relation("ThirdPartyPayable")
   taxes             Tax[]
-  
+
   // Global Tax Config Relations
-  globalIvaDebit     GlobalTaxConfiguration[] @relation("IvaDebit")
-  globalIvaCredit    GlobalTaxConfiguration[] @relation("IvaCredit")
-  globalIvaRetention GlobalTaxConfiguration[] @relation("IvaRetention")
+  globalIvaDebit      GlobalTaxConfiguration[] @relation("IvaDebit")
+  globalIvaCredit     GlobalTaxConfiguration[] @relation("IvaCredit")
+  globalIvaRetention  GlobalTaxConfiguration[] @relation("IvaRetention")
   globalIslrRetention GlobalTaxConfiguration[] @relation("IslrRetention")
-  globalIgtf         GlobalTaxConfiguration[] @relation("IgtfAccount")
+  globalIgtf          GlobalTaxConfiguration[] @relation("IgtfAccount")
 
   @@unique([company_id, code])
 }
@@ -122,40 +122,40 @@ enum ThirdPartyType {
 }
 
 enum TaxpayerType {
-  PN_RESIDENTE      // Persona Natural Residente
-  PN_NO_RESIDENTE   // Persona Natural No Residente
-  PJ_DOMICILIADA    // Persona Juridica Domiciliada
+  PN_RESIDENTE // Persona Natural Residente
+  PN_NO_RESIDENTE // Persona Natural No Residente
+  PJ_DOMICILIADA // Persona Juridica Domiciliada
   PJ_NO_DOMICILIADA // Persona Juridica No Domiciliada
 }
 
 model ThirdParty {
-  id                   String   @id @default(uuid())
-  company_id           String
-  company              Company  @relation(fields: [company_id], references: [id])
-  name                 String
-  rif                  String
-  email                String?
-  phone                String?
-  address              String?
-  type                 ThirdPartyType @default(CLIENTE)
-  
-  taxpayer_type        TaxpayerType @default(PJ_DOMICILIADA) // New field
-  
-  is_tax_payer_special Boolean  @default(false)
-  retention_agent_islr Boolean  @default(false)
-  
+  id         String         @id @default(uuid())
+  company_id String
+  company    Company        @relation(fields: [company_id], references: [id])
+  name       String
+  rif        String
+  email      String?
+  phone      String?
+  address    String?
+  type       ThirdPartyType @default(CLIENTE)
+
+  taxpayer_type TaxpayerType @default(PJ_DOMICILIADA) // New field
+
+  is_tax_payer_special Boolean @default(false)
+  retention_agent_islr Boolean @default(false)
+
   // Accounting Links
   receivable_account_id String?
   receivable_account    ChartOfAccount? @relation("ThirdPartyReceivable", fields: [receivable_account_id], references: [id])
-  
-  payable_account_id    String?
-  payable_account       ChartOfAccount? @relation("ThirdPartyPayable", fields: [payable_account_id], references: [id])
-  
-  documents             Document[]
-  withholdings          Withholding[]
 
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  payable_account_id String?
+  payable_account    ChartOfAccount? @relation("ThirdPartyPayable", fields: [payable_account_id], references: [id])
+
+  documents    Document[]
+  withholdings Withholding[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 // Product model removed (merged below)
@@ -168,22 +168,22 @@ enum BankAccountType {
 }
 
 model BankAccount {
-  id             String         @id @default(uuid())
+  id             String          @id @default(uuid())
   company_id     String
-  company        Company        @relation(fields: [company_id], references: [id])
+  company        Company         @relation(fields: [company_id], references: [id])
   bank_name      String
   account_number String
-  currency       String         @default("VES") // VES or USD
+  currency       String          @default("VES") // VES or USD
   type           BankAccountType @default(CORRIENTE)
-  balance        Decimal        @default(0.00) @db.Decimal(20, 2)
-  
-  gl_account_id  String
-  gl_account     ChartOfAccount @relation(fields: [gl_account_id], references: [id])
-  created_at     DateTime       @default(now())
-  updated_at     DateTime       @updatedAt
+  balance        Decimal         @default(0.00) @db.Decimal(20, 2)
+
+  gl_account_id String
+  gl_account    ChartOfAccount @relation(fields: [gl_account_id], references: [id])
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
 
   // Relations
-  transactions   BankTransaction[]
+  transactions      BankTransaction[]
   related_transfers BankTransaction[] @relation("RelatedTransfers")
 }
 
@@ -199,42 +199,42 @@ enum BankTransactionStatus {
 }
 
 enum BankTransactionSubtype {
-  DEPOSIT          // Depósito
-  WITHDRAWAL       // Retiro
-  TRANSFER_OUT     // Transferencia Enviada
-  TRANSFER_IN      // Transferencia Recibida
-  DEBIT_NOTE       // Nota de Débito
-  CREDIT_NOTE      // Nota de Crédito
-  OTHER            // Otro
+  DEPOSIT // Depósito
+  WITHDRAWAL // Retiro
+  TRANSFER_OUT // Transferencia Enviada
+  TRANSFER_IN // Transferencia Recibida
+  DEBIT_NOTE // Nota de Débito
+  CREDIT_NOTE // Nota de Crédito
+  OTHER // Otro
 }
 
 model BankTransaction {
-  id              String              @id @default(uuid())
+  id              String      @id @default(uuid())
   bank_account_id String
-  bank_account    BankAccount         @relation(fields: [bank_account_id], references: [id])
-  
-  date            DateTime
-  reference       String?
-  description     String
-  amount          Decimal             @db.Decimal(20, 2)
-  type            BankTransactionType
-  subtype         BankTransactionSubtype @default(OTHER)
-  status          BankTransactionStatus @default(PENDING)
-  
+  bank_account    BankAccount @relation(fields: [bank_account_id], references: [id])
+
+  date        DateTime
+  reference   String?
+  description String
+  amount      Decimal                @db.Decimal(20, 2)
+  type        BankTransactionType
+  subtype     BankTransactionSubtype @default(OTHER)
+  status      BankTransactionStatus  @default(PENDING)
+
   // For transfers between bank accounts
   related_bank_account_id String?
   related_bank_account    BankAccount? @relation("RelatedTransfers", fields: [related_bank_account_id], references: [id])
-  
-  // Venezuelan specifics
-  is_igtf_applied Boolean             @default(false)
-  igtf_amount     Decimal             @default(0.00) @db.Decimal(20, 2)
-  
-  // Atomic Link to Accounting
-  journal_entry_id String?            @unique
-  journal_entry    JournalEntry?      @relation(fields: [journal_entry_id], references: [id])
 
-  created_at      DateTime            @default(now())
-  updated_at      DateTime            @updatedAt
+  // Venezuelan specifics
+  is_igtf_applied Boolean @default(false)
+  igtf_amount     Decimal @default(0.00) @db.Decimal(20, 2)
+
+  // Atomic Link to Accounting
+  journal_entry_id String?       @unique
+  journal_entry    JournalEntry? @relation(fields: [journal_entry_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 // Configuration Module
@@ -248,50 +248,50 @@ enum TaxType {
 }
 
 model Tax {
-  id              String   @id @default(uuid())
-  company_id      String
-  company         Company  @relation(fields: [company_id], references: [id])
-  name            String
-  code            String?  
-  rate            Decimal  @db.Decimal(5, 2) 
-  type            TaxType
-  description     String?
+  id          String  @id @default(uuid())
+  company_id  String
+  company     Company @relation(fields: [company_id], references: [id])
+  name        String
+  code        String?
+  rate        Decimal @db.Decimal(5, 2)
+  type        TaxType
+  description String?
 
   // Connection to Accounting
-  gl_account_id   String?
-  gl_account      ChartOfAccount? @relation(fields: [gl_account_id], references: [id])
+  gl_account_id String?
+  gl_account    ChartOfAccount? @relation(fields: [gl_account_id], references: [id])
 
-  is_active       Boolean  @default(true)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model GlobalTaxConfiguration {
-  id                            String          @id @default(uuid())
-  company_id                    String          @unique
-  company                       Company         @relation(fields: [company_id], references: [id])
-  
+  id         String  @id @default(uuid())
+  company_id String  @unique
+  company    Company @relation(fields: [company_id], references: [id])
+
   // Sales VAT (Debito Fiscal)
-  iva_fiscal_debit_account_id   String?
-  iva_fiscal_debit_account      ChartOfAccount? @relation("IvaDebit", fields: [iva_fiscal_debit_account_id], references: [id])
+  iva_fiscal_debit_account_id String?
+  iva_fiscal_debit_account    ChartOfAccount? @relation("IvaDebit", fields: [iva_fiscal_debit_account_id], references: [id])
 
   // Purchase VAT (Credito Fiscal)
-  iva_fiscal_credit_account_id  String?
-  iva_fiscal_credit_account     ChartOfAccount? @relation("IvaCredit", fields: [iva_fiscal_credit_account_id], references: [id])
+  iva_fiscal_credit_account_id String?
+  iva_fiscal_credit_account    ChartOfAccount? @relation("IvaCredit", fields: [iva_fiscal_credit_account_id], references: [id])
 
   // VAT Retention (Retenciones IVA)
-  iva_retention_account_id      String?
-  iva_retention_account         ChartOfAccount? @relation("IvaRetention", fields: [iva_retention_account_id], references: [id])
+  iva_retention_account_id String?
+  iva_retention_account    ChartOfAccount? @relation("IvaRetention", fields: [iva_retention_account_id], references: [id])
 
   // ISLR Retention (Retenciones ISLR)
-  islr_retention_account_id     String?
-  islr_retention_account        ChartOfAccount? @relation("IslrRetention", fields: [islr_retention_account_id], references: [id])
-  
-  // IGTF (Impuesto a Grandes Transacciones Financieras)
-  igtf_account_id               String?
-  igtf_account                  ChartOfAccount? @relation("IgtfAccount", fields: [igtf_account_id], references: [id])
+  islr_retention_account_id String?
+  islr_retention_account    ChartOfAccount? @relation("IslrRetention", fields: [islr_retention_account_id], references: [id])
 
-  updatedAt                     DateTime        @updatedAt
+  // IGTF (Impuesto a Grandes Transacciones Financieras)
+  igtf_account_id String?
+  igtf_account    ChartOfAccount? @relation("IgtfAccount", fields: [igtf_account_id], references: [id])
+
+  updatedAt DateTime @updatedAt
 }
 
 model VATRetention {
@@ -308,22 +308,22 @@ model ISLRConcept {
   id                    String   @id @default(uuid())
   seniat_code           String?
   description           String
-  pn_resident_rate      String?  // PN Residente
-  pj_domiciled_rate     String?  // PJ Domiciliada
-  pn_non_resident_rate  String?  // PN No Residente
-  pj_non_domiciled_rate String?  // PJ No Domiciliada
+  pn_resident_rate      String? // PN Residente
+  pj_domiciled_rate     String? // PJ Domiciliada
+  pn_non_resident_rate  String? // PN No Residente
+  pj_non_domiciled_rate String? // PJ No Domiciliada
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
 
 // Optimization: Single table for all document headers (Invoices, Bills, Credit Notes)
 enum DocumentType {
-  INVOICE        // Factura de Venta
-  BILL           // Factura de Compra
-  CREDIT_NOTE    // Nota de Credito
-  DEBIT_NOTE     // Nota de Debito
-  RECEIPT        // Recibo de Pago
-  PAYMENT        // Comprobante de Egreso
+  INVOICE // Factura de Venta
+  BILL // Factura de Compra
+  CREDIT_NOTE // Nota de Credito
+  DEBIT_NOTE // Nota de Debito
+  RECEIPT // Recibo de Pago
+  PAYMENT // Comprobante de Egreso
 }
 
 enum PaymentStatus {
@@ -334,51 +334,56 @@ enum PaymentStatus {
 }
 
 model Document {
-  id              String         @id @default(uuid())
-  company_id      String
-  company         Company        @relation(fields: [company_id], references: [id])
-  
+  id         String  @id @default(uuid())
+  company_id String
+  company    Company @relation(fields: [company_id], references: [id])
+
   // Relations
-  third_party_id  String
-  third_party     ThirdParty     @relation(fields: [third_party_id], references: [id])
-  currency_code   String
-  
+  third_party_id String
+  third_party    ThirdParty @relation(fields: [third_party_id], references: [id])
+  currency_code  String
+
+  // Link to other documents (e.g. Credit Note -> Bill)
+  related_document_id String?
+  related_document    Document?  @relation("RelatedDocuments", fields: [related_document_id], references: [id])
+  child_documents     Document[] @relation("RelatedDocuments")
+
   // Document Info
   type            DocumentType
   date            DateTime
   due_date        DateTime?
-  number          String         // Nro de Factura
-  control_number  String?        // Nro de Control
-  accounting_date DateTime       @default(now()) // Fecha de Operacion Contable
-  reference       String?        // Order Reference, etc.
-  
+  number          String // Nro de Factura
+  control_number  String? // Nro de Control
+  accounting_date DateTime     @default(now()) // Fecha de Operacion Contable
+  reference       String? // Order Reference, etc.
+
   // Financials
-  subtotal        Decimal        @db.Decimal(15, 2)
-  tax_amount      Decimal        @db.Decimal(15, 2)
-  total           Decimal        @db.Decimal(15, 2)
-  balance         Decimal        @db.Decimal(15, 2) // Remaining amount to be paid
-  
-  status          PaymentStatus  @default(PENDING)
-  notes           String?
+  subtotal   Decimal @db.Decimal(15, 2)
+  tax_amount Decimal @db.Decimal(15, 2)
+  total      Decimal @db.Decimal(15, 2)
+  balance    Decimal @db.Decimal(15, 2) // Remaining amount to be paid
+
+  status PaymentStatus @default(PENDING)
+  notes  String?
 
   // Venezuelan specifics
-  is_igtf         Boolean        @default(false)
-  igtf_amount     Decimal        @default(0.00) @db.Decimal(15, 2)
+  is_igtf     Boolean @default(false)
+  igtf_amount Decimal @default(0.00) @db.Decimal(15, 2)
 
   // Items
-  items           DocumentItem[]
+  items DocumentItem[]
 
   // Accounting Link
   journal_entry_id String?       @unique
-  journal_entry   JournalEntry?  @relation(fields: [journal_entry_id], references: [id])
+  journal_entry    JournalEntry? @relation(fields: [journal_entry_id], references: [id])
 
   // Revenue Module Relations
-  withholdings         Withholding[]
-  payment_allocations  PaymentAllocation[] @relation("PaymentDocument")
-  invoice_allocations  PaymentAllocation[] @relation("InvoiceDocument")
+  withholdings        Withholding[]
+  payment_allocations PaymentAllocation[] @relation("PaymentDocument")
+  invoice_allocations PaymentAllocation[] @relation("InvoiceDocument")
 
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@unique([company_id, type, number])
   @@index([third_party_id])
@@ -386,34 +391,34 @@ model Document {
 }
 
 model DocumentItem {
-  id              String    @id @default(uuid())
-  document_id     String
-  document        Document  @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  document_id String
+  document    Document @relation(fields: [document_id], references: [id], onDelete: Cascade)
 
   // Product/Service Link
-  product_id      String?
-  product         Product?  @relation(fields: [product_id], references: [id])
-  
-  description     String
-  quantity        Decimal   @db.Decimal(12, 4)
-  unit_price      Decimal   @db.Decimal(15, 2)
-  
+  product_id String?
+  product    Product? @relation(fields: [product_id], references: [id])
+
+  description String
+  quantity    Decimal @db.Decimal(12, 4)
+  unit_price  Decimal @db.Decimal(15, 2)
+
   // Tax Info (Snapshot)
-  tax_id          String?
-  tax_rate        Decimal   @default(0) @db.Decimal(5, 2)
-  tax_amount      Decimal   @default(0) @db.Decimal(15, 2)
+  tax_id     String?
+  tax_rate   Decimal @default(0) @db.Decimal(5, 2)
+  tax_amount Decimal @default(0) @db.Decimal(15, 2)
 
   // Retentions (Per line calculation snapshots)
-  vat_retention_rate    Decimal @default(0) @db.Decimal(5, 2)
-  vat_retention_amount  Decimal @default(0) @db.Decimal(15, 2)
-  
-  islr_rate             Decimal @default(0) @db.Decimal(5, 2)
-  islr_amount           Decimal @default(0) @db.Decimal(15, 2)
-  
-  total           Decimal   @db.Decimal(15, 2)
+  vat_retention_rate   Decimal @default(0) @db.Decimal(5, 2)
+  vat_retention_amount Decimal @default(0) @db.Decimal(15, 2)
+
+  islr_rate   Decimal @default(0) @db.Decimal(5, 2)
+  islr_amount Decimal @default(0) @db.Decimal(15, 2)
+
+  total Decimal @db.Decimal(15, 2)
 
   // Account Link (Sales/Expense Account)
-  gl_account_id   String?   // Overrides product default if set
+  gl_account_id String? // Overrides product default if set
 }
 
 // INVENTORY MODULE
@@ -424,89 +429,90 @@ enum ProductType {
 }
 
 enum MovementType {
-  PURCHASE           // Compra / Entrada por compra
-  SALE               // Venta / Salida por venta
-  ADJUSTMENT_IN      // Ajuste de entrada
-  ADJUSTMENT_OUT     // Ajuste de salida (merma, pérdida)
-  TRANSFER_IN        // Transferencia entrada (futuro)
-  TRANSFER_OUT       // Transferencia salida (futuro)
+  PURCHASE // Compra / Entrada por compra
+  PURCHASE_RETURN // Devolución de Compra
+  SALE // Venta / Salida por venta
+  ADJUSTMENT_IN // Ajuste de entrada
+  ADJUSTMENT_OUT // Ajuste de salida (merma, pérdida)
+  TRANSFER_IN // Transferencia entrada (futuro)
+  TRANSFER_OUT // Transferencia salida (futuro)
 }
 
 model InventoryMovement {
-  id                String       @id @default(uuid())
-  company_id        String
-  product_id        String
-  product           Product      @relation(fields: [product_id], references: [id])
-  
-  date              DateTime
-  type              MovementType
-  quantity          Decimal      @db.Decimal(12, 4)
-  unit_cost         Decimal      @db.Decimal(15, 2) // Cost at time of movement
-  total_value       Decimal      @db.Decimal(15, 2)
-  
+  id         String  @id @default(uuid())
+  company_id String
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id])
+
+  date        DateTime
+  type        MovementType
+  quantity    Decimal      @db.Decimal(12, 4)
+  unit_cost   Decimal      @db.Decimal(15, 2) // Cost at time of movement
+  total_value Decimal      @db.Decimal(15, 2)
+
   // Snapshot of avg_cost before and after
-  avg_cost_before   Decimal      @db.Decimal(15, 2)
-  avg_cost_after    Decimal      @db.Decimal(15, 2)
-  
-  reference         String?      // Purchase order, invoice number, etc.
-  description       String?
-  
+  avg_cost_before Decimal @db.Decimal(15, 2)
+  avg_cost_after  Decimal @db.Decimal(15, 2)
+
+  reference   String? // Purchase order, invoice number, etc.
+  description String?
+
   // Link to source document (invoice, bill, etc.)
-  document_id       String?
-  
+  document_id String?
+
   // Accounting Link
-  journal_entry_id  String?      @unique
-  journal_entry     JournalEntry? @relation(fields: [journal_entry_id], references: [id])
-  
-  created_at        DateTime     @default(now())
-  updated_at        DateTime     @updatedAt
-  
+  journal_entry_id String?       @unique
+  journal_entry    JournalEntry? @relation(fields: [journal_entry_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   @@index([product_id])
   @@index([date])
   @@index([type])
 }
 
 model Product {
-  id              String      @id @default(uuid())
-  company_id      String
-  company         Company     @relation(fields: [company_id], references: [id])
-  
-  name            String
-  sku             String?
-  description     String?
-  type            ProductType
-  
+  id         String  @id @default(uuid())
+  company_id String
+  company    Company @relation(fields: [company_id], references: [id])
+
+  name        String
+  sku         String?
+  description String?
+  type        ProductType
+
   // Tracking
-  track_inventory Boolean     @default(false)
-  quantity_on_hand Decimal    @default(0) @db.Decimal(12, 4)
-  avg_cost        Decimal     @default(0) @db.Decimal(15, 2) // Costo Promedio Movil
+  track_inventory  Boolean @default(false)
+  quantity_on_hand Decimal @default(0) @db.Decimal(12, 4)
+  avg_cost         Decimal @default(0) @db.Decimal(15, 2) // Costo Promedio Movil
 
   // Price
-  sales_price     Decimal     @default(0) @db.Decimal(15, 2)
-  
+  sales_price Decimal @default(0) @db.Decimal(15, 2)
+
   // Accounting Links
   income_account_id String?
   income_account    ChartOfAccount? @relation("SalesIncome", fields: [income_account_id], references: [id])
-  
-  cogs_account_id   String?
-  cogs_account      ChartOfAccount? @relation("COGS", fields: [cogs_account_id], references: [id])
-  
-  asset_account_id  String?
-  asset_account     ChartOfAccount? @relation("InventoryAsset", fields: [asset_account_id], references: [id])
+
+  cogs_account_id String?
+  cogs_account    ChartOfAccount? @relation("COGS", fields: [cogs_account_id], references: [id])
+
+  asset_account_id String?
+  asset_account    ChartOfAccount? @relation("InventoryAsset", fields: [asset_account_id], references: [id])
 
   // Tax Default
-  tax_id          String?
-  
+  tax_id String?
+
   // Stock Control (for GOODS only)
-  minimum_stock   Decimal     @default(0) @db.Decimal(12, 4)
-  reorder_point   Decimal?    @db.Decimal(12, 4)
+  minimum_stock      Decimal   @default(0) @db.Decimal(12, 4)
+  reorder_point      Decimal?  @db.Decimal(12, 4)
   last_purchase_date DateTime?
-  
-  is_active       Boolean     @default(true)
-  created_at      DateTime    @default(now())
-  updated_at      DateTime    @updatedAt
-  
-  document_items  DocumentItem[]
+
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  document_items      DocumentItem[]
   inventory_movements InventoryMovement[]
 
   @@unique([company_id, sku])
@@ -515,49 +521,49 @@ model Product {
 // CUSTOMER REVENUE MODULE
 
 enum WithholdingDirection {
-  RECEIVED  // Recibida de cliente
-  ISSUED    // Emitida a proveedor
+  RECEIVED // Recibida de cliente
+  ISSUED // Emitida a proveedor
 }
 
 // Withholding - Retenciones recibidas de clientes o emitidas a proveedores
 model Withholding {
-  id                String               @id @default(uuid())
-  company_id        String
-  company           Company              @relation(fields: [company_id], references: [id])
-  
+  id         String  @id @default(uuid())
+  company_id String
+  company    Company @relation(fields: [company_id], references: [id])
+
   // Related Document (INVOICE for received, BILL for issued)
-  document_id       String
-  document          Document             @relation(fields: [document_id], references: [id])
-  
+  document_id String
+  document    Document @relation(fields: [document_id], references: [id])
+
   // Third Party (Customer who withheld OR Supplier to whom we withhold)
-  third_party_id    String
-  third_party       ThirdParty           @relation(fields: [third_party_id], references: [id])
-  
+  third_party_id String
+  third_party    ThirdParty @relation(fields: [third_party_id], references: [id])
+
   // Direction: RECEIVED (from customer) or ISSUED (to supplier)
-  direction         WithholdingDirection
-  
+  direction WithholdingDirection
+
   // Withholding Details
-  type              TaxType              // RETENCION_IVA or RETENCION_ISLR
-  date              DateTime
-  certificate_number String              // Auto-generated: RET-IVA-0001, RET-ISLR-0001
-  
+  type               TaxType // RETENCION_IVA or RETENCION_ISLR
+  date               DateTime
+  certificate_number String // Auto-generated: RET-IVA-0001, RET-ISLR-0001
+
   // Amounts
-  base_amount       Decimal              @db.Decimal(15, 2)  // Base imponible (for IVA) or taxable income (for ISLR)
-  tax_amount        Decimal              @db.Decimal(15, 2)  // IVA amount (for IVA retention) or N/A for ISLR
-  rate              Decimal              @db.Decimal(5, 2)   // Retention rate: 75, 100 for IVA; 2, 3, etc. for ISLR
-  amount            Decimal              @db.Decimal(15, 2)  // Final retention amount
-  
+  base_amount Decimal @db.Decimal(15, 2) // Base imponible (for IVA) or taxable income (for ISLR)
+  tax_amount  Decimal @db.Decimal(15, 2) // IVA amount (for IVA retention) or N/A for ISLR
+  rate        Decimal @db.Decimal(5, 2) // Retention rate: 75, 100 for IVA; 2, 3, etc. for ISLR
+  amount      Decimal @db.Decimal(15, 2) // Final retention amount
+
   // ISLR Specific (null for IVA retentions)
   islr_concept_code String?
   islr_concept_name String?
-  
+
   // Accounting Link
-  journal_entry_id  String?              @unique
-  journal_entry     JournalEntry?        @relation(fields: [journal_entry_id], references: [id])
-  
-  created_at        DateTime             @default(now())
-  updated_at        DateTime             @updatedAt
-  
+  journal_entry_id String?       @unique
+  journal_entry    JournalEntry? @relation(fields: [journal_entry_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   @@unique([company_id, direction, type, certificate_number])
   @@index([document_id])
   @@index([third_party_id])
@@ -565,20 +571,20 @@ model Withholding {
 
 // Payment allocation to track which payments apply to which invoices
 model PaymentAllocation {
-  id                String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Payment Document (RECEIPT)
-  payment_id        String
-  payment           Document  @relation("PaymentDocument", fields: [payment_id], references: [id])
-  
+  payment_id String
+  payment    Document @relation("PaymentDocument", fields: [payment_id], references: [id])
+
   // Invoice being paid
-  invoice_id        String
-  invoice           Document  @relation("InvoiceDocument", fields: [invoice_id], references: [id])
-  
-  amount            Decimal   @db.Decimal(15, 2)
-  
-  created_at        DateTime  @default(now())
-  
+  invoice_id String
+  invoice    Document @relation("InvoiceDocument", fields: [invoice_id], references: [id])
+
+  amount Decimal @db.Decimal(15, 2)
+
+  created_at DateTime @default(now())
+
   @@index([payment_id])
   @@index([invoice_id])
 }

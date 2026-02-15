@@ -423,6 +423,16 @@ export async function createBillJournalEntry(
         }
     }
 
+    // 5. ADJUSTMENT: If Credit Note, swap Debits and Credits
+    if (bill.type === DocumentType.CREDIT_NOTE) {
+        lines = lines.map(line => ({
+            ...line,
+            debit: line.credit,
+            credit: line.debit,
+            description: `(NC) ${line.description}` // Optional prefix
+        }))
+    }
+
     // Create Journal Entry
     const journal = await tx.journalEntry.create({
         data: {
