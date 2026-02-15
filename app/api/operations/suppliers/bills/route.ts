@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus, Prisma } from '@prisma/client'
+import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus, Prisma, MovementType } from '@prisma/client'
 import { createBillJournalEntry } from '@/lib/accounting-helpers'
 
 // Helper function to generate retention numbers
@@ -289,7 +289,7 @@ export async function POST(request: Request) {
                                     company_id,
                                     product_id: item.product_id,
                                     date: new Date(date),
-                                    type: 'PURCHASE_RETURN',
+                                    type: MovementType.PURCHASE_RETURN,
                                     quantity: returnQty,
                                     unit_cost: currentCost,
                                     total_value: returnQty * currentCost,
@@ -317,6 +317,8 @@ export async function POST(request: Request) {
             await createBillJournalEntry(tx, doc.id, company_id)
 
             return { document: doc }
+        }, {
+            timeout: 20000 // Increase timeout to 20s for complex operations
         })
 
         return NextResponse.json(result)
