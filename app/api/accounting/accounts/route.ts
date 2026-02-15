@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { AccountService } from '@/lib/services/account-service'
 import { AccountType } from '@prisma/client'
