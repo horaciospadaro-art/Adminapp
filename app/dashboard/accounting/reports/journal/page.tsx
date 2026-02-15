@@ -1,31 +1,31 @@
 import { Suspense } from 'react'
-import prisma from '@/lib/db'
 import { MonthYearFilters } from '@/components/accounting/reports/MonthYearFilters'
-import { getLegalJournal } from '@/lib/actions/accounting-reports'
+import { getLegalJournal, type LegalJournalEntry } from '@/lib/actions/accounting-reports'
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 
 import { getPersistentCompanyId } from '@/lib/company-utils'
 
-export default async function LegalJournalPage({
-    searchParams
-}: {
-    searchParams: { month?: string; year?: string }
+export default async function LegalJournalPage(props: {
+    searchParams: Promise<{ month?: string; year?: string }> | { month?: string; year?: string }
 }) {
+    const searchParams = await Promise.resolve(props.searchParams)
     const companyId = await getPersistentCompanyId()
     const { month, year } = searchParams
 
-    let entries: any[] = []
-    let error = null
+    let entries: LegalJournalEntry[] = []
+    let error: string | null = null
 
-    if (month && year) {
+    if (companyId && month && year) {
         try {
-            entries = await getLegalJournal({
-                companyId,
-                month: parseInt(month),
-                year: parseInt(year)
-            })
-        } catch (e: any) {
-            error = e.message
+            const m = parseInt(month, 10)
+            const y = parseInt(year, 10)
+            if (isNaN(m) || isNaN(y) || m < 1 || m > 12 || y < 1900 || y > 2100) {
+                error = 'Mes o año inválido'
+            } else {
+                entries = await getLegalJournal({ companyId, month: m, year: y })
+            }
+        } catch (e: unknown) {
+            error = e instanceof Error ? e.message : 'Error al cargar el diario'
         }
     }
 
@@ -70,12 +70,12 @@ export default async function LegalJournalPage({
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {entries.map((entry: any) => (
+                                {entries.map((entry) => (
                                     <>
                                         {/* Entry Header/Description Row */}
                                         <tr key={`h-${entry.id}`} className="bg-gray-50">
                                             <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                                {new Intl.DateTimeFormat('es-VE').format(entry.date)}
+                                                {entry.date ? new Intl.DateTimeFormat('es-VE').format(new Date(entry.date)) : '-'}
                                             </td>
                                             <td className="px-6 py-2 whitespace-nowrap text-sm text-blue-800 font-bold">
                                                 {entry.number}
@@ -85,23 +85,23 @@ export default async function LegalJournalPage({
                                             </td>
                                         </tr>
                                         {/* Entry Lines */}
-                                        {entry.lines.map((line: any) => (
+                                        {entry.lines.map((line) => (
                                             <tr key={line.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-1"></td>
                                                 <td className="px-6 py-1 text-xs text-gray-500 text-right pr-4">
-                                                    {line.account?.code}
+                                                    {line.account.code}
                                                 </td>
                                                 <td className="px-6 py-1 text-sm text-gray-600">
-                                                    {line.account?.name}
+                                                    {line.account.name}
                                                     {line.description && line.description !== entry.description && (
                                                         <span className="text-gray-400 text-xs ml-2">- {line.description}</span>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-700 text-right font-mono">
-                                                    {Number(line.debit) > 0 ? Number(line.debit).toLocaleString('es-VE', { minimumFractionDigits: 2 }) : ''}
+                                                    {line.debit > 0 ? line.debit.toLocaleString('es-VE', { minimumFractionDigits: 2 }) : ''}
                                                 </td>
                                                 <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-700 text-right font-mono">
-                                                    {Number(line.credit) > 0 ? Number(line.credit).toLocaleString('es-VE', { minimumFractionDigits: 2 }) : ''}
+                                                    {line.credit > 0 ? line.credit.toLocaleString('es-VE', { minimumFractionDigits: 2 }) : ''}
                                                 </td>
                                             </tr>
                                         ))}

@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
-import prisma from '@/lib/db'
 import { DateRangeFilters } from '@/components/accounting/reports/DateRangeFilters'
-import { getJournalEntryList } from '@/lib/actions/accounting-reports'
+import { getJournalEntryList, type JournalEntryListItem } from '@/lib/actions/accounting-reports'
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 import Link from 'next/link'
 import { Edit } from 'lucide-react'
@@ -9,26 +8,31 @@ import { DeleteEntryButton } from '@/components/accounting/DeleteEntryButton'
 
 import { getPersistentCompanyId } from '@/lib/company-utils'
 
-export default async function EntriesListPage({
-    searchParams
-}: {
-    searchParams: { startDate?: string; endDate?: string }
+export default async function EntriesListPage(props: {
+    searchParams: Promise<{ startDate?: string; endDate?: string }> | { startDate?: string; endDate?: string }
 }) {
+    const searchParams = await Promise.resolve(props.searchParams)
     const companyId = await getPersistentCompanyId()
     const { startDate, endDate } = searchParams
 
-    let entries: any[] = []
-    let error = null
+    let entries: JournalEntryListItem[] = []
+    let error: string | null = null
 
-    if (startDate && endDate) {
+    if (companyId && startDate && endDate) {
         try {
-            entries = await getJournalEntryList({
-                companyId,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate)
-            })
-        } catch (e: any) {
-            error = e.message
+            const start = new Date(startDate)
+            const end = new Date(endDate)
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                error = 'Rango de fechas inválido'
+            } else {
+                entries = await getJournalEntryList({
+                    companyId,
+                    startDate: start,
+                    endDate: end
+                })
+            }
+        } catch (e: unknown) {
+            error = e instanceof Error ? e.message : 'Error al cargar el listado'
         }
     }
 
@@ -69,13 +73,13 @@ export default async function EntriesListPage({
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {entries.map((entry: any) => {
-                                    const total = entry.lines.reduce((sum: number, line: any) => sum + Number(line.debit), 0)
+                                {entries.map((entry) => {
+                                    const total = entry.lines.reduce((sum, line) => sum + line.debit, 0)
 
                                     return (
                                         <tr key={entry.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Intl.DateTimeFormat('es-VE').format(entry.date)}
+                                                {entry.date ? new Intl.DateTimeFormat('es-VE').format(new Date(entry.date)) : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                                                 {entry.number || '-'}

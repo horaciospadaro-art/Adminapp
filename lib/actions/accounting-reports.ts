@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client'
 
 export interface LedgerMovement {
     id: string
-    date: Date
+    date: string // ISO string for RSC serialization
     description: string
     reference: string | null
     debit: number
@@ -40,6 +40,7 @@ export async function getAnalyticalLedger({
     })
 
     if (!account) throw new Error('Account not found')
+    if (account.company_id !== companyId) throw new Error('Account not found for this company')
 
     // 2. Calculate Initial Balance (Movements before startDate)
     // Note: This needs to respect fiscal year or be a running total from the beginning of time?
@@ -106,16 +107,18 @@ export async function getAnalyticalLedger({
         const debit = Number(m.debit)
         const credit = Number(m.credit)
         runningBalance += (debit - credit)
+        const date = m.entry?.date
+        const dateStr = date instanceof Date ? date.toISOString() : (date ? String(date) : '')
 
         return {
             id: m.id,
-            date: m.entry.date,
-            description: m.description || m.entry.description,
-            reference: m.entry.number,
+            date: dateStr,
+            description: (m.description || m.entry?.description) ?? '',
+            reference: m.entry?.number ?? null,
             debit,
             credit,
             balance: runningBalance,
-            entryNumber: m.entry.number
+            entryNumber: m.entry?.number ?? null
         }
     })
 
@@ -128,6 +131,16 @@ export async function getAnalyticalLedger({
     } as LedgerResult
 }
 
+/** Serializable entry for RSC (dates as ISO strings, numbers not Decimal) */
+export interface JournalEntryListItem {
+    id: string
+    date: string
+    number: string | null
+    description: string
+    status: string
+    lines: { id: string; debit: number; credit: number; account: { id: string; code: string; name: string } }[]
+}
+
 export async function getJournalEntryList({
     companyId,
     startDate,
@@ -137,7 +150,6 @@ export async function getJournalEntryList({
     startDate: Date
     endDate: Date
 }) {
-    // Ensure endDate covers the entire day
     const endOfDay = new Date(endDate)
     endOfDay.setHours(23, 59, 59, 999)
 
@@ -161,7 +173,33 @@ export async function getJournalEntryList({
         }
     })
 
-    return entries
+    return entries.map((entry): JournalEntryListItem => ({
+        id: entry.id,
+        date: entry.date instanceof Date ? entry.date.toISOString() : String(entry.date),
+        number: entry.number,
+        description: entry.description ?? '',
+        status: entry.status,
+        lines: entry.lines.map((line) => ({
+            id: line.id,
+            debit: Number(line.debit),
+            credit: Number(line.credit),
+            account: {
+                id: line.account.id,
+                code: line.account.code,
+                name: line.account.name
+            }
+        }))
+    }))
+}
+
+/** Serializable legal journal entry for RSC */
+export interface LegalJournalEntry {
+    id: string
+    date: string
+    number: string | null
+    description: string
+    status: string
+    lines: { id: string; debit: number; credit: number; description: string | null; account: { id: string; code: string; name: string } }[]
 }
 
 export async function getLegalJournal({
@@ -173,32 +211,40 @@ export async function getLegalJournal({
     month: number // 1-12
     year: number
 }) {
-    // Construct start and end of month
     const start = new Date(year, month - 1, 1)
-    const end = new Date(year, month, 0) // Last day of month
-    end.setHours(23, 59, 59, 999) // End of that day
+    const end = new Date(year, month, 0)
+    end.setHours(23, 59, 59, 999)
 
     const entries = await prisma.journalEntry.findMany({
         where: {
             company_id: companyId,
-            date: {
-                gte: start,
-                lte: end
-            },
-            status: 'POSTED' // Only Posted for Legal Journal
+            date: { gte: start, lte: end },
+            status: 'POSTED'
         },
         include: {
             lines: {
-                include: {
-                    account: true
-                }
+                include: { account: true }
             }
         },
-        orderBy: {
-            // @ts-ignore
-            number: 'asc' // Legal Journal usually ordered by correlative number
-        }
+        orderBy: { date: 'asc' }
     })
 
-    return entries
+    return entries.map((entry): LegalJournalEntry => ({
+        id: entry.id,
+        date: entry.date instanceof Date ? entry.date.toISOString() : String(entry.date),
+        number: entry.number,
+        description: entry.description ?? '',
+        status: entry.status,
+        lines: entry.lines.map((line) => ({
+            id: line.id,
+            debit: Number(line.debit),
+            credit: Number(line.credit),
+            description: line.description,
+            account: {
+                id: line.account.id,
+                code: line.account.code,
+                name: line.account.name
+            }
+        }))
+    }))
 }

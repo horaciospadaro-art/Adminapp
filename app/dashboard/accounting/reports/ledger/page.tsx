@@ -6,27 +6,32 @@ import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavig
 
 import { getPersistentCompanyId } from '@/lib/company-utils'
 
-export default async function AnalyticalLedgerPage({
-    searchParams
-}: {
-    searchParams: { startDate?: string; endDate?: string; accountId?: string }
+export default async function AnalyticalLedgerPage(props: {
+    searchParams: Promise<{ startDate?: string; endDate?: string; accountId?: string }> | { startDate?: string; endDate?: string; accountId?: string }
 }) {
+    const searchParams = await Promise.resolve(props.searchParams)
     const companyId = await getPersistentCompanyId()
     const { startDate, endDate, accountId } = searchParams
 
-    let reportData = null
-    let error = null
+    let reportData: Awaited<ReturnType<typeof getAnalyticalLedger>> | null = null
+    let error: string | null = null
 
-    if (startDate && endDate && accountId) {
+    if (companyId && startDate && endDate && accountId) {
         try {
-            reportData = await getAnalyticalLedger({
-                companyId,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                accountId
-            })
-        } catch (e: any) {
-            error = e.message
+            const start = new Date(startDate)
+            const end = new Date(endDate)
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                error = 'Rango de fechas inválido'
+            } else {
+                reportData = await getAnalyticalLedger({
+                    companyId,
+                    startDate: start,
+                    endDate: end,
+                    accountId
+                })
+            }
+        } catch (e: unknown) {
+            error = e instanceof Error ? e.message : 'Error al cargar el mayor'
         }
     }
 
@@ -106,7 +111,7 @@ export default async function AnalyticalLedgerPage({
                                     reportData.movements.map((move: any) => (
                                         <tr key={move.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Intl.DateTimeFormat('es-VE').format(new Date(move.date))}
+                                                {move.date ? new Intl.DateTimeFormat('es-VE').format(new Date(move.date)) : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:underline cursor-pointer">
                                                 {move.reference || move.entryNumber || '-'}
