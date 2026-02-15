@@ -88,9 +88,17 @@ export async function GET(req: NextRequest) {
         }
     }
 
+    // Cuentas con al menos un movimiento (para permitir/ocultar borrar)
+    const accountsWithMovements = await prisma.journalLine.findMany({
+        select: { account_id: true },
+        distinct: ['account_id']
+    })
+    const hasMovementsSet = new Set(accountsWithMovements.map((r) => r.account_id))
+
     const result = accounts.map((acc) => ({
         ...acc,
-        balance: computedBalance.get(acc.id) ?? 0
+        balance: computedBalance.get(acc.id) ?? 0,
+        hasMovements: hasMovementsSet.has(acc.id)
     }))
 
     return NextResponse.json(result)

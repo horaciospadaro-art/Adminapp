@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { ChevronRight, ChevronDown, Edit, Plus, Folder, FileText, Search } from 'lucide-react'
+import { ChevronRight, ChevronDown, Edit, Trash2, Folder, FileText, Search } from 'lucide-react'
 
 // Define stricter types matching Prisma
 type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE' | 'COST' | 'OTHER'
@@ -13,15 +13,17 @@ type Account = {
     type: AccountType
     parent_id: string | null
     balance: number
+    hasMovements?: boolean
     level: number // Helper for indentation
     children?: Account[]
 }
 
-export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: string, onEdit?: (account: any) => void, refreshKey?: number }) {
+export function AccountTree({ companyId, onEdit, onDeleteSuccess, refreshKey }: { companyId: string; onEdit?: (account: any) => void; onDeleteSuccess?: () => void; refreshKey?: number }) {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
         if (!companyId) return
@@ -45,6 +47,32 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                 setLoading(false)
             })
     }, [companyId, refreshKey])
+
+    const handleDelete = (account: Account) => (e: React.MouseEvent) => {
+        e.stopPropagation()
+        const hasChildren = accounts.some(a => a.parent_id === account.id)
+        if (hasChildren) {
+            alert('No se puede borrar la cuenta porque tiene subcuentas. Elimine primero las subcuentas.')
+            return
+        }
+        if (account.hasMovements) {
+            alert('No se puede borrar la cuenta porque tiene movimientos. Solo se pueden eliminar cuentas sin movimiento.')
+            return
+        }
+        if (!confirm(`¿Eliminar la cuenta ${account.code} - ${account.name}?`)) return
+        setDeletingId(account.id)
+        fetch(`/api/accounting/accounts/${account.id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then((data) => {
+                if (data.error) {
+                    alert(data.error)
+                } else {
+                    onDeleteSuccess?.()
+                }
+            })
+            .catch(() => alert('Error al eliminar la cuenta'))
+            .finally(() => setDeletingId(null))
+    }
 
     const toggleExpand = (id: string) => {
         const newExpanded = new Set(expandedNodes)
@@ -201,12 +229,22 @@ export function AccountTree({ companyId, onEdit, refreshKey }: { companyId: stri
                                     {/* Actions Column */}
                                     <div className="col-span-1 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); onEdit && onEdit(account); }}
+                                            onClick={(e) => { e.stopPropagation(); onEdit?.(account); }}
                                             className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
                                             title="Editar cuenta"
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
+                                        {!hasChildren && !account.hasMovements && (
+                                            <button
+                                                onClick={handleDelete(account)}
+                                                disabled={deletingId === account.id}
+                                                className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                                title="Eliminar cuenta (solo si no tiene movimientos ni subcuentas)"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             )

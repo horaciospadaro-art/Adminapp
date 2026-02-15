@@ -70,6 +70,7 @@ export function ChartOfAccountsManager({ companyId }: { companyId: string }) {
                 key={refreshKey}
                 companyId={companyId}
                 onEdit={handleEdit}
+                onDeleteSuccess={() => setRefreshKey(prev => prev + 1)}
                 refreshKey={refreshKey}
             />
 
