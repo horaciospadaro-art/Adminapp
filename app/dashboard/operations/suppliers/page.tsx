@@ -11,6 +11,15 @@ async function getDemoCompanyId() {
 export default async function SuppliersPage() {
     const companyId = await getDemoCompanyId()
 
+    if (!companyId) {
+        return (
+            <div className="p-8 text-center">
+                <h2 className="text-xl font-semibold text-gray-700">No se encontró una empresa activa</h2>
+                <p className="text-gray-500 mt-2">Por favor, configure una empresa para comenzar.</p>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen">
             <PageHeader

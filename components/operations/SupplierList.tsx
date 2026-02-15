@@ -15,13 +15,21 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
     const router = useRouter()
 
     useEffect(() => {
-        if (!companyId) return
+        if (!companyId) {
+            setLoading(false)
+            return
+        }
 
         setLoading(true)
         fetch(`/api/operations/suppliers?companyId=${companyId}`)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) setSuppliers(data)
+                if (Array.isArray(data)) {
+                    setSuppliers(data)
+                } else {
+                    console.error('Expected array of suppliers, got:', data)
+                    setSuppliers([])
+                }
                 setLoading(false)
             })
             .catch(err => {
