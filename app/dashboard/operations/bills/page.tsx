@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Plus, Search, FileText, Loader2, Receipt, Calendar } from 'lucide-react'
+import { Plus, Search, FileText, Loader2, Receipt, Calendar, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -149,10 +149,19 @@ export default function BillsPage() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-4">
-                <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <FileText className="w-6 h-6 text-gray-600" />
-                    Facturas de Compra (Gastos)
-                </h1>
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/dashboard/operations/suppliers"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Volver a Proveedores
+                    </Link>
+                    <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <FileText className="w-6 h-6 text-gray-600" />
+                        Facturas de Compra (Gastos)
+                    </h1>
+                </div>
                 <Link
                     href="/dashboard/operations/bills/new"
                     className="bg-[#2ca01c] hover:bg-[#248217] text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium"
