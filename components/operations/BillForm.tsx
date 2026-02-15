@@ -308,7 +308,7 @@ export function BillForm() {
         setLoading(true)
         try {
             const payload = {
-                company_id: '1', // Hardcoded for now
+                company_id: '68de82f4-7252-403c-cf80-4df2a5de04ae', // Empresa Demo C.A.
                 third_party_id: thirdPartyId,
                 type: documentType, // Passed payload type
                 bill_type: billType, // PURCHASE or EXPENSE
