@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     }
 
     const service = new AccountService()
-    const accounts = await service.getAccountTree(companyId)
+    const accounts = await service.getAccountTree(companyId!)
 
     return NextResponse.json(accounts)
 }
