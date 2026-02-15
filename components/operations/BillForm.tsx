@@ -382,6 +382,10 @@ export function BillForm({ companyId }: BillFormProps) {
             alert('Por favor complete los campos obligatorios.')
             return
         }
+        if (documentType === 'CREDIT_NOTE' && billType === 'PURCHASE' && !originBillId?.trim()) {
+            alert('Para una devolución (Nota de Crédito) debe seleccionar la factura de compra a la que se refiere la devolución.')
+            return
+        }
 
         for (const item of items) {
             if (billType === 'PURCHASE' && !item.product_id && !item.description) {
@@ -528,14 +532,17 @@ export function BillForm({ companyId }: BillFormProps) {
             {/* Origin Invoice Selector (For Returns) */}
             {documentType === 'CREDIT_NOTE' && billType === 'PURCHASE' && (
                 <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <label htmlFor="originBill" className="block text-sm font-medium text-blue-900 mb-2">Factura de Origen (Para Devolución)</label>
+                    <label htmlFor="originBill" className="block text-sm font-medium text-blue-900 mb-2">
+                        Factura de Origen (Para Devolución) <span className="text-red-600">*</span>
+                    </label>
                     <select
                         id="originBill"
                         value={originBillId}
                         onChange={(e) => handleOriginBillChange(e.target.value)}
+                        required={documentType === 'CREDIT_NOTE' && billType === 'PURCHASE'}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
-                        <option value="">Seleccione Factura a Devolver...</option>
+                        <option value="">Seleccione la factura a la que se refiere la devolución...</option>
                         {supplierBills.map((bill: any) => (
                             <option key={bill.id} value={bill.id}>
                                 {bill.number} - {new Date(bill.date).toLocaleDateString()} - Total: {Number(bill.total).toFixed(2)}

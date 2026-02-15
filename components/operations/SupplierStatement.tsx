@@ -155,12 +155,14 @@ export function SupplierStatement({ supplierId }: { supplierId: string }) {
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium 
                                             ${move.type === 'BILL' ? 'bg-orange-100 text-orange-800' :
                                                 move.type === 'PAYMENT' ? 'bg-green-100 text-green-800' :
-                                                    move.type === 'RETENTION' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                    move.type === 'RETENTION' ? 'bg-purple-100 text-purple-800' :
+                                                        move.type === 'CREDIT_NOTE' ? 'bg-teal-100 text-teal-800' :
+                                                            move.type === 'DEBIT_NOTE' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'}`}>
                                             {move.type}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 font-mono text-xs">{move.number}</td>
-                                    <td className="px-4 py-3 text-gray-600 truncate max-w-xs">{move.description}</td>
+                                    <td className="px-4 py-3 text-gray-600 max-w-sm" title={move.description}>{move.description}</td>
                                     <td className="px-4 py-3 text-right font-medium text-red-600">
                                         {move.credit > 0 ? formatCurrency(move.credit) : '-'}
                                     </td>
@@ -171,11 +173,11 @@ export function SupplierStatement({ supplierId }: { supplierId: string }) {
                                         {formatCurrency(move.balance)}
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                        {move.type === 'BILL' && (
+                                        {(move.type === 'BILL' || move.type === 'CREDIT_NOTE' || move.type === 'DEBIT_NOTE') && (
                                             <Link
                                                 href={`/dashboard/operations/bills/new?id=${move.id}&supplierId=${supplierId}`}
                                                 className="text-blue-600 hover:text-blue-800"
-                                                title="Ver Detalle"
+                                                title="Ver detalle"
                                             >
                                                 <Eye className="w-4 h-4" />
                                             </Link>
