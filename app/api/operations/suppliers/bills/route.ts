@@ -144,7 +144,7 @@ export async function POST(request: Request) {
         const totalPayable = totalInvoice - totalRetIVA - totalRetISLR
 
         // 2. Transaction
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // A. Create Document (Bill)
             const doc = await tx.document.create({
                 data: {
