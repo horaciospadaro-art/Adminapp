@@ -13,6 +13,15 @@ interface FinancialTableProps {
     title: string
 }
 
+const INDENT_CLASSES: Record<number, string> = {
+    1: 'pl-0',
+    2: 'pl-6',
+    3: 'pl-12',
+    4: 'pl-[4.5rem]',
+    5: 'pl-24',
+    6: 'pl-[7.5rem]',
+}
+
 export function FinancialTable({ rows, title }: FinancialTableProps) {
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -47,7 +56,7 @@ export function FinancialTable({ rows, title }: FinancialTableProps) {
                                 {row.code}
                             </td>
                             <td className="px-6 py-3 text-sm text-gray-900">
-                                <div style={{ paddingLeft: `${(row.level - 1) * 1.5}rem` }}>
+                                <div className={INDENT_CLASSES[row.level] || 'pl-0'}>
                                     {row.name}
                                 </div>
                             </td>

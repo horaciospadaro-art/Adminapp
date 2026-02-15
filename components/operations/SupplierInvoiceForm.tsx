@@ -76,8 +76,8 @@ export function SupplierInvoiceForm() {
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nro. Factura / Control</label>
-                    <input type="text" className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" placeholder="000123" />
+                    <label htmlFor="invoiceNumber" className="block text-sm font-medium text-gray-700 mb-1">Nro. Factura / Control</label>
+                    <input id="invoiceNumber" type="text" className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" placeholder="000123" />
                 </div>
                 <div>
                     <DateInput
@@ -99,8 +99,9 @@ export function SupplierInvoiceForm() {
 
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold text-blue-900 mb-1">Base Imponible</label>
+                            <label htmlFor="baseAmount" className="block text-sm font-semibold text-blue-900 mb-1">Base Imponible</label>
                             <input
+                                id="baseAmount"
                                 type="number"
                                 min="0"
                                 step="0.01"
@@ -112,8 +113,9 @@ export function SupplierInvoiceForm() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Alícuota IVA</label>
+                            <label htmlFor="taxSelect" className="block text-sm font-medium text-gray-700 mb-1">Alícuota IVA</label>
                             <select
+                                id="taxSelect"
                                 value={selectedTaxId}
                                 onChange={(e) => setSelectedTaxId(e.target.value)}
                                 className="w-full p-2 border rounded bg-white"
@@ -141,6 +143,7 @@ export function SupplierInvoiceForm() {
                         {applyRetentionIVA && (
                             <div className="pl-6 animate-in fade-in slide-in-from-top-2">
                                 <select
+                                    aria-label="Porcentaje de Retención IVA"
                                     value={retentionIVAPercentage}
                                     onChange={(e) => setRetentionIVAPercentage(Number(e.target.value))}
                                     className="w-full p-2 border rounded text-sm bg-gray-50"
@@ -167,6 +170,7 @@ export function SupplierInvoiceForm() {
                         {applyRetentionISLR && (
                             <div className="pl-6 animate-in fade-in slide-in-from-top-2">
                                 <select
+                                    aria-label="Concepto de Retención ISLR"
                                     value={selectedISLRConcept}
                                     onChange={(e) => setSelectedISLRConcept(e.target.value)}
                                     className="w-full p-2 border rounded text-sm bg-gray-50"
@@ -189,15 +193,15 @@ export function SupplierInvoiceForm() {
                     </h3>
 
                     <div className="space-y-3 text-sm">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-[1.006rem]">
                             <span className="text-gray-600">Base Imponible</span>
                             <span className="font-medium">{baseAmount.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-[1.006rem]">
                             <span className="text-gray-600">IVA Calculado</span>
                             <span className="font-medium">{calculations.ivaAmount.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-t pt-2 font-semibold">
+                        <div className="flex justify-between border-t pt-2 font-semibold text-[1.006rem]">
                             <span>Total Factura</span>
                             <span>{calculations.totalInvoice.toFixed(2)}</span>
                         </div>
@@ -207,14 +211,14 @@ export function SupplierInvoiceForm() {
                         )}
 
                         {calculations.retIVA > 0 && (
-                            <div className="flex justify-between text-red-600">
+                            <div className="flex justify-between text-red-600 text-[1.006rem]">
                                 <span>(-) Retención IVA ({retentionIVAPercentage}%)</span>
                                 <span>-{calculations.retIVA.toFixed(2)}</span>
                             </div>
                         )}
 
                         {calculations.retISLR > 0 && (
-                            <div className="flex justify-between text-red-600">
+                            <div className="flex justify-between text-red-600 text-[1.006rem]">
                                 <span>(-) Retención ISLR</span>
                                 <span>-{calculations.retISLR.toFixed(2)}</span>
                             </div>
@@ -222,7 +226,7 @@ export function SupplierInvoiceForm() {
 
                         <div className="border-t-2 border-gray-800 pt-3 mt-4">
                             <div className="flex justify-between text-lg font-bold">
-                                <span>Total a Pagar</span>
+                                <span>Neto a Pagar</span>
                                 <span className="text-[#2ca01c]">
                                     {calculations.totalPayable.toFixed(2)}
                                 </span>

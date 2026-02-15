@@ -74,10 +74,11 @@ export function TransferenciasForm({ bankAccount }: TransferenciasFormProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="targetAccount" className="block text-xs font-semibold text-gray-600 mb-1">
                         Cuenta Destino <span className="text-red-500">*</span>
                     </label>
                     <select
+                        id="targetAccount"
                         required
                         value={targetBankId}
                         onChange={e => setTargetBankId(e.target.value)}
@@ -92,10 +93,11 @@ export function TransferenciasForm({ bankAccount }: TransferenciasFormProps) {
                     </select>
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="transferAmount" className="block text-xs font-semibold text-gray-600 mb-1">
                         Monto <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="transferAmount"
                         type="number"
                         step="0.01"
                         required
@@ -117,10 +119,11 @@ export function TransferenciasForm({ bankAccount }: TransferenciasFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="transferReference" className="block text-xs font-semibold text-gray-600 mb-1">
                         Referencia <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="transferReference"
                         required
                         value={reference}
                         onChange={e => setReference(e.target.value)}
@@ -129,10 +132,11 @@ export function TransferenciasForm({ bankAccount }: TransferenciasFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="transferDescription" className="block text-xs font-semibold text-gray-600 mb-1">
                         Descripción <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="transferDescription"
                         required
                         value={description}
                         onChange={e => setDescription(e.target.value)}

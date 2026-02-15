@@ -19,8 +19,9 @@ export function ThirdPartyForm({ companyId }: { companyId: string }) {
             <h2 className="text-lg font-bold mb-4">Nuevo Tercero</h2>
             <div className="grid grid-cols-1 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Nombre / Razón Social</label>
+                    <label htmlFor="tpName" className="block text-sm font-medium text-gray-700">Nombre / Razón Social</label>
                     <input
+                        id="tpName"
                         type="text"
                         value={name}
                         onChange={e => setName(e.target.value)}
@@ -28,8 +29,9 @@ export function ThirdPartyForm({ companyId }: { companyId: string }) {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">RIF</label>
+                    <label htmlFor="tpRif" className="block text-sm font-medium text-gray-700">RIF</label>
                     <input
+                        id="tpRif"
                         type="text"
                         value={rif}
                         onChange={e => setRif(e.target.value)}

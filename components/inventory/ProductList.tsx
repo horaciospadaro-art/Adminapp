@@ -82,6 +82,7 @@ export function ProductList({ type, title, basePath }: ProductListProps) {
                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     <input
                         placeholder="Buscar por nombre o código..."
+                        aria-label="Buscar producto"
                         className="pl-10 w-full border rounded-md p-2 focus:ring-blue-500"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
@@ -124,12 +125,14 @@ export function ProductList({ type, title, basePath }: ProductListProps) {
                                             <Link
                                                 href={`${basePath}/${product.id}/edit`}
                                                 className="text-gray-400 hover:text-blue-600"
+                                                aria-label={`Editar ${product.name}`}
                                             >
                                                 <Pencil className="w-4 h-4" />
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(product.id)}
                                                 className="text-gray-400 hover:text-red-600"
+                                                aria-label={`Eliminar ${product.name}`}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

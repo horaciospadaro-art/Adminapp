@@ -180,8 +180,9 @@ export function WithholdingForm() {
                 {/* Selection */}
                 <div className="grid grid-cols-1 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                        <label htmlFor="customer" className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
                         <select
+                            id="customer"
                             value={customerId}
                             onChange={e => setCustomerId(e.target.value)}
                             className="w-full p-2 border rounded focus:ring-blue-500"
@@ -194,8 +195,9 @@ export function WithholdingForm() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Factura Relacionada <span className="text-red-500">*</span></label>
+                        <label htmlFor="relatedInvoice" className="block text-sm font-medium text-gray-700 mb-1">Factura Relacionada <span className="text-red-500">*</span></label>
                         <select
+                            id="relatedInvoice"
                             value={invoiceId}
                             onChange={e => setInvoiceId(e.target.value)}
                             className="w-full p-2 border rounded focus:ring-blue-500"
@@ -217,8 +219,9 @@ export function WithholdingForm() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Retención</label>
+                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Retención</label>
                             <select
+                                id="type"
                                 value={type}
                                 onChange={e => setType(e.target.value)}
                                 className="w-full p-2 border rounded focus:ring-blue-500"
@@ -236,8 +239,9 @@ export function WithholdingForm() {
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Número de Comprobante <span className="text-red-500">*</span></label>
+                            <label htmlFor="certificateNumber" className="block text-sm font-medium text-gray-700 mb-1">Número de Comprobante <span className="text-red-500">*</span></label>
                             <input
+                                id="certificateNumber"
                                 value={certificateNumber}
                                 onChange={e => setCertificateNumber(e.target.value)}
                                 className="w-full p-2 border rounded focus:ring-blue-500"
@@ -247,8 +251,9 @@ export function WithholdingForm() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Base Imponible</label>
+                            <label htmlFor="baseAmount" className="block text-sm font-medium text-gray-700 mb-1">Base Imponible</label>
                             <input
+                                id="baseAmount"
                                 type="number" step="0.01"
                                 value={baseAmount}
                                 onChange={e => handleBaseChange(e.target.value)}
@@ -257,8 +262,9 @@ export function WithholdingForm() {
                             <p className="text-xs text-gray-500 mt-1">{type === 'RETENCION_IVA' ? 'Monto del Impuesto' : 'Monto de la Factura'}</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">% Porcentaje</label>
+                            <label htmlFor="rate" className="block text-sm font-medium text-gray-700 mb-1">% Porcentaje</label>
                             <input
+                                id="rate"
                                 type="number" step="0.01"
                                 value={rate}
                                 onChange={e => handleRateChange(e.target.value)}
@@ -266,8 +272,9 @@ export function WithholdingForm() {
                             />
                         </div>
                         <div className="md:col-span-2 bg-gray-50 p-4 rounded border">
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Monto Retenido (A descontar)</label>
+                            <label htmlFor="retentionAmount" className="block text-sm font-bold text-gray-700 mb-1">Monto Retenido (A descontar)</label>
                             <input
+                                id="retentionAmount"
                                 type="number" step="0.01"
                                 value={amount}
                                 onChange={e => setAmount(e.target.value)}

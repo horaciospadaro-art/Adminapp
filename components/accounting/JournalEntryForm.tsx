@@ -199,6 +199,7 @@ export function JournalEntryForm({ companyId, initialData, entryId }: { companyI
                                 value={line.debit}
                                 onChange={e => updateLine(idx, 'debit', e.target.value)}
                                 className="block w-full text-right rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                aria-label="Debe"
                             />
                         </div>
                         <div className="col-span-2">
@@ -208,6 +209,7 @@ export function JournalEntryForm({ companyId, initialData, entryId }: { companyI
                                 value={line.credit}
                                 onChange={e => updateLine(idx, 'credit', e.target.value)}
                                 className="block w-full text-right rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                aria-label="Haber"
                             />
                         </div>
                         <div className="col-span-1 text-center pt-2">

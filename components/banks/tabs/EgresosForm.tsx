@@ -173,10 +173,11 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="reference" className="block text-xs font-semibold text-gray-600 mb-1">
                         Referencia <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="reference"
                         required
                         value={reference}
                         onChange={e => setReference(e.target.value)}
@@ -185,10 +186,11 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="description" className="block text-xs font-semibold text-gray-600 mb-1">
                         Descripción <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="description"
                         required
                         value={description}
                         onChange={e => setDescription(e.target.value)}
@@ -201,10 +203,11 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
             {mode === 'OTHER' && (
                 <>
                     <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        <label htmlFor="amount" className="block text-xs font-semibold text-gray-600 mb-1">
                             Monto <span className="text-red-500">*</span>
                         </label>
                         <input
+                            id="amount"
                             type="number"
                             step="0.01"
                             required
@@ -264,7 +267,7 @@ export function EgresosForm({ bankAccount }: EgresosFormProps) {
                                         <th className="px-4 py-2">Proveedor</th>
                                         <th className="px-4 py-2">Fecha</th>
                                         <th className="px-4 py-2 text-right">Saldo</th>
-                                        <th className="px-4 py-2 text-right" style={{ width: '150px' }}>Pagar</th>
+                                        <th className="px-4 py-2 text-right w-[150px]">Pagar</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">

@@ -122,8 +122,9 @@ export function DynamicReportBuilder() {
                 {/* Selector de Módulo */}
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Módulo</label>
+                        <label htmlFor="moduleSelect" className="block text-sm font-medium text-gray-700 mb-2">Módulo</label>
                         <select
+                            id="moduleSelect"
                             value={module}
                             onChange={(e) => {
                                 setModule(e.target.value)
@@ -150,12 +151,14 @@ export function DynamicReportBuilder() {
                         <div className="grid grid-cols-2 gap-2">
                             <div>
                                 <DateInput
+                                    label="Desde"
                                     value={startDate}
                                     onChange={e => setStartDate(e.target.value)}
                                 />
                             </div>
                             <div>
                                 <DateInput
+                                    label="Hasta"
                                     value={endDate}
                                     onChange={e => setEndDate(e.target.value)}
                                 />
@@ -235,6 +238,7 @@ export function DynamicReportBuilder() {
                         <div className="relative">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                             <input
+                                aria-label="Filtrar resultados"
                                 type="text"
                                 placeholder="Filtrar resultados..."
                                 className="pl-9 pr-4 py-1.5 border border-gray-300 rounded-md text-sm w-48 focus:ring-1 focus:ring-blue-500"

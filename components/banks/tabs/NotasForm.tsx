@@ -182,10 +182,11 @@ export function NotasForm({ bankAccount }: NotasFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="notaReference" className="block text-xs font-semibold text-gray-600 mb-1">
                         Referencia <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="notaReference"
                         required
                         value={reference}
                         onChange={e => setReference(e.target.value)}
@@ -194,10 +195,11 @@ export function NotasForm({ bankAccount }: NotasFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="notaDescription" className="block text-xs font-semibold text-gray-600 mb-1">
                         Descripción <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="notaDescription"
                         required
                         value={description}
                         onChange={e => setDescription(e.target.value)}
@@ -208,10 +210,11 @@ export function NotasForm({ bankAccount }: NotasFormProps) {
             </div>
 
             <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                <label htmlFor="notaAmount" className="block text-xs font-semibold text-gray-600 mb-1">
                     Monto <span className="text-red-500">*</span>
                 </label>
                 <input
+                    id="notaAmount"
                     type="number"
                     step="0.01"
                     required

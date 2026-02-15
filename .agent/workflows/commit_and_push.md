@@ -2,6 +2,8 @@
 description: Commit and push changes to the repository
 ---
 
+# Commit and Push Workflow
+
 // turbo-all
 
 1. Check the status of the repository

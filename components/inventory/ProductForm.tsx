@@ -108,8 +108,9 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                 <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Información General</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                        <label htmlFor="prodName" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                         <input
+                            id="prodName"
                             required
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -117,16 +118,18 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">SKU / Código</label>
+                        <label htmlFor="prodSku" className="block text-sm font-medium text-gray-700 mb-1">SKU / Código</label>
                         <input
+                            id="prodSku"
                             value={formData.sku}
                             onChange={e => setFormData({ ...formData, sku: e.target.value })}
                             className="w-full border p-2 rounded focus:ring-blue-500"
                         />
                     </div>
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <label htmlFor="prodDesc" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                         <textarea
+                            id="prodDesc"
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
                             className="w-full border p-2 rounded focus:ring-blue-500"
@@ -140,8 +143,9 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                 <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Precio y Contabilidad</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Precio de Venta</label>
+                        <label htmlFor="prodPrice" className="block text-sm font-medium text-gray-700 mb-1">Precio de Venta</label>
                         <input
+                            id="prodPrice"
                             type="number"
                             step="0.01"
                             value={formData.sales_price}
@@ -150,8 +154,9 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Impuesto (IVA)</label>
+                        <label htmlFor="prodTax" className="block text-sm font-medium text-gray-700 mb-1">Impuesto (IVA)</label>
                         <select
+                            id="prodTax"
                             value={formData.tax_id}
                             onChange={e => setFormData({ ...formData, tax_id: e.target.value })}
                             className="w-full border p-2 rounded focus:ring-blue-500"
@@ -208,8 +213,9 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                     <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Control de Stock</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo</label>
+                            <label htmlFor="minStock" className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo</label>
                             <input
+                                id="minStock"
                                 type="number"
                                 step="0.01"
                                 value={formData.minimum_stock}
@@ -220,8 +226,9 @@ export function ProductForm({ initialData, isService = false }: ProductFormProps
                             <p className="text-xs text-gray-500 mt-1">Se generará alerta cuando el stock esté por debajo de este valor</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Punto de Reorden (Opcional)</label>
+                            <label htmlFor="reorderPoint" className="block text-sm font-medium text-gray-700 mb-1">Punto de Reorden (Opcional)</label>
                             <input
+                                id="reorderPoint"
                                 type="number"
                                 step="0.01"
                                 value={formData.reorder_point}

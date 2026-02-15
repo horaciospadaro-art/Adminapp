@@ -239,8 +239,9 @@ export function InvoiceForm() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                        <label htmlFor="clientSelect" className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
                         <select
+                            id="clientSelect"
                             value={thirdPartyId}
                             onChange={e => setThirdPartyId(e.target.value)}
                             className="w-full p-2 border rounded focus:ring-blue-500"
@@ -253,8 +254,9 @@ export function InvoiceForm() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nro. {type === 'INVOICE' ? 'Factura' : 'Control'} <span className="text-red-500">*</span></label>
+                        <label htmlFor="invoiceNumber" className="block text-sm font-medium text-gray-700 mb-1">Nro. {type === 'INVOICE' ? 'Factura' : 'Control'} <span className="text-red-500">*</span></label>
                         <input
+                            id="invoiceNumber"
                             value={number}
                             onChange={e => setNumber(e.target.value)}
                             className="w-full p-2 border rounded focus:ring-blue-500"
@@ -293,6 +295,7 @@ export function InvoiceForm() {
                                 <td className="p-2 pl-4">
                                     <div className="space-y-1">
                                         <select
+                                            aria-label="Seleccionar producto"
                                             value={item.product_id}
                                             onChange={e => updateItem(idx, 'product_id', e.target.value)}
                                             className="w-full p-1 border rounded text-xs mb-1"
@@ -301,6 +304,7 @@ export function InvoiceForm() {
                                             {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select>
                                         <input
+                                            aria-label="Descripción del item"
                                             value={item.description}
                                             onChange={e => updateItem(idx, 'description', e.target.value)}
                                             placeholder="Detalle de venta"
@@ -310,6 +314,7 @@ export function InvoiceForm() {
                                 </td>
                                 <td className="p-2">
                                     <input
+                                        aria-label="Cantidad"
                                         type="number"
                                         min="0"
                                         step="0.01"
@@ -320,6 +325,7 @@ export function InvoiceForm() {
                                 </td>
                                 <td className="p-2">
                                     <input
+                                        aria-label="Precio Unitario"
                                         type="number"
                                         min="0"
                                         step="0.01"
@@ -330,6 +336,7 @@ export function InvoiceForm() {
                                 </td>
                                 <td className="p-2">
                                     <select
+                                        aria-label="Impuesto"
                                         value={item.tax_id}
                                         onChange={e => updateItem(idx, 'tax_id', e.target.value)}
                                         className="w-full p-1 border rounded text-xs"
@@ -343,6 +350,7 @@ export function InvoiceForm() {
                                 <td className="p-2 text-center">
                                     <button
                                         type="button"
+                                        aria-label="Eliminar item"
                                         onClick={() => removeItem(idx)}
                                         className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
@@ -366,17 +374,17 @@ export function InvoiceForm() {
             <div className="flex justify-end">
                 <div className="w-full md:w-1/2 bg-gray-50 p-6 rounded-lg border border-gray-200">
                     <div className="space-y-3 text-sm">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-[1.006rem]">
                             <span className="text-gray-600">Subtotal</span>
                             <span className="font-medium">{calculations.subtotal.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-[1.006rem]">
                             <span className="text-gray-600">IVA</span>
                             <span className="font-medium">{calculations.totalTax.toFixed(2)}</span>
                         </div>
                         <div className="border-t-2 border-gray-800 pt-3 mt-4">
                             <div className="flex justify-between text-lg font-bold">
-                                <span>Total Factura</span>
+                                <span>Neto a Cobrar</span>
                                 <span className="text-[#2ca01c]">
                                     {calculations.totalInvoice.toFixed(2)}
                                 </span>

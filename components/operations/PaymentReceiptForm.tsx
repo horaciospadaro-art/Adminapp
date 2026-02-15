@@ -221,8 +221,9 @@ export function PaymentReceiptForm() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                        <label htmlFor="customer" className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
                         <select
+                            id="customer"
                             value={customerId}
                             onChange={e => setCustomerId(e.target.value)}
                             className="w-full p-2 border rounded focus:ring-blue-500"
@@ -243,8 +244,9 @@ export function PaymentReceiptForm() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Monto Total <span className="text-red-500">*</span></label>
+                        <label htmlFor="totalAmount" className="block text-sm font-medium text-gray-700 mb-1">Monto Total <span className="text-red-500">*</span></label>
                         <input
+                            id="totalAmount"
                             type="number" step="0.01" min="0.01"
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
@@ -257,8 +259,9 @@ export function PaymentReceiptForm() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                        <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
                         <select
+                            id="paymentMethod"
                             value={paymentMethod}
                             onChange={e => setPaymentMethod(e.target.value)}
                             className="w-full p-2 border rounded focus:ring-blue-500"
@@ -281,8 +284,9 @@ export function PaymentReceiptForm() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta Destino</label>
+                                <label htmlFor="bankAccount" className="block text-sm font-medium text-gray-700 mb-1">Cuenta Destino</label>
                                 <select
+                                    id="bankAccount"
                                     value={bankAccountId}
                                     onChange={e => setBankAccountId(e.target.value)}
                                     className="w-full p-2 border rounded focus:ring-blue-500"
@@ -299,8 +303,9 @@ export function PaymentReceiptForm() {
                 </div>
 
                 <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notas / Observaciones</label>
+                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Notas / Observaciones</label>
                     <textarea
+                        id="notes"
                         value={notes}
                         onChange={e => setNotes(e.target.value)}
                         className="w-full p-2 border rounded focus:ring-blue-500 h-20"

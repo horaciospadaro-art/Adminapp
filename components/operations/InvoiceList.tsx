@@ -84,6 +84,7 @@ export function InvoiceList() {
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
                         className="p-2 border rounded-lg bg-gray-50 text-gray-700 font-medium"
+                        aria-label="Filtrar por estatus"
                     >
                         <option value="ALL">Todas las Facturas</option>
                         <option value="PENDING">Pendientes de Pago</option>

@@ -176,10 +176,11 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="reference" className="block text-xs font-semibold text-gray-600 mb-1">
                         Referencia <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="reference"
                         required
                         value={reference}
                         onChange={e => setReference(e.target.value)}
@@ -188,10 +189,11 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    <label htmlFor="description" className="block text-xs font-semibold text-gray-600 mb-1">
                         Descripción <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="description"
                         required
                         value={description}
                         onChange={e => setDescription(e.target.value)}
@@ -204,10 +206,11 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
             {mode === 'OTHER' && (
                 <>
                     <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        <label htmlFor="amount" className="block text-xs font-semibold text-gray-600 mb-1">
                             Monto <span className="text-red-500">*</span>
                         </label>
                         <input
+                            id="amount"
                             type="number"
                             step="0.01"
                             required
@@ -267,7 +270,7 @@ export function IngresosForm({ bankAccount }: IngresosFormProps) {
                                         <th className="px-4 py-2">Cliente</th>
                                         <th className="px-4 py-2">Fecha</th>
                                         <th className="px-4 py-2 text-right">Saldo</th>
-                                        <th className="px-4 py-2 text-right" style={{ width: '150px' }}>Abonar</th>
+                                        <th className="px-4 py-2 text-right w-[150px]">Abonar</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">

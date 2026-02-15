@@ -109,12 +109,13 @@ export function NewTransactionModal({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                            <DateInput name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
+                            <label htmlFor="txDate" className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                            <DateInput id="txDate" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operación</label>
+                            <label htmlFor="txSubtype" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operación</label>
                             <select
+                                id="txSubtype"
                                 value={subtype}
                                 onChange={(e) => setSubtype(e.target.value)}
                                 className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c]"
@@ -128,18 +129,18 @@ export function NewTransactionModal({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Referencia</label>
-                            <input name="reference" className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
+                            <label htmlFor="txReference" className="block text-sm font-medium text-gray-700 mb-1">Referencia</label>
+                            <input id="txReference" name="reference" className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Monto ({type === 'CREDIT' ? 'Salida' : 'Entrada'})</label>
-                            <input type="number" step="0.01" name="amount" required className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c] font-mono text-lg" />
+                            <label htmlFor="txAmount" className="block text-sm font-medium text-gray-700 mb-1">Monto ({type === 'CREDIT' ? 'Salida' : 'Entrada'})</label>
+                            <input id="txAmount" type="number" step="0.01" name="amount" required className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c] font-mono text-lg" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción / Beneficiario</label>
-                        <input name="description" required className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
+                        <label htmlFor="txDescription" className="block text-sm font-medium text-gray-700 mb-1">Descripción / Beneficiario</label>
+                        <input id="txDescription" name="description" required className="w-full border-gray-300 rounded-md focus:ring-[#2ca01c] focus:border-[#2ca01c]" />
                     </div>
 
                     <div className="bg-gray-50 p-4 rounded-md border border-gray-200">

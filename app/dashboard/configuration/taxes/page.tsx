@@ -258,8 +258,9 @@ export default function TaxesPage() {
     // --- RENDER ---
     const renderAccountSelect = (label: string, field: keyof GlobalTaxConfiguration) => (
         <div className="flex flex-col">
-            <label className="text-xs font-medium text-gray-500 mb-1">{label}</label>
+            <label htmlFor={field} className="text-xs font-medium text-gray-500 mb-1">{label}</label>
             <select
+                id={field}
                 value={globalForm[field] as string || ''}
                 onChange={e => setGlobalForm({ ...globalForm, [field]: e.target.value })}
                 className="border border-gray-300 rounded text-sm p-2 w-full"
@@ -322,8 +323,8 @@ export default function TaxesPage() {
                                         <td className="px-4 py-3"><span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{tax.type}</span></td>
                                         <td className="px-4 py-3 text-right font-mono">{Number(tax.rate).toFixed(2)}%</td>
                                         <td className="px-4 py-3 text-right">
-                                            <button onClick={() => openTaxModal(tax)} className="text-gray-400 hover:text-blue-600 mr-2"><Pencil className="w-4 h-4" /></button>
-                                            <button onClick={() => deleteTax(tax.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                                            <button onClick={() => openTaxModal(tax)} className="text-gray-400 hover:text-blue-600 mr-2" aria-label="Editar impuesto"><Pencil className="w-4 h-4" /></button>
+                                            <button onClick={() => deleteTax(tax.id)} className="text-gray-400 hover:text-red-600" aria-label="Eliminar impuesto"><Trash2 className="w-4 h-4" /></button>
                                         </td>
                                     </tr>
                                 ))}
@@ -361,8 +362,8 @@ export default function TaxesPage() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <button onClick={() => openVatRetModal(ret)} className="text-gray-400 hover:text-blue-600 mr-2"><Pencil className="w-4 h-4" /></button>
-                                            <button onClick={() => deleteVatRet(ret.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                                            <button onClick={() => openVatRetModal(ret)} className="text-gray-400 hover:text-blue-600 mr-2" aria-label="Editar retención"><Pencil className="w-4 h-4" /></button>
+                                            <button onClick={() => deleteVatRet(ret.id)} className="text-gray-400 hover:text-red-600" aria-label="Eliminar retención"><Trash2 className="w-4 h-4" /></button>
                                         </td>
                                     </tr>
                                 ))}
@@ -403,8 +404,8 @@ export default function TaxesPage() {
                                     <td className="px-4 py-3 text-xs">{item.pn_non_resident_rate || '-'}</td>
                                     <td className="px-4 py-3 text-xs">{item.pj_non_domiciled_rate || '-'}</td>
                                     <td className="px-4 py-3 text-right">
-                                        <button onClick={() => openIslrModal(item)} className="text-gray-400 hover:text-blue-600 mr-2"><Pencil className="w-4 h-4" /></button>
-                                        <button onClick={() => deleteIslr(item.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                                        <button onClick={() => openIslrModal(item)} className="text-gray-400 hover:text-blue-600 mr-2" aria-label="Editar concepto"><Pencil className="w-4 h-4" /></button>
+                                        <button onClick={() => deleteIslr(item.id)} className="text-gray-400 hover:text-red-600" aria-label="Eliminar concepto"><Trash2 className="w-4 h-4" /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -421,21 +422,21 @@ export default function TaxesPage() {
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
                         <div className="flex justify-between items-center p-4 border-b">
                             <h3 className="font-bold">{editingTax ? 'Editar Impuesto' : 'Nuevo Impuesto'}</h3>
-                            <button onClick={() => setIsTaxModalOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
+                            <button onClick={() => setIsTaxModalOpen(false)} aria-label="Cerrar modal"><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleTaxSubmit} className="p-4 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">Nombre</label>
-                                <input required value={taxForm.name} onChange={e => setTaxForm({ ...taxForm, name: e.target.value })} className="w-full border rounded p-2" />
+                                <label htmlFor="taxName" className="block text-sm font-medium mb-1">Nombre</label>
+                                <input id="taxName" required value={taxForm.name} onChange={e => setTaxForm({ ...taxForm, name: e.target.value })} className="w-full border rounded p-2" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Tasa (%)</label>
-                                    <input type="number" step="0.01" required value={taxForm.rate} onChange={e => setTaxForm({ ...taxForm, rate: e.target.value })} className="w-full border rounded p-2" />
+                                    <label htmlFor="taxRate" className="block text-sm font-medium mb-1">Tasa (%)</label>
+                                    <input id="taxRate" type="number" step="0.01" required value={taxForm.rate} onChange={e => setTaxForm({ ...taxForm, rate: e.target.value })} className="w-full border rounded p-2" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Tipo</label>
-                                    <select value={taxForm.type} onChange={e => setTaxForm({ ...taxForm, type: e.target.value })} className="w-full border rounded p-2">
+                                    <label htmlFor="taxType" className="block text-sm font-medium mb-1">Tipo</label>
+                                    <select id="taxType" value={taxForm.type} onChange={e => setTaxForm({ ...taxForm, type: e.target.value })} className="w-full border rounded p-2">
                                         <option value="IVA">IVA</option>
                                         <option value="IGTF">IGTF</option>
                                         <option value="OTRO">Otro</option>
@@ -444,8 +445,8 @@ export default function TaxesPage() {
                             </div>
                             {taxForm.type === 'OTRO' && (
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Cuenta Contable</label>
-                                    <select required value={taxForm.gl_account_id} onChange={e => setTaxForm({ ...taxForm, gl_account_id: e.target.value })} className="w-full border rounded p-2">
+                                    <label htmlFor="taxAccount" className="block text-sm font-medium mb-1">Cuenta Contable</label>
+                                    <select id="taxAccount" required value={taxForm.gl_account_id} onChange={e => setTaxForm({ ...taxForm, gl_account_id: e.target.value })} className="w-full border rounded p-2">
                                         <option value="">Seleccionar...</option>
                                         {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
                                     </select>
@@ -471,16 +472,16 @@ export default function TaxesPage() {
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
                         <div className="flex justify-between items-center p-4 border-b">
                             <h3 className="font-bold">{editingVatRet ? 'Editar Retención IVA' : 'Nueva Retención IVA'}</h3>
-                            <button onClick={() => setIsVatRetModalOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
+                            <button onClick={() => setIsVatRetModalOpen(false)} aria-label="Cerrar modal"><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleVatRetSubmit} className="p-4 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">Descripción</label>
-                                <input required value={vatRetForm.description} onChange={e => setVatRetForm({ ...vatRetForm, description: e.target.value })} className="w-full border rounded p-2" placeholder="ej. Retención 75%" />
+                                <label htmlFor="vatRetDesc" className="block text-sm font-medium mb-1">Descripción</label>
+                                <input id="vatRetDesc" required value={vatRetForm.description} onChange={e => setVatRetForm({ ...vatRetForm, description: e.target.value })} className="w-full border rounded p-2" placeholder="ej. Retención 75%" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">Porcentaje de Retención (%)</label>
-                                <input type="number" step="0.01" required value={vatRetForm.rate} onChange={e => setVatRetForm({ ...vatRetForm, rate: e.target.value })} className="w-full border rounded p-2" />
+                                <label htmlFor="vatRetRate" className="block text-sm font-medium mb-1">Porcentaje de Retención (%)</label>
+                                <input id="vatRetRate" type="number" step="0.01" required value={vatRetForm.rate} onChange={e => setVatRetForm({ ...vatRetForm, rate: e.target.value })} className="w-full border rounded p-2" />
                             </div>
                             <div className="flex items-center gap-2">
                                 <input type="checkbox" checked={vatRetForm.active} onChange={e => setVatRetForm({ ...vatRetForm, active: e.target.checked })} id="retActive" />
@@ -501,24 +502,24 @@ export default function TaxesPage() {
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
                         <div className="flex justify-between items-center p-4 border-b">
                             <h3 className="font-bold">{editingIslr ? 'Concepto ISLR' : 'Nuevo Concepto ISLR'}</h3>
-                            <button onClick={() => setIsIslrModalOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
+                            <button onClick={() => setIsIslrModalOpen(false)} aria-label="Cerrar modal"><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleIslrSubmit} className="p-4 space-y-4">
                             <div className="grid grid-cols-4 gap-4">
                                 <div className="col-span-1">
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Cód.</label>
-                                    <input value={islrForm.seniat_code} onChange={e => setIslrForm({ ...islrForm, seniat_code: e.target.value })} className="w-full border rounded p-2 font-mono text-sm" placeholder="001" />
+                                    <label htmlFor="islrCode" className="block text-xs font-medium text-gray-700 mb-1">Cód.</label>
+                                    <input id="islrCode" value={islrForm.seniat_code} onChange={e => setIslrForm({ ...islrForm, seniat_code: e.target.value })} className="w-full border rounded p-2 font-mono text-sm" placeholder="001" />
                                 </div>
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Concepto</label>
-                                    <input required value={islrForm.description} onChange={e => setIslrForm({ ...islrForm, description: e.target.value })} className="w-full border rounded p-2 text-sm" />
+                                    <label htmlFor="islrDesc" className="block text-xs font-medium text-gray-700 mb-1">Concepto</label>
+                                    <input id="islrDesc" required value={islrForm.description} onChange={e => setIslrForm({ ...islrForm, description: e.target.value })} className="w-full border rounded p-2 text-sm" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-md border border-gray-100">
-                                <div><label className="text-xs mb-1 block">PN Residente</label><input value={islrForm.pn_resident_rate} onChange={e => setIslrForm({ ...islrForm, pn_resident_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
-                                <div><label className="text-xs mb-1 block">PJ Domiciliada</label><input value={islrForm.pj_domiciled_rate} onChange={e => setIslrForm({ ...islrForm, pj_domiciled_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
-                                <div><label className="text-xs mb-1 block">PN No Residente</label><input value={islrForm.pn_non_resident_rate} onChange={e => setIslrForm({ ...islrForm, pn_non_resident_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
-                                <div><label className="text-xs mb-1 block">PJ No Domiciliada</label><input value={islrForm.pj_non_domiciled_rate} onChange={e => setIslrForm({ ...islrForm, pj_non_domiciled_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
+                                <div><label htmlFor="pnRes" className="text-xs mb-1 block">PN Residente</label><input id="pnRes" value={islrForm.pn_resident_rate} onChange={e => setIslrForm({ ...islrForm, pn_resident_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
+                                <div><label htmlFor="pjDom" className="text-xs mb-1 block">PJ Domiciliada</label><input id="pjDom" value={islrForm.pj_domiciled_rate} onChange={e => setIslrForm({ ...islrForm, pj_domiciled_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
+                                <div><label htmlFor="pnNonRes" className="text-xs mb-1 block">PN No Residente</label><input id="pnNonRes" value={islrForm.pn_non_resident_rate} onChange={e => setIslrForm({ ...islrForm, pn_non_resident_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
+                                <div><label htmlFor="pjNonDom" className="text-xs mb-1 block">PJ No Domiciliada</label><input id="pjNonDom" value={islrForm.pj_non_domiciled_rate} onChange={e => setIslrForm({ ...islrForm, pj_non_domiciled_rate: e.target.value })} className="w-full border text-sm p-1.5 rounded" /></div>
                             </div>
                             <div className="flex justify-end gap-2 pt-4">
                                 <button type="button" onClick={() => setIsIslrModalOpen(false)} className="px-4 py-2 border rounded">Cancelar</button>

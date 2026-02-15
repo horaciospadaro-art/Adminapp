@@ -70,8 +70,9 @@ export function BankForm({ initialData, isEdit = false }: BankFormProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Banco / Caja</label>
+                    <label htmlFor="bankName" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Banco / Caja</label>
                     <input
+                        id="bankName"
                         name="bankName"
                         defaultValue={initialData?.bank_name}
                         required
@@ -81,8 +82,9 @@ export function BankForm({ initialData, isEdit = false }: BankFormProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Número de Cuenta</label>
+                    <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-1">Número de Cuenta</label>
                     <input
+                        id="accountNumber"
                         name="accountNumber"
                         defaultValue={initialData?.account_number}
                         required
@@ -92,8 +94,9 @@ export function BankForm({ initialData, isEdit = false }: BankFormProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Cuenta</label>
+                    <label htmlFor="accountType" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Cuenta</label>
                     <select
+                        id="accountType"
                         name="type"
                         defaultValue={initialData?.type}
                         className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2ca01c] focus:border-[#2ca01c] px-3 py-2 border"
@@ -106,8 +109,9 @@ export function BankForm({ initialData, isEdit = false }: BankFormProps) {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                    <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
                     <select
+                        id="currency"
                         name="currency"
                         defaultValue={initialData?.currency || 'VES'}
                         className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2ca01c] focus:border-[#2ca01c] px-3 py-2 border"
@@ -119,8 +123,9 @@ export function BankForm({ initialData, isEdit = false }: BankFormProps) {
 
                 {!isEdit && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial (Libros)</label>
+                        <label htmlFor="initialBalance" className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial (Libros)</label>
                         <input
+                            id="initialBalance"
                             type="number"
                             step="0.01"
                             name="initialBalance"
