@@ -58,10 +58,11 @@ export default function BillsPage() {
             .catch(() => {})
     }, [])
 
-    const fetchBills = useCallback(async () => {
+    const fetchBills = useCallback(async (filterQ?: string) => {
         if (!companyId) return
         setLoading(true)
         const params = new URLSearchParams({ companyId, dateFrom, dateTo })
+        if (filterQ?.trim()) params.set('q', filterQ.trim())
         try {
             const res = await fetch(`/api/operations/suppliers/bills?${params}`)
             const data = await res.json()
@@ -76,6 +77,15 @@ export default function BillsPage() {
     useEffect(() => {
         fetchBills()
     }, [fetchBills])
+
+    // Filtrar listado por proveedor o número de factura al escribir
+    useEffect(() => {
+        if (!companyId) return
+        const t = setTimeout(() => {
+            fetchBills(searchText.trim() || undefined)
+        }, DEBOUNCE_MS)
+        return () => clearTimeout(t)
+    }, [companyId, searchText, fetchBills])
 
     useEffect(() => {
         if (!companyId) return
@@ -186,14 +196,14 @@ export default function BillsPage() {
             </div>
 
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 relative" ref={dropdownRef}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Buscar proveedor para registrar factura</label>
-                <div className="relative max-w-md">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar listado o buscar proveedor para registrar factura</label>
+                <div className="relative max-w-xl">
                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     <input
                         value={searchText}
                         onChange={e => setSearchText(e.target.value)}
                         onFocus={() => searchText.trim().length >= 2 && setShowDropdown(true)}
-                        placeholder="Escribe el nombre del proveedor..."
+                        placeholder="Nombre del proveedor o número de factura para filtrar..."
                         className="pl-10 w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     {supplierSearching && (
