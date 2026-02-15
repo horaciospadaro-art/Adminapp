@@ -3,8 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  /* Scale down UI by 25% (Standard 16px -> 12px) */
-  font-size: 12px;
+  /* Scale down UI by 32.5% (Standard 16px -> 10.8px) */
+  font-size: 10.8px;
 }
 
 @theme inline {
