@@ -59,7 +59,7 @@ export async function POST(
             return NextResponse.json({ error: 'Contra account required' }, { status: 400 })
         }
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // 1. Create Main Bank Transaction Record
             const mainTransaction = await tx.bankTransaction.create({
                 data: {
@@ -354,7 +354,7 @@ async function handleTransfer(
         isIgtfApplied: boolean
     }
 ) {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: any) => {
         // Get target bank account
         const targetBankAccount = await tx.bankAccount.findUnique({
             where: { id: data.targetBankId },
