@@ -38,7 +38,7 @@ export async function GET(
 
         // Process for Running Balance
         let runningBalance = 0
-        const transactions = documents.map(doc => {
+        const transactions = documents.map((doc: any) => {
             let charge = 0
             let payment = 0
 

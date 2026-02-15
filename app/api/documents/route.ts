@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
         if (status) {
             const statuses = status.split(',')
-            where.status = { in: statuses.map(s => s.trim() as PaymentStatus) }
+            where.status = { in: statuses.map((s: string) => s.trim() as PaymentStatus) }
         }
 
         if (third_party_id) {
