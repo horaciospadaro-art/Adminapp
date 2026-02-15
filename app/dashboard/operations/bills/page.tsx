@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Plus, Search, FileText, Loader2, Receipt } from 'lucide-react'
+import { Plus, Search, FileText, Loader2, Receipt, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -22,18 +22,29 @@ interface Supplier {
 
 const DEBOUNCE_MS = 300
 
+function getDefaultDateRange() {
+    const now = new Date()
+    const from = new Date(now.getFullYear(), now.getMonth(), 1)
+    return {
+        from: from.toISOString().slice(0, 10),
+        to: now.toISOString().slice(0, 10)
+    }
+}
+
 export default function BillsPage() {
     const router = useRouter()
+    const defaults = getDefaultDateRange()
     const [bills, setBills] = useState<Bill[]>([])
     const [loading, setLoading] = useState(true)
     const [companyId, setCompanyId] = useState<string>('')
+    const [dateFrom, setDateFrom] = useState(defaults.from)
+    const [dateTo, setDateTo] = useState(defaults.to)
     const [searchText, setSearchText] = useState('')
     const [supplierResults, setSupplierResults] = useState<Supplier[]>([])
     const [supplierSearching, setSupplierSearching] = useState(false)
     const [showDropdown, setShowDropdown] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
-    // Obtener empresa activa (primera de la lista, como en otras páginas)
     useEffect(() => {
         fetch('/api/companies')
             .then(res => res.json())
@@ -45,12 +56,10 @@ export default function BillsPage() {
             .catch(() => {})
     }, [])
 
-    // Cargar facturas (todas o filtradas por q)
-    const fetchBills = useCallback(async (q?: string) => {
+    const fetchBills = useCallback(async () => {
         if (!companyId) return
         setLoading(true)
-        const params = new URLSearchParams({ companyId })
-        if (q?.trim()) params.set('q', q.trim())
+        const params = new URLSearchParams({ companyId, dateFrom, dateTo })
         try {
             const res = await fetch(`/api/operations/suppliers/bills?${params}`)
             const data = await res.json()
@@ -60,16 +69,14 @@ export default function BillsPage() {
         } finally {
             setLoading(false)
         }
-    }, [companyId])
+    }, [companyId, dateFrom, dateTo])
 
     useEffect(() => {
         fetchBills()
-    }, [companyId, fetchBills])
+    }, [fetchBills])
 
-    // Búsqueda de proveedores (debounce) y filtro de facturas
     useEffect(() => {
         if (!companyId) return
-
         const t = setTimeout(() => {
             const q = searchText.trim()
             if (q.length >= 2) {
@@ -82,18 +89,14 @@ export default function BillsPage() {
                     })
                     .catch(() => setSupplierResults([]))
                     .finally(() => setSupplierSearching(false))
-                fetchBills(q)
             } else {
                 setSupplierResults([])
                 setShowDropdown(false)
-                if (!q) fetchBills()
             }
         }, DEBOUNCE_MS)
-
         return () => clearTimeout(t)
-    }, [companyId, searchText, fetchBills])
+    }, [companyId, searchText])
 
-    // Cerrar dropdown al hacer clic fuera
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -113,7 +116,7 @@ export default function BillsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-4">
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                     <FileText className="w-6 h-6 text-gray-600" />
                     Facturas de Compra (Gastos)
@@ -126,14 +129,49 @@ export default function BillsPage() {
                 </Link>
             </div>
 
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-4">
+                <div className="flex flex-wrap items-end gap-4">
+                    <div className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-gray-500" />
+                        <label className="text-sm font-medium text-gray-700">Desde</label>
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={e => setDateFrom(e.target.value)}
+                            className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700">Hasta</label>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={e => setDateTo(e.target.value)}
+                            className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => fetchBills()}
+                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium"
+                    >
+                        Aplicar fechas
+                    </button>
+                </div>
+                <p className="text-sm text-gray-500">
+                    Todas las facturas en el rango se muestran mezcladas (todos los proveedores). Para registrar una factura, usa el buscador de abajo o el botón verde.
+                </p>
+            </div>
+
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 relative" ref={dropdownRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Buscar proveedor para registrar factura</label>
                 <div className="relative max-w-md">
                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     <input
                         value={searchText}
                         onChange={e => setSearchText(e.target.value)}
                         onFocus={() => searchText.trim().length >= 2 && setShowDropdown(true)}
-                        placeholder="Buscar proveedor para registrar factura o filtrar listado..."
+                        placeholder="Escribe el nombre del proveedor..."
                         className="pl-10 w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     {supplierSearching && (
@@ -160,7 +198,7 @@ export default function BillsPage() {
                 )}
                 {showDropdown && searchText.trim().length >= 2 && !supplierSearching && supplierResults.length === 0 && (
                     <div className="absolute z-10 mt-1 max-w-md px-4 py-3 bg-white border border-gray-200 rounded-md shadow-lg text-sm text-gray-500">
-                        No se encontraron proveedores. Puedes registrar una factura sin filtrar desde el botón verde.
+                        No se encontraron proveedores. Usa el botón &quot;Registrar Factura&quot; para cargar una sin seleccionar.
                     </div>
                 )}
             </div>
@@ -181,7 +219,7 @@ export default function BillsPage() {
                         {loading ? (
                             <tr><td colSpan={6} className="p-8 text-center">Cargando...</td></tr>
                         ) : bills.length === 0 ? (
-                            <tr><td colSpan={6} className="p-8 text-center text-gray-500">No hay facturas registradas.</td></tr>
+                            <tr><td colSpan={6} className="p-8 text-center text-gray-500">No hay facturas en el rango de fechas seleccionado.</td></tr>
                         ) : (
                             bills.map((bill: any) => (
                                 <tr key={bill.id}>

@@ -35,13 +35,22 @@ export async function GET(request: Request) {
         const type = searchParams.get('type') // optional filter
         const companyId = searchParams.get('companyId')
         const q = searchParams.get('q')?.trim()
+        const dateFrom = searchParams.get('dateFrom')?.trim()
+        const dateTo = searchParams.get('dateTo')?.trim()
 
         const whereClause: Prisma.DocumentWhereInput = {
             company_id: companyId || '1',
-            // if type is not provided, we might want all supplier documents, or just BILLs
-            // For returns, we want BILLs.
             type: type ? (type as DocumentType) : DocumentType.BILL,
-            status: { not: 'VOID' } // Don't return voided bills
+            status: { not: 'VOID' }
+        }
+
+        if (dateFrom || dateTo) {
+            const from = dateFrom ? new Date(dateFrom) : undefined
+            const to = dateTo ? new Date(dateTo) : undefined
+            if (to) to.setHours(23, 59, 59, 999)
+            if (from && to) whereClause.date = { gte: from, lte: to }
+            else if (from) whereClause.date = { gte: from }
+            else if (to) whereClause.date = { lte: to }
         }
 
         const id = searchParams.get('id')

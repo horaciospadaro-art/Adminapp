@@ -454,10 +454,14 @@ export function BillForm({ companyId }: BillFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="w-full mx-auto space-y-6 pb-20">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
                 <h1 className="text-2xl font-bold text-gray-800">Registrar Factura</h1>
-                <Link href="/dashboard/operations/bills" className="text-sm text-blue-600 hover:underline">
-                    &larr; Volver
+                <Link
+                    href="/dashboard/operations/bills"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Volver al listado (elegir proveedor u otro)
                 </Link>
             </div>
 
@@ -843,8 +847,12 @@ export function BillForm({ companyId }: BillFormProps) {
             </div>
 
             <div className="flex justify-end gap-4">
-                <Link href="/dashboard/operations/bills" className="px-6 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
-                    Cancelar
+                <Link
+                    href="/dashboard/operations/bills"
+                    className="px-6 py-3 text-gray-600 hover:bg-gray-50 rounded-lg border border-gray-200 inline-flex items-center gap-2"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Volver al listado
                 </Link>
                 <button
                     type="submit"
