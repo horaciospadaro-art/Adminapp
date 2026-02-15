@@ -143,6 +143,7 @@ export function BillForm() {
     const [vatRetentionRate, setVatRetentionRate] = useState(0)
     const [islrConceptId, setIslrConceptId] = useState('')
     const [isIgtfApplied, setIsIgtfApplied] = useState(false)
+    const [foreignCurrencyAmount, setForeignCurrencyAmount] = useState(0) // Amount paid in foreign currency (in Bs)
 
     // Initial Load
     useEffect(() => {
@@ -225,19 +226,19 @@ export function BillForm() {
     const calculations = useMemo(() => {
         const subtotal = items.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unit_price)), 0)
 
-        // 1. IVA (Only if IGTF is NOT applied)
+        // 1. IVA (Always calculated if tax is selected)
         let totalTax = 0
         let taxRateValue = 0
-        if (!isIgtfApplied && globalTaxId) {
+        if (globalTaxId) {
             const tax = taxes.find(t => t.id === globalTaxId)
             taxRateValue = tax ? parseFloat(tax.rate) : 0
             totalTax = subtotal * (taxRateValue / 100)
         }
 
-        // 2. IGTF (If applied, no IVA)
+        // 2. IGTF (Applied on foreign currency amount, coexists with IVA)
         let igtfAmount = 0
-        if (isIgtfApplied) {
-            igtfAmount = subtotal * 0.03
+        if (isIgtfApplied && foreignCurrencyAmount > 0) {
+            igtfAmount = foreignCurrencyAmount * 0.03
         }
 
         // 3. Retentions
@@ -292,7 +293,14 @@ export function BillForm() {
             islrConceptName,
             taxpayerTypeLabel
         }
-    }, [items, globalTaxId, vatRetentionRate, islrConceptId, isIgtfApplied, taxes, islrConcepts, thirdPartyId, suppliers])
+    }, [items, globalTaxId, vatRetentionRate, islrConceptId, isIgtfApplied, foreignCurrencyAmount, taxes, islrConcepts, thirdPartyId, suppliers])
+
+    // Auto-update foreign currency amount when IGTF is enabled
+    useEffect(() => {
+        if (isIgtfApplied && foreignCurrencyAmount === 0) {
+            setForeignCurrencyAmount(calculations.totalPayable)
+        }
+    }, [isIgtfApplied, calculations.totalPayable, foreignCurrencyAmount])
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -712,21 +720,32 @@ export function BillForm() {
                                 <input
                                     type="checkbox"
                                     checked={isIgtfApplied}
-                                    onChange={e => {
-                                        setIsIgtfApplied(e.target.checked)
-                                        if (e.target.checked) {
-                                            setGlobalTaxId('')
-                                            setVatRetentionRate(0)
-                                        }
-                                    }}
+                                    onChange={e => setIsIgtfApplied(e.target.checked)}
                                     className="rounded text-blue-600 focus:ring-blue-500"
                                 />
                                 <span className="text-sm font-medium text-gray-700">Aplicar IGTF (3%)</span>
                             </label>
-                            {isIgtfApplied && (
-                                <span className="text-xs font-bold text-red-600 tracking-tight italic">* IVA discapacitado</span>
-                            )}
                         </div>
+                        {isIgtfApplied && (
+                            <div className="mt-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Monto Pagado en Divisa (Bs)
+                                    <span className="text-xs text-gray-500 ml-2">(Editable para pagos mixtos)</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={foreignCurrencyAmount}
+                                    onChange={(e) => setForeignCurrencyAmount(parseFloat(e.target.value) || 0)}
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Monto en Bs pagado con divisa"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    El IGTF (3%) se calculará sobre este monto. Por defecto es el neto a pagar.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
