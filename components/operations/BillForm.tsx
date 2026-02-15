@@ -142,8 +142,6 @@ export function BillForm() {
     const [globalTaxId, setGlobalTaxId] = useState('')
     const [vatRetentionRate, setVatRetentionRate] = useState(0)
     const [islrConceptId, setIslrConceptId] = useState('')
-    const [isIgtfApplied, setIsIgtfApplied] = useState(false)
-    const [foreignCurrencyAmount, setForeignCurrencyAmount] = useState(0) // Amount paid in foreign currency (in Bs)
 
     // Initial Load
     useEffect(() => {
@@ -226,19 +224,13 @@ export function BillForm() {
     const calculations = useMemo(() => {
         const subtotal = items.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unit_price)), 0)
 
-        // 1. IVA (Always calculated if tax is selected)
+        // 1. IVA
         let totalTax = 0
         let taxRateValue = 0
         if (globalTaxId) {
             const tax = taxes.find(t => t.id === globalTaxId)
             taxRateValue = tax ? parseFloat(tax.rate) : 0
             totalTax = subtotal * (taxRateValue / 100)
-        }
-
-        // 2. IGTF (Applied on foreign currency amount, coexists with IVA)
-        let igtfAmount = 0
-        if (isIgtfApplied && foreignCurrencyAmount > 0) {
-            igtfAmount = foreignCurrencyAmount * 0.03
         }
 
         // 3. Retentions
@@ -275,7 +267,7 @@ export function BillForm() {
         }
         const totalRetISLR = subtotal * (islrRateValue / 100)
 
-        const totalInvoice = subtotal + totalTax + igtfAmount
+        const totalInvoice = subtotal + totalTax
         const totalPayable = totalInvoice - totalRetIVA - totalRetISLR
 
         const islrConceptName = islrConceptId ? (islrConcepts.find(c => c.id === islrConceptId)?.description || '') : ''
@@ -283,7 +275,6 @@ export function BillForm() {
         return {
             subtotal,
             totalTax,
-            igtfAmount,
             totalRetIVA,
             totalRetISLR,
             totalInvoice,
@@ -293,14 +284,7 @@ export function BillForm() {
             islrConceptName,
             taxpayerTypeLabel
         }
-    }, [items, globalTaxId, vatRetentionRate, islrConceptId, isIgtfApplied, foreignCurrencyAmount, taxes, islrConcepts, thirdPartyId, suppliers])
-
-    // Auto-update foreign currency amount when IGTF is enabled
-    useEffect(() => {
-        if (isIgtfApplied && foreignCurrencyAmount === 0) {
-            setForeignCurrencyAmount(calculations.totalPayable)
-        }
-    }, [isIgtfApplied, calculations.totalPayable, foreignCurrencyAmount])
+    }, [items, globalTaxId, vatRetentionRate, islrConceptId, taxes, islrConcepts, thirdPartyId, suppliers])
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -343,18 +327,16 @@ export function BillForm() {
                         ...item,
                         quantity: Number(item.quantity),
                         unit_price: Number(item.unit_price),
-                        tax_id: isIgtfApplied ? null : globalTaxId,
-                        tax_rate: isIgtfApplied ? 0 : calculations.taxRate,
-                        tax_amount: isIgtfApplied ? 0 : (calculations.totalTax * proportion),
+                        tax_id: globalTaxId,
+                        tax_rate: calculations.taxRate,
+                        tax_amount: calculations.totalTax * proportion,
                         vat_retention_rate: vatRetentionRate,
-                        vat_retention_amount: isIgtfApplied ? 0 : (calculations.totalRetIVA * proportion),
+                        vat_retention_amount: calculations.totalRetIVA * proportion,
                         islr_rate: calculations.islrRate,
                         islr_amount: calculations.totalRetISLR * proportion,
                         islr_concept_id: islrConceptId || null
                     }
-                }),
-                is_igtf: isIgtfApplied,
-                igtf_amount: calculations.igtfAmount
+                })
             }
 
             const res = await fetch('/api/operations/suppliers/bills', {
@@ -667,11 +649,7 @@ export function BillForm() {
                                 <label className="block text-xs font-medium text-gray-500 mb-1">IVA (Tasa Global)</label>
                                 <select
                                     value={globalTaxId}
-                                    onChange={e => {
-                                        setGlobalTaxId(e.target.value)
-                                        if (e.target.value) setIsIgtfApplied(false) // Mutually exclusive
-                                    }}
-                                    disabled={isIgtfApplied}
+                                    onChange={e => setGlobalTaxId(e.target.value)}
                                     className="w-full p-2 border rounded text-sm bg-gray-50 disabled:opacity-50"
                                     title="Tasa IVA"
                                 >
@@ -686,7 +664,7 @@ export function BillForm() {
                                 <select
                                     value={vatRetentionRate}
                                     onChange={e => setVatRetentionRate(parseFloat(e.target.value) || 0)}
-                                    disabled={isIgtfApplied || !globalTaxId}
+                                    disabled={!globalTaxId}
                                     className="w-full p-2 border rounded text-sm bg-gray-50 disabled:opacity-50"
                                     title="Tasa Retención IVA"
                                 >
@@ -715,37 +693,6 @@ export function BillForm() {
                             )}
                         </div>
 
-                        <div className="pt-2 border-t flex items-center justify-between">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={isIgtfApplied}
-                                    onChange={e => setIsIgtfApplied(e.target.checked)}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-sm font-medium text-gray-700">Aplicar IGTF (3%)</span>
-                            </label>
-                        </div>
-                        {isIgtfApplied && (
-                            <div className="mt-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Monto Pagado en Divisa (Bs)
-                                    <span className="text-xs text-gray-500 ml-2">(Editable para pagos mixtos)</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={foreignCurrencyAmount}
-                                    onChange={(e) => setForeignCurrencyAmount(parseFloat(e.target.value) || 0)}
-                                    step="0.01"
-                                    min="0"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Monto en Bs pagado con divisa"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">
-                                    El IGTF (3%) se calculará sobre este monto. Por defecto es el neto a pagar.
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -757,19 +704,11 @@ export function BillForm() {
                             <span className="font-medium text-blue-600">{calculations.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
 
-                        {!isIgtfApplied && (
-                            <div className="flex justify-between items-center bg-blue-50/50 px-2 py-1 rounded">
-                                <span className="text-gray-600">IVA ({calculations.taxRate}%)</span>
-                                <span className="font-medium">{calculations.totalTax.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                            </div>
-                        )}
+                        <div className="flex justify-between items-center bg-blue-50/50 px-2 py-1 rounded">
+                            <span className="text-gray-600">IVA ({calculations.taxRate}%)</span>
+                            <span className="font-medium">{calculations.totalTax.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
 
-                        {isIgtfApplied && (
-                            <div className="flex justify-between items-center bg-red-50/50 px-2 py-1 rounded">
-                                <span className="text-red-700 font-medium">IGTF (3%)</span>
-                                <span className="font-medium text-red-700">{calculations.igtfAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                            </div>
-                        )}
 
                         <div className="flex justify-between border-t pt-2 font-semibold text-gray-900 border-gray-100">
                             <span>Monto Bruto Factura</span>
