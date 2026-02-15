@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
             if (type === 'entries') {
                 const movements = await service.getMovements(targetCompanyId, filters)
-                const entries = movements.filter(m =>
+                const entries = movements.filter((m: any) =>
                     m.type === MovementType.PURCHASE ||
                     m.type === MovementType.ADJUSTMENT_IN ||
                     m.type === MovementType.TRANSFER_IN
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
 
             if (type === 'exits') {
                 const movements = await service.getMovements(targetCompanyId, filters)
-                const exits = movements.filter(m =>
+                const exits = movements.filter((m: any) =>
                     m.type === MovementType.SALE ||
                     m.type === MovementType.ADJUSTMENT_OUT ||
                     m.type === MovementType.TRANSFER_OUT
