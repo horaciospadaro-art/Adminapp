@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
         const withholdingAmount = parseFloat(amount)
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // 1. Create Withholding Record
             const withholding = await tx.withholding.create({
                 data: {

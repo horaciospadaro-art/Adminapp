@@ -119,7 +119,7 @@ export async function POST(request: Request) {
         const total = subtotal + totalTax
 
         // 3. Transaction
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // Create Document
             const doc = await tx.document.create({
                 data: {

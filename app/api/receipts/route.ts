@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
         const totalAmount = parseFloat(amount)
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // 1. Create Receipt Document
             // For now, generating a simple number or expecting one. 
             // In a real app, we might want auto-increment sequence specifically for receipts.
