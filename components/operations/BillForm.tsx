@@ -244,10 +244,22 @@ export function BillForm() {
         const totalRetIVA = totalTax * (vatRetentionRate / 100)
 
         let islrRateValue = 0
+        let taxpayerTypeLabel = ''
         if (islrConceptId) {
             const concept = islrConcepts.find(c => c.id === islrConceptId)
             const supplier = suppliers.find(s => s.id === thirdPartyId) as any
             const type = supplier?.taxpayer_type || 'PJ_DOMICILIADA'
+
+            // Map taxpayer type to human-readable label
+            const taxpayerTypeLabels: Record<string, string> = {
+                'PN_RESIDENTE': 'Persona Natural Residente',
+                'PN_NO_RESIDENTE': 'Persona Natural No Residente',
+                'PJ_DOMICILIADA': 'Persona Jurídica Domiciliada',
+                'PJ_NO_DOMICILIADA': 'Persona Jurídica No Domiciliada'
+            }
+            taxpayerTypeLabel = taxpayerTypeLabels[type] || type
+
+            console.log('ISLR Debug:', { concept, supplier, type, taxpayerTypeLabel })
 
             if (concept) {
                 switch (type) {
@@ -257,6 +269,7 @@ export function BillForm() {
                     case 'PJ_NO_DOMICILIADA': islrRateValue = Number(concept.pj_non_domiciled_rate); break;
                     default: islrRateValue = Number(concept.pj_domiciled_rate);
                 }
+                console.log('ISLR Rate calculated:', islrRateValue)
             }
         }
         const totalRetISLR = subtotal * (islrRateValue / 100)
@@ -276,7 +289,8 @@ export function BillForm() {
             totalPayable,
             taxRate: taxRateValue,
             islrRate: islrRateValue,
-            islrConceptName
+            islrConceptName,
+            taxpayerTypeLabel
         }
     }, [items, globalTaxId, vatRetentionRate, islrConceptId, isIgtfApplied, taxes, islrConcepts, thirdPartyId, suppliers])
 
@@ -749,7 +763,11 @@ export function BillForm() {
                                 <span>-{calculations.totalRetIVA.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                             </div>
                             <div className="flex justify-between text-red-600 text-xs italic">
-                                <span>(-) Retención ISLR ({calculations.islrRate}%){calculations.islrConceptName && ` - ${calculations.islrConceptName}`}</span>
+                                <span>
+                                    (-) Retención ISLR ({calculations.islrRate}%)
+                                    {calculations.islrConceptName && ` - ${calculations.islrConceptName}`}
+                                    {calculations.taxpayerTypeLabel && ` (${calculations.taxpayerTypeLabel})`}
+                                </span>
                                 <span>-{(calculations.totalRetISLR || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
