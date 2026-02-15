@@ -474,8 +474,8 @@ export function BillForm() {
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor <span className="text-red-500">*</span></label>
                         <select
@@ -540,8 +540,8 @@ export function BillForm() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 overflow-hidden">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Detalle de Factura</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 overflow-hidden">
+                <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wider">Detalle de Factura</h3>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-xs mb-4 table-auto">
@@ -632,10 +632,10 @@ export function BillForm() {
             </div>
 
             {/* Calculations & Submit */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 {/* Global Taxes Management Table */}
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Impuestos y Retenciones</h3>
+                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wider">Impuestos y Retenciones</h3>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
@@ -713,8 +713,8 @@ export function BillForm() {
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Totalización</h3>
+                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wider">Totalización</h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
                             <span className="text-gray-600">Sumatoria Base Imponible</span>
