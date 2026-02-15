@@ -732,7 +732,7 @@ export function BillForm() {
 
                 <div className="bg-white p-3 rounded-lg border border-gray-200">
                     <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wider">Totalización</h3>
-                    <div className="space-y-3 text-sm">
+                    <div className="space-y-3 text-base">
                         <div className="flex justify-between">
                             <span className="text-gray-600">Sumatoria Base Imponible</span>
                             <span className="font-medium text-blue-600">{calculations.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
@@ -758,11 +758,11 @@ export function BillForm() {
                         </div>
 
                         <div className="space-y-1 pt-2">
-                            <div className="flex justify-between text-red-600 text-xs italic">
+                            <div className="flex justify-between text-red-600 text-sm italic">
                                 <span>(-) Retención IVA ({vatRetentionRate}%)</span>
                                 <span>-{calculations.totalRetIVA.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                             </div>
-                            <div className="flex justify-between text-red-600 text-xs italic">
+                            <div className="flex justify-between text-red-600 text-sm italic">
                                 <span>
                                     (-) Retención ISLR ({calculations.islrRate}%)
                                     {calculations.islrConceptName && ` - ${calculations.islrConceptName}`}
