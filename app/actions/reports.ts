@@ -31,7 +31,7 @@ export async function getDynamicReportData(module: string, fields: string[], sta
             }
         })
 
-        return parties.map(p => {
+        return parties.map((p: any) => {
             const row: any = {}
             if (fields.includes('name')) row.name = p.name
             if (fields.includes('rif')) row.rif = p.rif
@@ -80,7 +80,7 @@ export async function getDynamicReportData(module: string, fields: string[], sta
             orderBy: { date: 'desc' }
         })
 
-        return docs.map(d => {
+        return docs.map((d: any) => {
             const row: any = {}
             // Basic mapping
             if (fields.includes('status')) row.status = d.status
