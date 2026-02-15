@@ -52,7 +52,7 @@ export default async function BankDetailsPage(props: { params: Promise<{ bankId:
         }))
     }
 
-    const serializedTaxes = taxes.map(t => ({
+    const serializedTaxes = taxes.map((t: any) => ({
         ...t,
         rate: Number(t.rate)
     }))
