@@ -47,7 +47,7 @@ export default async function SupplierRetentionIVAPage({
     })
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" data-retention-iva-page>
             <PageHeader
                 title={`Comprobantes de retención IVA - ${supplier.name}`}
                 backHref="/dashboard/operations/suppliers"

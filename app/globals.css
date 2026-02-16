@@ -27,8 +27,14 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Una hoja por comprobante de retención IVA al imprimir/PDF */
+/* Ocultar menú, barra y título al imprimir (solo comprobantes) */
 @media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+  [data-retention-iva-page] > *:first-child {
+    display: none !important;
+  }
   .comprobante-iva-page.print-break-after-page {
     break-after: page;
     page-break-after: always;

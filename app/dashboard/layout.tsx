@@ -16,10 +16,14 @@ export default async function DashboardLayout({
 
     return (
         <div className="flex h-screen bg-[#f4f5f8] flex-col">
-            <TopBar companyName={company?.name} />
+            <div data-print-hide>
+                <TopBar companyName={company?.name} />
+            </div>
             <div className="flex flex-1 overflow-hidden">
-                <Sidebar />
-                <main className="flex-1 overflow-auto p-6 relative">
+                <div data-print-hide className="shrink-0">
+                    <Sidebar />
+                </div>
+                <main className="flex-1 overflow-auto p-6 relative print:p-0">
                     {children}
                 </main>
             </div>

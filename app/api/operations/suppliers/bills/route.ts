@@ -4,7 +4,7 @@ import prisma from '@/lib/db'
 import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus, Prisma, MovementType } from '@prisma/client'
 import { createBillJournalEntry, resyncJournalEntryFromDocument } from '@/lib/accounting-helpers'
 
-// IVA: YYYYMM + 5-digit correlative (resets each month). Example: 20260200001
+// IVA: YYYYMM + correlativo de 7 dígitos (6 ceros delante del 1). Ej: 2024010000001, 2024010000002
 // ISLR: 5-digit ascending. Example: 00001
 async function generateRetentionNumber(tx: any, companyId: string, type: 'IVA' | 'ISLR') {
     const now = new Date()
@@ -23,12 +23,17 @@ async function generateRetentionNumber(tx: any, companyId: string, type: 'IVA' |
         })
         let maxSeq = 0
         for (const w of lastInMonth) {
-            const suffix = w.certificate_number.slice(6)
-            const n = parseInt(suffix, 10)
-            if (!isNaN(n) && n > maxSeq) maxSeq = n
+            const cert = w.certificate_number as string
+            if (cert.startsWith(yyyymm) && cert.length >= 13) {
+                const suffix = cert.slice(6)
+                if (/^\d+$/.test(suffix)) {
+                    const n = parseInt(suffix, 10)
+                    if (!isNaN(n) && n > maxSeq) maxSeq = n
+                }
+            }
         }
         const nextNum = maxSeq + 1
-        return `${yyyymm}${nextNum.toString().padStart(5, '0')}`
+        return `${yyyymm}${nextNum.toString().padStart(7, '0')}`
     }
 
     // ISLR: 5-digit correlative (only consider numbers 00001-99999; ignore old RET-ISLR-xxx)
