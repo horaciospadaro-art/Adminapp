@@ -9,6 +9,8 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', '
 const formatNum = (n: number) =>
     new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
 
+const LEY_IVA_ART11 = 'Ley IVA. Art. 11: Serán responsables del pago del impuesto en calidad de agentes de retención, los compradores o adquirientes de determinados bienes muebles y los receptores de ciertos servicios, a quienes la Administración Tributaria designe como tal.'
+
 type Withholding = {
     id: string
     certificate_number: string
@@ -17,11 +19,11 @@ type Withholding = {
     tax_amount: unknown
     rate: number | unknown
     amount: unknown
-    document: { number: string; date: Date | string } | null
+    document: { number: string; date: Date | string; control_number?: string | null } | null
 }
 
 type Props = {
-    company: { name: string | null; rif: string | null } | null
+    company: { name: string | null; rif: string | null; address?: string | null } | null
     supplier: { name: string; rif: string; address: string | null }
     withholdings: Withholding[]
     start: Date
@@ -35,101 +37,156 @@ function addComprobantePage(
     w: Withholding,
     isFirstPage: boolean
 ) {
-    if (!isFirstPage) pdf.addPage('letter', 'portrait')
-    const pageW = 215.9
-    const margin = 15
-    let y = 20
+    if (!isFirstPage) pdf.addPage('letter', 'landscape')
+    const pageW = 279.4
+    const pageH = 215.9
+    const margin = 12
+    let y = 14
 
-    pdf.setFontSize(14)
-    pdf.setFont('helvetica', 'bold')
-    pdf.text('COMPROBANTE DE RETENCIÓN DEL IMPUESTO AL VALOR AGREGADO', pageW / 2, y, { align: 'center' })
-    y += 8
-    pdf.setFontSize(9)
+    pdf.setDrawColor(0, 0, 0)
+    pdf.rect(margin, y, 22, 22)
+    pdf.setFontSize(7)
     pdf.setFont('helvetica', 'normal')
-    pdf.text('Ley IVA. Art. 11', pageW / 2, y, { align: 'center' })
-    y += 12
+    pdf.text('Logotipo', margin + 11, y + 12, { align: 'center' })
 
-    pdf.setFontSize(8)
+    pdf.setFontSize(12)
     pdf.setFont('helvetica', 'bold')
-    pdf.text('AGENTE DE RETENCIÓN', margin, y)
-    y += 5
+    pdf.text('COMPROBANTE DE RETENCIÓN DEL IMPUESTO AL VALOR AGREGADO', pageW / 2, y + 10, { align: 'center' })
+    y += 16
+    pdf.setFontSize(7)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(company?.name ?? '—', margin, y)
-    y += 5
-    pdf.text('RIF: ' + (company?.rif ?? '—'), margin, y)
-    y += 10
+    const leyLines = pdf.splitTextToSize(LEY_IVA_ART11, pageW - 2 * margin - 30)
+    pdf.text(leyLines, pageW / 2, y, { align: 'center' })
+    y += leyLines.length * 4 + 8
+
+    const boxH = 6
+    pdf.setFontSize(6)
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('NOMBRE O RAZÓN SOCIAL AGENTE DE RETENCIÓN', margin, y)
+    y += 4
+    pdf.rect(margin, y, 95, boxH)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text((company?.name ?? '—').substring(0, 55), margin + 2, y + 4)
+    const xRif = margin + 98
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('RIF DEL AGENTE DE RETENCIÓN', xRif, y - 4)
+    pdf.rect(xRif, y, 38, boxH)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(company?.rif ?? '—', xRif + 2, y + 4)
+    const xCert = xRif + 41
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('Nº COMPROBANTE', xCert, y - 4)
+    pdf.rect(xCert, y, 42, boxH)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(w.certificate_number, xCert + 2, y + 4)
+    y += boxH + 8
 
     pdf.setFont('helvetica', 'bold')
-    pdf.text('SUJETO RETENIDO (PROVEEDOR)', margin + 100, y - 15)
+    pdf.text('DIRECCION FISCAL DEL AGENTE DE RETENCIÓN', margin, y)
+    y += 4
+    pdf.rect(margin, y, 165, boxH)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(supplier.name, margin + 100, y - 10)
-    pdf.text('RIF: ' + supplier.rif, margin + 100, y - 5)
-    if (supplier.address) pdf.text('Dirección fiscal: ' + supplier.address, margin + 100, y)
-    y += 5
+    pdf.text((company?.address ?? '—').substring(0, 75), margin + 2, y + 4)
+    const xEmi = margin + 168
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('E. EMISION', xEmi, y - 4)
+    pdf.rect(xEmi, y, 24, boxH)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(formatDate(w.date), xEmi + 2, y + 4)
+    const xEnt = xEmi + 27
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('F. ENTREGA', xEnt, y - 4)
+    pdf.rect(xEnt, y, 24, boxH)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(formatDate(w.date), xEnt + 2, y + 4)
+    y += boxH + 8
 
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('NOMBRE O RAZÓN SOCIAL DEL SUJETO RETENIDO', margin, y)
+    y += 4
+    pdf.rect(margin, y, 95, boxH)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(supplier.name.substring(0, 55), margin + 2, y + 4)
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('RIF DEL SUJETO RETENIDO', xRif, y - 4)
+    pdf.rect(xRif, y, 38, boxH)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(supplier.rif, xRif + 2, y + 4)
     const d = new Date(w.date)
     const periodoAnio = d.getFullYear()
     const periodoMes = d.getMonth() + 1
-
     pdf.setFont('helvetica', 'bold')
-    pdf.setFontSize(7)
-    pdf.text('Nº COMPROBANTE', margin, y)
-    pdf.text('E. EMISIÓN', margin + 45, y)
-    pdf.text('F. ENTREGA', margin + 85, y)
-    pdf.text('PERÍODO FISCAL', margin + 125, y)
-    y += 5
+    pdf.text('PERÍODO FISCAL', xCert, y - 4)
+    pdf.text('AÑO:', xCert, y + 1)
+    pdf.rect(xCert + 12, y, 15, boxH)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(w.certificate_number, margin, y)
-    pdf.text(formatDate(w.date), margin + 45, y)
-    pdf.text(formatDate(w.date), margin + 85, y)
-    pdf.text(`Año: ${periodoAnio}  Mes: ${periodoMes} (${MESES[periodoMes - 1]})`, margin + 125, y)
-    y += 12
-
-    const colW = [28, 22, 32, 18, 22, 28]
-    const headers = ['Fecha factura', 'Nº factura', 'Base imponible', '% alícuota', 'IVA', 'IVA retenido']
+    pdf.text(String(periodoAnio), xCert + 14, y + 4)
     pdf.setFont('helvetica', 'bold')
-    pdf.setFontSize(8)
-    let x = margin
-    headers.forEach((h, i) => {
-        pdf.text(h, x + 2, y + 4)
-        x += colW[i]
-    })
-    y += 8
+    pdf.text('MES:', xCert + 30, y + 1)
+    pdf.rect(xCert + 38, y, 15, boxH)
     pdf.setFont('helvetica', 'normal')
+    pdf.text(String(periodoMes), xCert + 40, y + 4)
+    y += boxH + 10
+
+    const totalCompra = Number(w.base_amount) + Number(w.tax_amount)
+    const headers = ['OPER', 'FECHA FACTURA', 'Nº FACTURA', 'Nº CONTROL', 'Nº NOTA DEBITO', 'Nº NOTA CREDITO', 'Nº FACT. AFECT.', 'TOTAL COMPRA INCL. IVA', 'COMPRAS SIN DER. CRED.', 'BASE IMPONIBLE', '% ALICUOTA', 'IMPUESTO IVA', 'IVA RETENIDO']
+    const colW = [10, 18, 18, 16, 18, 18, 16, 24, 22, 20, 12, 18, 20]
     const row = [
+        '1',
         formatDate(w.document?.date),
         w.document?.number ?? '—',
+        (w.document as { control_number?: string })?.control_number ?? '—',
+        '—',
+        '—',
+        '—',
+        formatNum(totalCompra),
+        '0,00',
         formatNum(Number(w.base_amount)),
         Number(w.rate) + '%',
         formatNum(Number(w.tax_amount)),
         formatNum(Number(w.amount))
     ]
+    const rightCols = [7, 8, 9, 10, 11, 12]
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(6)
+    let x = margin
+    headers.forEach((h, i) => {
+        const ww = colW[i]
+        pdf.rect(x, y, ww, 7)
+        const label = pdf.splitTextToSize(h, ww - 2)
+        pdf.text(label[0], x + ww / 2, y + 4.5, { align: 'center' })
+        x += ww
+    })
+    y += 7
+    pdf.setFont('helvetica', 'normal')
     x = margin
     row.forEach((cell, i) => {
-        const align = i >= 2 ? 'right' : 'left'
-        pdf.text(String(cell), align === 'right' ? x + colW[i] - 2 : x + 2, y + 4, { align: align === 'right' ? 'right' : 'left' })
-        x += colW[i]
+        const ww = colW[i]
+        pdf.rect(x, y, ww, 6)
+        const align = rightCols.includes(i) ? 'right' : 'left'
+        pdf.text(String(cell).substring(0, 14), x + (align === 'right' ? ww - 1 : 1), y + 4, { align })
+        x += ww
     })
     y += 6
     pdf.setFont('helvetica', 'bold')
-    pdf.text('Total', margin + 2, y + 4)
-    x = margin + colW[0] + colW[1]
-    pdf.text(formatNum(Number(w.base_amount)), x + colW[2] - 2, y + 4, { align: 'right' })
-    x += colW[2]
-    pdf.text('', x + colW[3] - 2, y + 4)
-    x += colW[3]
-    pdf.text(formatNum(Number(w.tax_amount)), x + colW[4] - 2, y + 4, { align: 'right' })
-    x += colW[4]
-    pdf.text(formatNum(Number(w.amount)), x + colW[5] - 2, y + 4, { align: 'right' })
-    y += 15
+    x = margin
+    const totalRow = ['', '', '', '', '', '', '', formatNum(totalCompra), '0,00', formatNum(Number(w.base_amount)), '', formatNum(Number(w.tax_amount)), formatNum(Number(w.amount))]
+    totalRow.forEach((cell, i) => {
+        const ww = colW[i]
+        pdf.rect(x, y, ww, 6)
+        const align = rightCols.includes(i) ? 'right' : 'left'
+        if (cell) pdf.text(cell, x + (align === 'right' ? ww - 1 : 1), y + 4, { align })
+        x += ww
+    })
+    y += 10
 
     pdf.setFont('helvetica', 'bold')
-    pdf.setFontSize(7)
+    pdf.setFontSize(6)
     pdf.text('Firma y sello de la empresa que emite el comprobante', margin, y)
     y += 5
-    pdf.setDrawColor(200, 200, 200)
-    pdf.rect(margin, y, pageW - 2 * margin, 25)
-    y += 30
+    pdf.rect(margin, y, pageW - 2 * margin, 18)
+    y += 20
     pdf.setFont('helvetica', 'normal')
     pdf.setFontSize(9)
     pdf.text(company?.name ?? '—', margin, y)
@@ -252,7 +309,7 @@ export function RetentionIVAPrintView({ company, supplier, withholdings, start, 
         if (withholdings.length === 0) return
         setDownloading(true)
         try {
-            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' })
             withholdings.forEach((w, i) => {
                 addComprobantePage(pdf, company, supplier, w, i === 0)
             })
