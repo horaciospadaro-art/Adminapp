@@ -239,8 +239,8 @@ export async function PUT(request: Request) {
                 where: { document_id: documentId },
                 select: { type: true, certificate_number: true }
             })
-            const existingIVANumber = existingWithholdings.find(w => w.type === TaxType.RETENCION_IVA)?.certificate_number
-            const existingISLRNumber = existingWithholdings.find(w => w.type === TaxType.RETENCION_ISLR)?.certificate_number
+            const existingIVANumber = existingWithholdings.find((w: { type: TaxType; certificate_number: string }) => w.type === TaxType.RETENCION_IVA)?.certificate_number
+            const existingISLRNumber = existingWithholdings.find((w: { type: TaxType; certificate_number: string }) => w.type === TaxType.RETENCION_ISLR)?.certificate_number
 
             await tx.withholding.deleteMany({ where: { document_id: documentId } })
             if (totalRetIVA > 0 || totalRetISLR > 0) {

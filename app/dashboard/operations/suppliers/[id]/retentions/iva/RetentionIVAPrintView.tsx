@@ -13,7 +13,7 @@ type Withholding = {
     date: Date | string
     base_amount: unknown
     tax_amount: unknown
-    rate: number
+    rate: number | unknown
     amount: unknown
     document: { number: string; date: Date | string } | null
 }
