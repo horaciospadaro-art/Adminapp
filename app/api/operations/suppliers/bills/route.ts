@@ -122,6 +122,28 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
         }
 
+        const docType = (type as DocumentType) || DocumentType.BILL
+        const docNumber = typeof number === 'string' ? number.trim() : String(number ?? '').trim()
+        if (!docNumber) {
+            return NextResponse.json({ error: 'El número de documento es obligatorio.' }, { status: 400 })
+        }
+
+        const existing = await prisma.document.findFirst({
+            where: {
+                company_id,
+                type: docType,
+                number: docNumber,
+                status: { not: 'VOID' }
+            }
+        })
+        if (existing) {
+            const typeLabel = docType === DocumentType.BILL ? 'Factura de compra' : docType === DocumentType.CREDIT_NOTE ? 'Nota de crédito' : docType === DocumentType.DEBIT_NOTE ? 'Nota de débito' : 'documento'
+            return NextResponse.json(
+                { error: `Ya existe una ${typeLabel} con el número "${docNumber}". Use otro número.` },
+                { status: 422 }
+            )
+        }
+
         const islrConcepts = await prisma.iSLRConcept.findMany() // Fetch for naming 
 
         // 1. Calculations
@@ -183,11 +205,11 @@ export async function POST(request: Request) {
                 data: {
                     company_id,
                     third_party_id,
-                    type: type as DocumentType,
+                    type: docType,
                     date: new Date(date),
                     accounting_date: accounting_date ? new Date(accounting_date) : new Date(date),
                     due_date: due_date ? new Date(due_date) : null,
-                    number,
+                    number: docNumber,
                     reference,
                     currency_code: 'VES',
 
