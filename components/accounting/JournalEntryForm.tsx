@@ -11,12 +11,24 @@ type JournalLine = {
     description: string
 }
 
-import { updateJournalEntry } from '@/lib/actions/journal-actions'
+import { updateJournalEntry, repairBillEntryAddMissingIvaLine } from '@/lib/actions/journal-actions'
 import { DateInput } from '@/components/common/DateInput'
+import { Wrench } from 'lucide-react'
 
-export function JournalEntryForm({ companyId, initialData, entryId }: { companyId: string, initialData?: any, entryId?: string }) {
+export function JournalEntryForm({
+    companyId,
+    initialData,
+    entryId,
+    repairIvaOffer
+}: {
+    companyId: string
+    initialData?: any
+    entryId?: string
+    repairIvaOffer?: { amount: number; accountId: string } | null
+}) {
     const router = useRouter()
     const [accounts, setAccounts] = useState<Account[]>([])
+    const [repairLoading, setRepairLoading] = useState(false)
 
     // Initialize state with initialData if provided
     const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10))
@@ -246,7 +258,31 @@ export function JournalEntryForm({ companyId, initialData, entryId }: { companyI
                 </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-3">
+                {repairIvaOffer && entryId && (
+                    <button
+                        type="button"
+                        disabled={repairLoading || loading}
+                        onClick={async () => {
+                            setRepairLoading(true)
+                            try {
+                                const res = await repairBillEntryAddMissingIvaLine(entryId)
+                                if (res.success) {
+                                    alert('Se agregó la línea de IVA Crédito Fiscal. La página se recargará.')
+                                    router.refresh()
+                                } else {
+                                    alert(res.error || 'No se pudo reparar el asiento.')
+                                }
+                            } finally {
+                                setRepairLoading(false)
+                            }
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                    >
+                        <Wrench className="w-4 h-4" />
+                        {repairLoading ? 'Reparando...' : `Agregar línea IVA faltante (${repairIvaOffer.amount.toLocaleString('es-VE', { minimumFractionDigits: 2 })})`}
+                    </button>
+                )}
                 <button
                     type="submit"
                     disabled={loading || !isBalanced}
