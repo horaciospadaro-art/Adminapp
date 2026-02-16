@@ -34,9 +34,13 @@ export async function PUT(
         })
 
         return NextResponse.json(updatedTax)
-    } catch (error) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Error updating tax'
         console.error('Error updating tax:', error)
-        return NextResponse.json({ error: 'Error updating tax' }, { status: 500 })
+        const hint = message.includes('column') || message.includes('does not exist')
+            ? ' Ejecute la migración de Prisma en la base de datos (prisma migrate deploy o prisma db push).'
+            : ''
+        return NextResponse.json({ error: message + hint }, { status: 500 })
     }
 }
 
@@ -54,8 +58,9 @@ export async function DELETE(
         })
 
         return NextResponse.json({ success: true })
-    } catch (error) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Error deleting tax'
         console.error('Error deleting tax:', error)
-        return NextResponse.json({ error: 'Error deleting tax' }, { status: 500 })
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }

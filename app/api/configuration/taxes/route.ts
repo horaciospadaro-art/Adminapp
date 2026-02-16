@@ -6,7 +6,6 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url)
         const companyId = searchParams.get('companyId')
 
-        // Default to first company if not provided (Demo mode)
         let targetCompanyId = companyId
         if (!targetCompanyId) {
             const company = await prisma.company.findFirst()
@@ -28,9 +27,9 @@ export async function GET(request: Request) {
         })
 
         return NextResponse.json(taxes)
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error fetching taxes:', error)
-        return NextResponse.json({ error: 'Error fetching taxes' }, { status: 500 })
+        return NextResponse.json([])
     }
 }
 
@@ -78,8 +77,12 @@ export async function POST(request: Request) {
         })
 
         return NextResponse.json(newTax)
-    } catch (error) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Error creating tax'
         console.error('Error creating tax:', error)
-        return NextResponse.json({ error: 'Error creating tax' }, { status: 500 })
+        const hint = message.includes('column') || message.includes('does not exist')
+            ? ' Ejecute la migración de Prisma en la base de datos (prisma migrate deploy o prisma db push).'
+            : ''
+        return NextResponse.json({ error: message + hint }, { status: 500 })
     }
 }

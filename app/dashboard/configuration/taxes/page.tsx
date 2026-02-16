@@ -222,10 +222,13 @@ export default function TaxesPage() {
                 setIsTaxModalOpen(false)
                 refreshData()
             } else {
-                const err = await res.json()
-                alert(err.error || 'Error al guardar')
+                const err = await res.json().catch(() => ({}))
+                alert(err?.error || 'Error al guardar')
             }
-        } catch (error) { console.error(error) }
+        } catch (error) {
+            console.error(error)
+            alert('Error de conexión. Revise la consola.')
+        }
     }
 
     async function deleteTax(id: string) {
