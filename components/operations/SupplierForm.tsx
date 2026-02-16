@@ -138,7 +138,7 @@ export function SupplierForm({ companyId, initialData, onSuccess, onCancel }: Su
                     </select>
                 </div>
                 <div className="md:col-span-2">
-                    <label htmlFor="supplier-address" className="block text-sm font-medium text-gray-700 mb-1">Dirección Fiscal</label>
+                    <label htmlFor="supplier-address" className="block text-sm font-medium text-gray-700 mb-1">Dirección fiscal (opcional)</label>
                     <input id="supplier-address" type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2" />
                 </div>
                 <div className="md:col-span-2 bg-orange-50 p-4 rounded border border-orange-100">

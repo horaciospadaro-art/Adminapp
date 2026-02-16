@@ -4,28 +4,50 @@ import prisma from '@/lib/db'
 import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus, Prisma, MovementType } from '@prisma/client'
 import { createBillJournalEntry, resyncJournalEntryFromDocument } from '@/lib/accounting-helpers'
 
-// Helper function to generate retention numbers
+// IVA: YYYYMM + 5-digit correlative (resets each month). Example: 20260200001
+// ISLR: 5-digit ascending. Example: 00001
 async function generateRetentionNumber(tx: any, companyId: string, type: 'IVA' | 'ISLR') {
-    const prefix = type === 'IVA' ? 'RET-IVA' : 'RET-ISLR'
+    const now = new Date()
+    const yyyy = now.getFullYear()
+    const mm = String(now.getMonth() + 1).padStart(2, '0')
+    const yyyymm = `${yyyy}${mm}`
 
-    // Find the last retention of this type for this company
-    const lastRetention = await tx.withholding.findFirst({
-        where: {
-            company_id: companyId,
-            type: type === 'IVA' ? TaxType.RETENCION_IVA : TaxType.RETENCION_ISLR,
-            certificate_number: { startsWith: prefix }
-        },
-        orderBy: { created_at: 'desc' }
-    })
-
-    let nextNum = 1
-    if (lastRetention) {
-        const parts = lastRetention.certificate_number.split('-')
-        const lastSeq = parseInt(parts[parts.length - 1])
-        if (!isNaN(lastSeq)) nextNum = lastSeq + 1
+    if (type === 'IVA') {
+        const lastInMonth = await tx.withholding.findMany({
+            where: {
+                company_id: companyId,
+                type: TaxType.RETENCION_IVA,
+                certificate_number: { startsWith: yyyymm }
+            },
+            select: { certificate_number: true }
+        })
+        let maxSeq = 0
+        for (const w of lastInMonth) {
+            const suffix = w.certificate_number.slice(6)
+            const n = parseInt(suffix, 10)
+            if (!isNaN(n) && n > maxSeq) maxSeq = n
+        }
+        const nextNum = maxSeq + 1
+        return `${yyyymm}${nextNum.toString().padStart(5, '0')}`
     }
 
-    return `${prefix}-${nextNum.toString().padStart(6, '0')}`
+    // ISLR: 5-digit correlative (only consider numbers 00001-99999; ignore old RET-ISLR-xxx)
+    const allISLR = await tx.withholding.findMany({
+        where: {
+            company_id: companyId,
+            type: TaxType.RETENCION_ISLR
+        },
+        select: { certificate_number: true }
+    })
+    let maxSeq = 0
+    for (const w of allISLR) {
+        if (/^\d{5}$/.test(w.certificate_number)) {
+            const n = parseInt(w.certificate_number, 10)
+            if (n > maxSeq) maxSeq = n
+        }
+    }
+    const nextNum = maxSeq + 1
+    return nextNum.toString().padStart(5, '0')
 }
 
 export async function GET(request: Request) {
