@@ -99,6 +99,9 @@ export function BillForm({ companyId }: BillFormProps) {
         }
     }, [documentType])
 
+    // Edit mode: when loading by id, we update instead of create
+    const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null)
+
     // Origin Bill Logic (For Returns)
     const [originBillId, setOriginBillId] = useState('')
     const [supplierBills, setSupplierBills] = useState<any[]>([])
@@ -207,6 +210,7 @@ export function BillForm({ companyId }: BillFormProps) {
                         const data = await res.json()
                         const bill = data[0]
                         if (bill) {
+                            setEditingDocumentId(bill.id)
                             // Populate Form
                             setDate(new Date(bill.date).toISOString().split('T')[0])
                             setAccountingDate(new Date(bill.accounting_date || bill.date).toISOString().split('T')[0])
@@ -255,6 +259,7 @@ export function BillForm({ companyId }: BillFormProps) {
                     setPageLoading(false)
                 }
             } else {
+                setEditingDocumentId(null)
                 const supplierId = searchParams?.get('supplierId')
                 if (supplierId) {
                     setThirdPartyId(supplierId)
@@ -402,40 +407,53 @@ export function BillForm({ companyId }: BillFormProps) {
 
         setLoading(true)
         try {
-            const payload = {
-                company_id: resolvedCompanyId,
-                third_party_id: thirdPartyId,
-                type: documentType, // Passed payload type
-                bill_type: billType, // PURCHASE or EXPENSE
-                related_document_id: originBillId || null, // Link to origin
-                date,
-                accounting_date: accountingDate,
-                due_date: dueDate || null,
-                number,
-                control_number: controlNumber,
-                reference,
-                items: items.map(item => {
-                    const itemBase = Number(item.quantity) * Number(item.unit_price)
-                    const proportion = calculations.subtotal > 0 ? itemBase / calculations.subtotal : 1 / (items.length || 1)
+            const itemsPayload = items.map(item => {
+                const itemBase = Number(item.quantity) * Number(item.unit_price)
+                const proportion = calculations.subtotal > 0 ? itemBase / calculations.subtotal : 1 / (items.length || 1)
+                return {
+                    ...item,
+                    quantity: Number(item.quantity),
+                    unit_price: Number(item.unit_price),
+                    tax_id: globalTaxId,
+                    tax_rate: calculations.taxRate,
+                    tax_amount: calculations.totalTax * proportion,
+                    vat_retention_rate: vatRetentionRate,
+                    vat_retention_amount: calculations.totalRetIVA * proportion,
+                    islr_rate: calculations.islrRate,
+                    islr_amount: calculations.totalRetISLR * proportion,
+                    islr_concept_id: islrConceptId || null
+                }
+            })
 
-                    return {
-                        ...item,
-                        quantity: Number(item.quantity),
-                        unit_price: Number(item.unit_price),
-                        tax_id: globalTaxId,
-                        tax_rate: calculations.taxRate,
-                        tax_amount: calculations.totalTax * proportion,
-                        vat_retention_rate: vatRetentionRate,
-                        vat_retention_amount: calculations.totalRetIVA * proportion,
-                        islr_rate: calculations.islrRate,
-                        islr_amount: calculations.totalRetISLR * proportion,
-                        islr_concept_id: islrConceptId || null
-                    }
-                })
-            }
+            const isUpdate = Boolean(editingDocumentId)
+            const payload = isUpdate
+                ? {
+                    id: editingDocumentId,
+                    date,
+                    accounting_date: accountingDate,
+                    due_date: dueDate || null,
+                    reference,
+                    related_document_id: originBillId || null,
+                    vat_retention_rate: vatRetentionRate,
+                    items: itemsPayload
+                }
+                : {
+                    company_id: resolvedCompanyId,
+                    third_party_id: thirdPartyId,
+                    type: documentType,
+                    bill_type: billType,
+                    related_document_id: originBillId || null,
+                    date,
+                    accounting_date: accountingDate,
+                    due_date: dueDate || null,
+                    number,
+                    control_number: controlNumber,
+                    reference,
+                    items: itemsPayload
+                }
 
             const res = await fetch('/api/operations/suppliers/bills', {
-                method: 'POST',
+                method: isUpdate ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
@@ -868,7 +886,7 @@ export function BillForm({ companyId }: BillFormProps) {
                     className="bg-[#2ca01c] hover:bg-[#248217] text-white px-8 py-3 rounded-lg font-medium shadow-sm flex items-center gap-2"
                 >
                     {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                    Guardar documento
+                    {editingDocumentId ? 'Actualizar documento' : 'Guardar documento'}
                 </button>
             </div>
         </form>

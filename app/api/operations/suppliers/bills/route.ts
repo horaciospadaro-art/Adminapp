@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { DocumentType, WithholdingDirection, TaxType, ProductType, PaymentStatus, Prisma, MovementType } from '@prisma/client'
-import { createBillJournalEntry } from '@/lib/accounting-helpers'
+import { createBillJournalEntry, resyncJournalEntryFromDocument } from '@/lib/accounting-helpers'
 
 // Helper function to generate retention numbers
 async function generateRetentionNumber(tx: any, companyId: string, type: 'IVA' | 'ISLR') {
@@ -94,6 +94,181 @@ export async function GET(request: Request) {
     } catch (error: any) {
         console.error('Error fetching bills:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+}
+
+export async function PUT(request: Request) {
+    try {
+        const body = await request.json()
+        const documentId = body.id
+        if (!documentId) {
+            return NextResponse.json({ error: 'Falta el id del documento a actualizar.' }, { status: 400 })
+        }
+
+        const existing = await prisma.document.findUnique({
+            where: { id: documentId },
+            include: { items: true, withholdings: true }
+        })
+        if (!existing) {
+            return NextResponse.json({ error: 'Documento no encontrado.' }, { status: 404 })
+        }
+
+        const {
+            date,
+            accounting_date,
+            due_date,
+            reference,
+            related_document_id,
+            items
+        } = body
+
+        if (!date || !items || items.length === 0) {
+            return NextResponse.json({ error: 'Faltan campos obligatorios (fecha, ítems).' }, { status: 400 })
+        }
+
+        const company_id = existing.company_id
+        const third_party_id = existing.third_party_id
+        const vat_retention_rate = body.vat_retention_rate ?? 0
+        const islrConcepts = await prisma.iSLRConcept.findMany()
+
+        let subtotal = 0
+        let totalTax = 0
+        let totalRetIVA = 0
+        let totalRetISLR = 0
+        const processedItems: any[] = []
+        for (const item of items) {
+            const qty = parseFloat(item.quantity)
+            const price = parseFloat(item.unit_price)
+            const lineBase = qty * price
+            const taxRate = parseFloat(item.tax_rate) || 0
+            const taxAmount = parseFloat(item.tax_amount) || 0
+            const retIVAAmount = parseFloat(item.vat_retention_amount) || 0
+            const retISLRAmount = parseFloat(item.islr_amount) || 0
+            subtotal += lineBase
+            totalTax += taxAmount
+            totalRetIVA += retIVAAmount
+            totalRetISLR += retISLRAmount
+            let glAccountId = item.gl_account_id
+            if (!glAccountId && item.product_id) {
+                const product = await prisma.product.findUnique({
+                    where: { id: item.product_id },
+                    select: { asset_account_id: true, cogs_account_id: true, type: true }
+                })
+                if (product) {
+                    glAccountId = product.type === 'GOODS' ? product.asset_account_id : product.cogs_account_id
+                }
+            }
+            processedItems.push({
+                ...item,
+                quantity: qty,
+                unit_price: price,
+                tax_rate: taxRate,
+                tax_amount: taxAmount,
+                vat_retention_rate: parseFloat(item.vat_retention_rate) || 0,
+                vat_retention_amount: retIVAAmount,
+                islr_rate: parseFloat(item.islr_rate) || 0,
+                islr_amount: retISLRAmount,
+                total: lineBase + taxAmount,
+                gl_account_id: glAccountId
+            })
+        }
+
+        const totalInvoice = subtotal + totalTax
+        const totalPayable = totalInvoice - totalRetIVA - totalRetISLR
+
+        const result = await prisma.$transaction(async (tx: any) => {
+            await tx.document.update({
+                where: { id: documentId },
+                data: {
+                    date: new Date(date),
+                    accounting_date: accounting_date ? new Date(accounting_date) : new Date(date),
+                    due_date: due_date ? new Date(due_date) : null,
+                    reference: reference ?? existing.reference,
+                    related_document_id: related_document_id || null,
+                    subtotal,
+                    tax_amount: totalTax,
+                    total: totalInvoice,
+                    balance: totalPayable
+                }
+            })
+
+            await tx.documentItem.deleteMany({ where: { document_id: documentId } })
+            await tx.documentItem.createMany({
+                data: processedItems.map((item: any) => ({
+                    document_id: documentId,
+                    product_id: item.product_id || null,
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit_price: item.unit_price,
+                    tax_id: item.tax_id || null,
+                    tax_rate: item.tax_rate,
+                    tax_amount: item.tax_amount,
+                    vat_retention_rate: item.vat_retention_rate,
+                    vat_retention_amount: item.vat_retention_amount,
+                    islr_rate: item.islr_rate,
+                    islr_amount: item.islr_amount,
+                    total: item.total,
+                    gl_account_id: item.gl_account_id || null
+                }))
+            })
+
+            await tx.withholding.deleteMany({ where: { document_id: documentId } })
+            if (totalRetIVA > 0 || totalRetISLR > 0) {
+                const withholdingsToCreate: any[] = []
+                if (totalRetIVA > 0) {
+                    withholdingsToCreate.push({
+                        company_id,
+                        third_party_id,
+                        document_id: documentId,
+                        type: TaxType.RETENCION_IVA,
+                        base_amount: subtotal,
+                        tax_amount: totalTax,
+                        rate: vat_retention_rate,
+                        amount: totalRetIVA,
+                        direction: WithholdingDirection.ISSUED,
+                        certificate_number: await generateRetentionNumber(tx, company_id, 'IVA'),
+                        date: new Date(date)
+                    })
+                }
+                if (totalRetISLR > 0) {
+                    const islrRate = processedItems.find((i: any) => i.islr_rate > 0)?.islr_rate || 0
+                    const islrConceptName = islrConcepts.find((c: any) => c.id === processedItems.find((i: any) => i.islr_concept_id)?.islr_concept_id)?.description || null
+                    withholdingsToCreate.push({
+                        company_id,
+                        third_party_id,
+                        document_id: documentId,
+                        type: TaxType.RETENCION_ISLR,
+                        base_amount: subtotal,
+                        tax_amount: 0,
+                        rate: islrRate,
+                        amount: totalRetISLR,
+                        direction: WithholdingDirection.ISSUED,
+                        islr_concept_name: islrConceptName,
+                        certificate_number: await generateRetentionNumber(tx, company_id, 'ISLR'),
+                        date: new Date(date)
+                    })
+                }
+                await tx.withholding.createMany({ data: withholdingsToCreate })
+            }
+
+            if (existing.journal_entry_id && (existing.type === DocumentType.BILL || existing.type === DocumentType.CREDIT_NOTE)) {
+                await resyncJournalEntryFromDocument(tx, existing.journal_entry_id)
+            }
+
+            return await tx.document.findUnique({
+                where: { id: documentId },
+                include: { third_party: true, items: true }
+            })
+        })
+
+        return NextResponse.json(result)
+    } catch (error: any) {
+        console.error('Error updating bill:', error)
+        const message = error?.message ?? 'Error al actualizar el documento'
+        if (message.includes('Payable Account') || message.includes('missing GL Account') || message.includes('not found')) {
+            return NextResponse.json({ error: 'Error contable: ' + message }, { status: 422 })
+        }
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }
 
