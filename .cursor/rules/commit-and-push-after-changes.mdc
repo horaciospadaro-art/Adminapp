@@ -4,6 +4,8 @@ globs: ["**/*.ts", "**/*.tsx", "**/*.json", "**/*.css", "**/*.md", "prisma/**"]
 ---
 # Commit y push tras cambios
 
+**Hacer commit y push automáticamente** con los cambios que lo ameriten (no esperar a que el usuario lo pida).
+
 ## Regla
 
 Cada vez que se modifique código, configuración o recursos del proyecto (archivos en `v-ledge` que afecten la aplicación desplegable), **al terminar esos cambios** se debe:
