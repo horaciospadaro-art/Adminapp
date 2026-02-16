@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { X, FileText, Calendar, Receipt, Percent } from 'lucide-react'
 
 const REPORT_TYPES = [
-    { id: 'statement', label: 'Estado de cuenta', icon: FileText },
-    { id: 'aging', label: 'Análisis de vencimiento', icon: Calendar },
-    { id: 'retention-islr', label: 'Comprobante de retención (ISLR)', icon: Receipt },
-    { id: 'retention-iva', label: 'Comprobante de retención (IVA)', icon: Percent }
+    { id: 'statement', label: 'Estado de cuenta', icon: FileText, needsDateRange: true },
+    { id: 'payables', label: 'Cuentas por pagar', icon: Calendar, needsDateRange: false },
+    { id: 'retention-islr', label: 'Comprobante de retención (ISLR)', icon: Receipt, needsDateRange: true },
+    { id: 'retention-iva', label: 'Comprobante de retención (IVA)', icon: Percent, needsDateRange: true }
 ] as const
 
 interface SupplierReportsModalProps {
@@ -23,6 +23,10 @@ export function SupplierReportsModal({ companyId, isOpen, onClose }: SupplierRep
     const [loading, setLoading] = useState(false)
     const [selectedSupplierId, setSelectedSupplierId] = useState('')
     const [selectedReportType, setSelectedReportType] = useState<string>('statement')
+    const defaultFrom = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+    const defaultTo = new Date().toISOString().slice(0, 10)
+    const [dateFrom, setDateFrom] = useState(defaultFrom)
+    const [dateTo, setDateTo] = useState(defaultTo)
 
     useEffect(() => {
         if (!isOpen || !companyId) return
@@ -39,25 +43,31 @@ export function SupplierReportsModal({ companyId, isOpen, onClose }: SupplierRep
 
     const handleGenerate = () => {
         if (!selectedSupplierId) return
+        const needsRange = ['statement', 'retention-islr', 'retention-iva'].includes(selectedReportType)
+        if (needsRange && (!dateFrom || !dateTo)) return
         onClose()
         const base = `/dashboard/operations/suppliers/${selectedSupplierId}`
+        const params = needsRange ? `?startDate=${dateFrom}&endDate=${dateTo}` : ''
         switch (selectedReportType) {
             case 'statement':
-                router.push(`${base}/statement`)
+                router.push(`${base}/statement${params}`)
                 break
-            case 'aging':
-                router.push(`${base}/aging`)
+            case 'payables':
+                router.push(`${base}/payables`)
                 break
             case 'retention-islr':
-                router.push(`${base}/retentions/islr`)
+                router.push(`${base}/retentions/islr${params}`)
                 break
             case 'retention-iva':
-                router.push(`${base}/retentions/iva`)
+                router.push(`${base}/retentions/iva${params}`)
                 break
             default:
-                router.push(`${base}/statement`)
+                router.push(`${base}/statement${params}`)
         }
     }
+
+    const selectedMeta = REPORT_TYPES.find(r => r.id === selectedReportType)
+    const showDateRange = Boolean(selectedMeta?.needsDateRange)
 
     if (!isOpen) return null
 
@@ -124,6 +134,29 @@ export function SupplierReportsModal({ companyId, isOpen, onClose }: SupplierRep
                             </div>
                         </div>
 
+                        {showDateRange && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+                                    <input
+                                        type="date"
+                                        value={dateFrom}
+                                        onChange={e => setDateFrom(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
+                                    <input
+                                        type="date"
+                                        value={dateTo}
+                                        onChange={e => setDateTo(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex gap-2 pt-2">
                             <button
                                 type="button"
@@ -135,7 +168,7 @@ export function SupplierReportsModal({ companyId, isOpen, onClose }: SupplierRep
                             <button
                                 type="button"
                                 onClick={handleGenerate}
-                                disabled={!selectedSupplierId}
+                                disabled={!selectedSupplierId || (showDateRange && (!dateFrom || !dateTo))}
                                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Ver reporte

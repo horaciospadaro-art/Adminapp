@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Calendar, Printer, Download, Search, ArrowRight, Eye } from 'lucide-react'
 import { formatDate } from '@/lib/date-utils'
 import { documentTypeLabel } from '@/lib/labels'
@@ -26,13 +27,22 @@ interface StatementData {
     finalBalance: number
 }
 
+const defaultStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
+const defaultEnd = new Date().toISOString().split('T')[0]
+
 export function SupplierStatement({ supplierId }: { supplierId: string }) {
+    const searchParams = useSearchParams()
     const [data, setData] = useState<StatementData | null>(null)
     const [loading, setLoading] = useState(true)
-    const [startDate, setStartDate] = useState(
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-    ) // Start of current month
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]) // Today
+    const [startDate, setStartDate] = useState(defaultStart)
+    const [endDate, setEndDate] = useState(defaultEnd)
+
+    useEffect(() => {
+        const from = searchParams.get('startDate')
+        const to = searchParams.get('endDate')
+        if (from) setStartDate(from)
+        if (to) setEndDate(to)
+    }, [searchParams])
 
     const fetchStatement = async () => {
         setLoading(true)
