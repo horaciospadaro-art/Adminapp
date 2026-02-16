@@ -3,7 +3,7 @@ import { LedgerFilters } from '@/components/accounting/reports/LedgerFilters'
 import { getAnalyticalLedger, getAnalyticalLedgerRange } from '@/lib/actions/accounting-reports'
 import { getPersistentCompanyId } from '@/lib/company-utils'
 import { formatDate } from '@/lib/date-utils'
-import type { LedgerResult } from '@/lib/actions/accounting-reports'
+import type { LedgerResult, LedgerMovement } from '@/lib/actions/accounting-reports'
 
 function LedgerBlock({ data, startDate, endDate }: { data: LedgerResult; startDate: string; endDate: string }) {
     return (
@@ -56,7 +56,7 @@ function LedgerBlock({ data, startDate, endDate }: { data: LedgerResult; startDa
                                 </td>
                             </tr>
                         ) : (
-                            data.movements.map((move: { id: string; date?: string; reference?: string; entryNumber?: string; description?: string; debit: number; credit: number; balance: number }) => (
+                            data.movements.map((move: LedgerMovement) => (
                                 <tr key={move.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {move.date ? formatDate(move.date) : '-'}
