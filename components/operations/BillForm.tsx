@@ -460,7 +460,7 @@ export function BillForm({ companyId }: BillFormProps) {
     return (
         <form onSubmit={handleSubmit} className="w-full mx-auto space-y-6 pb-20">
             <div className="flex items-center justify-between flex-wrap gap-2">
-                <h1 className="text-2xl font-bold text-gray-800">Registrar Factura</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Documento de compra</h1>
                 <Link
                     href="/dashboard/operations/bills"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -868,7 +868,7 @@ export function BillForm({ companyId }: BillFormProps) {
                     className="bg-[#2ca01c] hover:bg-[#248217] text-white px-8 py-3 rounded-lg font-medium shadow-sm flex items-center gap-2"
                 >
                     {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                    Registrar Factura
+                    Guardar documento
                 </button>
             </div>
         </form>

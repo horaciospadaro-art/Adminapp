@@ -38,9 +38,11 @@ export async function GET(request: Request) {
         const dateFrom = searchParams.get('dateFrom')?.trim()
         const dateTo = searchParams.get('dateTo')?.trim()
 
+        // Por defecto listar todos los documentos de compra (factura, nota de crédito, nota de débito)
+        const purchaseDocTypes = [DocumentType.BILL, DocumentType.CREDIT_NOTE, DocumentType.DEBIT_NOTE]
         const whereClause: Prisma.DocumentWhereInput = {
             company_id: companyId || '1',
-            type: type ? (type as DocumentType) : DocumentType.BILL,
+            type: type ? (type as DocumentType) : { in: purchaseDocTypes },
             status: { not: 'VOID' }
         }
 

@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Plus, Search, FileText, Loader2, Receipt, Calendar, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { formatDate } from '@/lib/date-utils'
-import { paymentStatusLabel } from '@/lib/labels'
+import { paymentStatusLabel, documentTypeLabel } from '@/lib/labels'
 import { useRouter } from 'next/navigation'
 
 interface Bill {
     id: string
     number: string
     date: string
+    type?: string
     third_party: { name: string }
     total: string
     status: string
@@ -161,14 +162,14 @@ export default function BillsPage() {
                     </Link>
                     <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                         <FileText className="w-6 h-6 text-gray-600" />
-                        Facturas de Compra (Gastos)
+                        Documentos de Compra
                     </h1>
                 </div>
                 <Link
                     href="/dashboard/operations/bills/new"
                     className="bg-[#2ca01c] hover:bg-[#248217] text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium"
                 >
-                    <Plus className="w-5 h-5" /> Registrar Factura
+                    <Plus className="w-5 h-5" /> Guardar documento
                 </Link>
             </div>
 
@@ -202,19 +203,19 @@ export default function BillsPage() {
                     </button>
                 </div>
                 <p className="text-sm text-gray-500">
-                    Todas las facturas en el rango se muestran mezcladas (todos los proveedores). Para registrar una factura, usa el buscador de abajo o el botón verde.
+                    Se muestran facturas, notas de crédito y notas de débito en el rango de fechas. Filtre por proveedor o número de documento en el buscador. Para registrar una factura, use el botón verde o el buscador para ir directo al proveedor.
                 </p>
             </div>
 
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 relative" ref={dropdownRef}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar listado o buscar proveedor para registrar factura</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por proveedor o número de documento</label>
                 <div className="relative max-w-xl">
                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     <input
                         value={searchText}
                         onChange={e => setSearchText(e.target.value)}
                         onFocus={() => searchText.trim().length >= 2 && setShowDropdown(true)}
-                        placeholder="Nombre del proveedor o número de factura para filtrar..."
+                        placeholder="Nombre del proveedor o número de documento para filtrar..."
                         className="pl-10 w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     {supplierSearching && (
@@ -239,7 +240,7 @@ export default function BillsPage() {
                                     <Receipt className="w-4 h-4 text-gray-500" />
                                     <span className="font-medium">{s.name}</span>
                                     <span className="text-gray-500 text-xs">({s.rif})</span>
-                                    <span className="ml-auto text-xs text-[#2ca01c]">Registrar factura</span>
+                                    <span className="ml-auto text-xs text-[#2ca01c]">Guardar documento</span>
                                 </button>
                             </li>
                         ))}
@@ -248,7 +249,7 @@ export default function BillsPage() {
                 )}
                 {showDropdown && searchText.trim().length >= 2 && !supplierSearching && supplierResults.length === 0 && (
                     <div className="absolute z-10 mt-1 max-w-md px-4 py-3 bg-white border border-gray-200 rounded-md shadow-lg text-sm text-gray-500">
-                        No se encontraron proveedores. Usa el botón &quot;Registrar Factura&quot; para cargar una sin seleccionar.
+                        No se encontraron proveedores. Usa el botón &quot;Guardar documento&quot; para cargar una sin seleccionar.
                     </div>
                 )}
             </div>
@@ -258,6 +259,7 @@ export default function BillsPage() {
                     <thead className="bg-gray-50 border-b">
                         <tr>
                             <th className="px-6 py-3 font-medium text-gray-700">Fecha</th>
+                            <th className="px-6 py-3 font-medium text-gray-700">Tipo</th>
                             <th className="px-6 py-3 font-medium text-gray-700">Número</th>
                             <th className="px-6 py-3 font-medium text-gray-700">Proveedor</th>
                             <th className="px-6 py-3 font-medium text-gray-700 text-right">Total</th>
@@ -267,13 +269,14 @@ export default function BillsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {loading ? (
-                            <tr><td colSpan={6} className="p-8 text-center">Cargando...</td></tr>
+                            <tr><td colSpan={7} className="p-8 text-center">Cargando...</td></tr>
                         ) : bills.length === 0 ? (
-                            <tr><td colSpan={6} className="p-8 text-center text-gray-500">No hay facturas en el rango de fechas seleccionado.</td></tr>
+                            <tr><td colSpan={7} className="p-8 text-center text-gray-500">No hay documentos de compra en el rango de fechas seleccionado.</td></tr>
                         ) : (
                             bills.map((bill: any) => (
                                 <tr key={bill.id}>
                                     <td className="px-6 py-3">{formatDate(bill.date)}</td>
+                                    <td className="px-6 py-3">{documentTypeLabel(bill.type)}</td>
                                     <td className="px-6 py-3">{bill.number || bill.control_number || '—'}</td>
                                     <td className="px-6 py-3">{bill.third_party?.name ?? '—'}</td>
                                     <td className="px-6 py-3 text-right">{bill.total ?? '0'}</td>
