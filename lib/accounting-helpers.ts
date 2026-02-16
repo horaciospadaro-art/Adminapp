@@ -1,4 +1,4 @@
-import { Prisma, DocumentType, JournalStatus } from '@prisma/client'
+import { Prisma, DocumentType, JournalStatus, TaxType } from '@prisma/client'
 import { generateJournalEntryNumber } from '@/lib/services/accounting-engine'
 
 /**
@@ -394,7 +394,7 @@ export async function buildBillJournalLines(
             const taxDef = await tx.tax.findFirst({
                 where: {
                     company_id: companyId,
-                    type: withholding.type
+                    type: withholding.type as TaxType
                 }
             })
 
