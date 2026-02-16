@@ -97,7 +97,7 @@ export function Sidebar() {
             title: 'CONTABILIDAD',
             items: [
                 { label: 'Plan de Cuentas', href: '/dashboard/accounting/chart-of-accounts', icon: BookOpen },
-                { label: 'Asientos Manuales', href: '/dashboard/accounting', icon: FileText },
+                { label: 'Asientos contables', href: '/dashboard/accounting', icon: FileText },
 
             ]
         },
