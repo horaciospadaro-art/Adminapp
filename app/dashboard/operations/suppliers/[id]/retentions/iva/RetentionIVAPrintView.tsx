@@ -156,7 +156,22 @@ export function RetentionIVAPrintView({ company, supplier, withholdings, start, 
                     scale: 2,
                     useCORS: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    onclone(_, clonedEl) {
+                        const style = clonedEl.ownerDocument.createElement('style')
+                        style.textContent = `
+                          .comprobante-iva-page { background-color: #ffffff !important; }
+                          .comprobante-iva-page .bg-gray-50 { background-color: #f9fafb !important; }
+                          .comprobante-iva-page .text-gray-400 { color: #9ca3af !important; }
+                          .comprobante-iva-page .text-gray-500 { color: #6b7280 !important; }
+                          .comprobante-iva-page .text-gray-600 { color: #4b5563 !important; }
+                          .comprobante-iva-page .text-gray-700 { color: #374151 !important; }
+                          .comprobante-iva-page .text-gray-800 { color: #1f2937 !important; }
+                          .comprobante-iva-page .text-gray-900 { color: #111827 !important; }
+                          .comprobante-iva-page [class*="border"] { border-color: #e5e7eb !important; }
+                        `
+                        clonedEl.insertBefore(style, clonedEl.firstChild)
+                    }
                 })
                 const imgData = canvas.toDataURL('image/png')
                 const pxToMm = 25.4 / 96
