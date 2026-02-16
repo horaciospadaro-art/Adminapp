@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { BillForm } from '@/components/operations/BillForm'
+import { TaxConfigGuard } from '@/components/accounting/TaxConfigGuard'
 import prisma from '@/lib/db'
 
 async function getActiveCompany() {
@@ -11,9 +12,11 @@ export default async function NewBillPage() {
 
     return (
         <div className="max-w-[98%] mx-auto py-8">
-            <Suspense fallback={<div className="p-8 text-center">Cargando...</div>}>
-                <BillForm companyId={company?.id} />
-            </Suspense>
+            <TaxConfigGuard context="compras">
+                <Suspense fallback={<div className="p-8 text-center">Cargando...</div>}>
+                    <BillForm companyId={company?.id} />
+                </Suspense>
+            </TaxConfigGuard>
         </div>
     )
 }
