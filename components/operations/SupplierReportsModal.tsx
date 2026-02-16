@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, FileText, Calendar, Receipt, Percent } from 'lucide-react'
+import { DateInput } from '@/components/common/DateInput'
 
 const REPORT_TYPES = [
     { id: 'statement', label: 'Estado de cuenta', icon: FileText, needsDateRange: true },
@@ -136,24 +137,18 @@ export function SupplierReportsModal({ companyId, isOpen, onClose }: SupplierRep
 
                         {showDateRange && (
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                                    <input
-                                        type="date"
-                                        value={dateFrom}
-                                        onChange={e => setDateFrom(e.target.value)}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                                    <input
-                                        type="date"
-                                        value={dateTo}
-                                        onChange={e => setDateTo(e.target.value)}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
+                                <DateInput
+                                    label="Desde"
+                                    value={dateFrom}
+                                    onChange={e => setDateFrom(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <DateInput
+                                    label="Hasta"
+                                    value={dateTo}
+                                    onChange={e => setDateTo(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
                             </div>
                         )}
 

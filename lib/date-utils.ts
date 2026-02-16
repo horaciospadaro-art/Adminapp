@@ -56,6 +56,31 @@ export const parseInputDate = (dateString: string): Date | null => {
 }
 
 /**
+ * Parses a date string in Spanish display format (DD/MM/YYYY or D/M/YYYY) into YYYY-MM-DD.
+ * Returns empty string if invalid.
+ */
+export const parseDisplayDateToInput = (ddMmYyyy: string): string => {
+    if (!ddMmYyyy || !ddMmYyyy.trim()) return ''
+    const trimmed = ddMmYyyy.trim()
+    const formats = [STANDARD_DATE_FORMAT, 'd/M/yyyy', 'dd/M/yyyy', 'd/MM/yyyy']
+    for (const fmt of formats) {
+        const d = parse(trimmed, fmt, new Date())
+        if (isValid(d)) return format(d, INPUT_DATE_FORMAT)
+    }
+    return ''
+}
+
+/**
+ * Converts YYYY-MM-DD (internal/value) to DD/MM/YYYY for display in inputs.
+ */
+export const inputDateToDisplay = (yyyyMmDd: string): string => {
+    if (!yyyyMmDd || !yyyyMmDd.trim()) return ''
+    const d = parse(yyyyMmDd.trim(), INPUT_DATE_FORMAT, new Date())
+    if (!isValid(d)) return ''
+    return format(d, STANDARD_DATE_FORMAT)
+}
+
+/**
  * Helper specifically for currency/accounting contexts if we need consistent timestamp formatting
  */
 export const formatDateTime = (

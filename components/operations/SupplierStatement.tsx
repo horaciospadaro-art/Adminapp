@@ -7,6 +7,7 @@ import { Calendar, Printer, Download, Search, ArrowRight, Eye } from 'lucide-rea
 import { formatDate } from '@/lib/date-utils'
 import { documentTypeLabel } from '@/lib/labels'
 import Link from 'next/link'
+import { DateInput } from '@/components/common/DateInput'
 
 interface Movement {
     id: string
@@ -76,26 +77,20 @@ export function SupplierStatement({ supplierId }: { supplierId: string }) {
             {/* Controls */}
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-wrap gap-4 items-end justify-between">
                 <div className="flex gap-4 items-end">
-                    <div>
-                        <label htmlFor="startDate" className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
-                        <input
-                            id="startDate"
-                            type="date"
-                            value={startDate}
-                            onChange={e => setStartDate(e.target.value)}
-                            className="p-2 border rounded text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="endDate" className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
-                        <input
-                            id="endDate"
-                            type="date"
-                            value={endDate}
-                            onChange={e => setEndDate(e.target.value)}
-                            className="p-2 border rounded text-sm"
-                        />
-                    </div>
+                    <DateInput
+                        id="startDate"
+                        label="Desde"
+                        value={startDate}
+                        onChange={e => setStartDate(e.target.value)}
+                        className="p-2 border rounded text-sm"
+                    />
+                    <DateInput
+                        id="endDate"
+                        label="Hasta"
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                        className="p-2 border rounded text-sm"
+                    />
                     <button
                         onClick={fetchStatement}
                         className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center gap-2"
