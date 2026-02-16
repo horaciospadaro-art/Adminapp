@@ -19,7 +19,11 @@ export async function GET(request: Request) {
 
         const taxes = await prisma.tax.findMany({
             where: { company_id: targetCompanyId, is_active: true },
-            include: { gl_account: true },
+            include: {
+                gl_account: true,
+                debito_fiscal_account: true,
+                credito_fiscal_account: true
+            },
             orderBy: { name: 'asc' }
         })
 
@@ -33,7 +37,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { name, rate, type, description, gl_account_id, company_id } = body
+        const {
+            name,
+            rate,
+            type,
+            description,
+            gl_account_id,
+            debito_fiscal_account_id,
+            credito_fiscal_account_id,
+            company_id
+        } = body
 
         // Resolve Company ID
         let targetCompanyId = company_id
@@ -42,8 +55,13 @@ export async function POST(request: Request) {
             if (company) targetCompanyId = company.id
         }
 
-        if (!targetCompanyId || !name || rate === undefined || !type || !gl_account_id) {
+        const isIva = type === 'IVA'
+        const hasAccount = gl_account_id || (isIva && (debito_fiscal_account_id || credito_fiscal_account_id))
+        if (!targetCompanyId || !name || rate === undefined || !type) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+        }
+        if (!isIva && !gl_account_id) {
+            return NextResponse.json({ error: 'Impuestos no IVA requieren Cuenta Contable.' }, { status: 400 })
         }
 
         const newTax = await prisma.tax.create({
@@ -53,7 +71,9 @@ export async function POST(request: Request) {
                 rate,
                 type,
                 description,
-                gl_account_id
+                gl_account_id: gl_account_id || null,
+                debito_fiscal_account_id: debito_fiscal_account_id || null,
+                credito_fiscal_account_id: credito_fiscal_account_id || null
             }
         })
 

@@ -202,6 +202,7 @@ export async function POST(request: Request) {
                             description: item.description,
                             quantity: item.quantity,
                             unit_price: item.unit_price,
+                            tax_id: item.tax_id || null,
                             tax_rate: item.tax_rate,
                             tax_amount: item.tax_amount,
                             vat_retention_rate: item.vat_retention_rate,

@@ -14,6 +14,10 @@ interface Tax {
     description?: string
     gl_account_id?: string
     gl_account?: { id: string, code: string, name: string }
+    debito_fiscal_account_id?: string
+    debito_fiscal_account?: { id: string, code: string, name: string }
+    credito_fiscal_account_id?: string
+    credito_fiscal_account?: { id: string, code: string, name: string }
     is_active: boolean
 }
 
@@ -75,7 +79,15 @@ export default function TaxesPage() {
     const [editingVatRet, setEditingVatRet] = useState<VATRetention | null>(null)
 
     // Forms
-    const [taxForm, setTaxForm] = useState({ name: '', rate: '', type: 'OTRO', description: '', gl_account_id: '' })
+    const [taxForm, setTaxForm] = useState({
+        name: '',
+        rate: '',
+        type: 'OTRO',
+        description: '',
+        gl_account_id: '',
+        debito_fiscal_account_id: '',
+        credito_fiscal_account_id: ''
+    })
     const [islrForm, setIslrForm] = useState({ seniat_code: '', description: '', pn_resident_rate: '', pj_domiciled_rate: '', pn_non_resident_rate: '', pj_non_domiciled_rate: '' })
     const [vatRetForm, setVatRetForm] = useState({ description: '', rate: '', active: true })
     const [globalForm, setGlobalForm] = useState<GlobalTaxConfiguration>({ id: '', company_id: '' })
@@ -175,11 +187,13 @@ export default function TaxesPage() {
                 rate: tax.rate.toString(),
                 type: tax.type,
                 description: tax.description || '',
-                gl_account_id: tax.gl_account_id || ''
+                gl_account_id: tax.gl_account_id || '',
+                debito_fiscal_account_id: tax.debito_fiscal_account_id || '',
+                credito_fiscal_account_id: tax.credito_fiscal_account_id || ''
             })
         } else {
             setEditingTax(null)
-            setTaxForm({ name: '', rate: '', type: 'OTRO', description: '', gl_account_id: '' })
+            setTaxForm({ name: '', rate: '', type: 'OTRO', description: '', gl_account_id: '', debito_fiscal_account_id: '', credito_fiscal_account_id: '' })
         }
         setIsTaxModalOpen(true)
     }
@@ -189,11 +203,13 @@ export default function TaxesPage() {
         try {
             const url = editingTax ? `/api/configuration/taxes/${editingTax.id}` : '/api/configuration/taxes'
             const method = editingTax ? 'PUT' : 'POST'
-            // If type is IVA/IGTF, force empty account so it uses global default logic
-            const body = { ...taxForm, rate: parseFloat(taxForm.rate) }
-            if (['IVA', 'IGTF'].includes(taxForm.type)) {
-                body.gl_account_id = ''
+            const body: Record<string, unknown> = {
+                ...taxForm,
+                rate: parseFloat(taxForm.rate),
+                debito_fiscal_account_id: taxForm.debito_fiscal_account_id || undefined,
+                credito_fiscal_account_id: taxForm.credito_fiscal_account_id || undefined
             }
+            if (taxForm.type === 'IGTF') body.gl_account_id = ''
 
             const res = await fetch(url, {
                 method,
@@ -203,6 +219,9 @@ export default function TaxesPage() {
             if (res.ok) {
                 setIsTaxModalOpen(false)
                 refreshData()
+            } else {
+                const err = await res.json()
+                alert(err.error || 'Error al guardar')
             }
         } catch (error) { console.error(error) }
     }
@@ -452,9 +471,29 @@ export default function TaxesPage() {
                                     </select>
                                 </div>
                             )}
-                            {(taxForm.type === 'IVA' || taxForm.type === 'IGTF') && (
+                            {taxForm.type === 'IVA' && (
+                                <>
+                                    <div>
+                                        <label htmlFor="taxDebitoFiscal" className="block text-sm font-medium mb-1">Cuenta Débito Fiscal IVA (ventas / clientes)</label>
+                                        <select id="taxDebitoFiscal" value={taxForm.debito_fiscal_account_id} onChange={e => setTaxForm({ ...taxForm, debito_fiscal_account_id: e.target.value })} className="w-full border rounded p-2">
+                                            <option value="">Seleccionar cuenta...</option>
+                                            {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
+                                        </select>
+                                        <p className="text-xs text-gray-500 mt-0.5">IVA cobrado en ventas. Cuenta del pasivo (obligación con el fisco).</p>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="taxCreditoFiscal" className="block text-sm font-medium mb-1">Cuenta Crédito Fiscal IVA (compras / proveedores)</label>
+                                        <select id="taxCreditoFiscal" value={taxForm.credito_fiscal_account_id} onChange={e => setTaxForm({ ...taxForm, credito_fiscal_account_id: e.target.value })} className="w-full border rounded p-2">
+                                            <option value="">Seleccionar cuenta...</option>
+                                            {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
+                                        </select>
+                                        <p className="text-xs text-gray-500 mt-0.5">IVA recuperable en compras y facturas de proveedor. Cuenta del activo.</p>
+                                    </div>
+                                </>
+                            )}
+                            {taxForm.type === 'IGTF' && (
                                 <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                                    La cuenta contable para {taxForm.type} se define en la configuración global.
+                                    La cuenta contable para IGTF se define en la configuración global.
                                 </div>
                             )}
                             <div className="flex justify-end gap-2 pt-4">

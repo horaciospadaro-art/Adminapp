@@ -131,6 +131,63 @@ export async function getAnalyticalLedger({
     } as LedgerResult
 }
 
+/**
+ * Mayor analítico para un rango de cuentas (en cascada por código).
+ * Incluye todas las cuentas con code >= fromCode y code <= toCode, en orden jerárquico.
+ */
+export async function getAnalyticalLedgerRange({
+    companyId,
+    startDate,
+    endDate,
+    accountIdFrom,
+    accountIdTo
+}: {
+    companyId: string
+    startDate: Date
+    endDate: Date
+    accountIdFrom: string
+    accountIdTo: string
+}): Promise<LedgerResult[]> {
+    const accountFrom = await prisma.chartOfAccount.findUnique({ where: { id: accountIdFrom } })
+    const accountTo = await prisma.chartOfAccount.findUnique({ where: { id: accountIdTo } })
+
+    if (!accountFrom || !accountTo) throw new Error('Cuenta no encontrada')
+    if (accountFrom.company_id !== companyId || accountTo.company_id !== companyId) {
+        throw new Error('Cuenta no pertenece a esta empresa')
+    }
+
+    const fromCode = accountFrom.code
+    const toCode = accountTo.code
+    if (fromCode > toCode) {
+        throw new Error('La cuenta "Desde" debe tener código menor o igual que la cuenta "Hasta"')
+    }
+
+    const allAccounts = await prisma.chartOfAccount.findMany({
+        where: { company_id: companyId },
+        orderBy: { code: 'asc' }
+    })
+
+    const accountsInRange = allAccounts.filter(
+        (a) => a.code >= fromCode && a.code <= toCode
+    )
+
+    if (accountsInRange.length === 0) return []
+
+    const results: LedgerResult[] = []
+
+    for (const account of accountsInRange) {
+        const single = await getAnalyticalLedger({
+            companyId,
+            startDate,
+            endDate,
+            accountId: account.id
+        })
+        results.push(single)
+    }
+
+    return results
+}
+
 /** Serializable entry for RSC (dates as ISO strings, numbers not Decimal) */
 export interface JournalEntryListItem {
     id: string

@@ -67,6 +67,8 @@ model ChartOfAccount {
   linkedReceivables ThirdParty[] @relation("ThirdPartyReceivable")
   linkedPayables    ThirdParty[] @relation("ThirdPartyPayable")
   taxes             Tax[]
+  taxesDebitoFiscal Tax[]         @relation("TaxDebitoFiscal")
+  taxesCreditoFiscal Tax[]        @relation("TaxCreditoFiscal")
 
   // Global Tax Config Relations
   globalIvaDebit      GlobalTaxConfiguration[] @relation("IvaDebit")
@@ -260,6 +262,12 @@ model Tax {
   // Connection to Accounting
   gl_account_id String?
   gl_account    ChartOfAccount? @relation(fields: [gl_account_id], references: [id])
+
+  // IVA: dos cuentas distintas — ventas = Débito Fiscal, compras/gastos = Crédito Fiscal
+  debito_fiscal_account_id  String?
+  debito_fiscal_account     ChartOfAccount? @relation("TaxDebitoFiscal", fields: [debito_fiscal_account_id], references: [id])
+  credito_fiscal_account_id String?
+  credito_fiscal_account    ChartOfAccount? @relation("TaxCreditoFiscal", fields: [credito_fiscal_account_id], references: [id])
 
   is_active  Boolean  @default(true)
   created_at DateTime @default(now())

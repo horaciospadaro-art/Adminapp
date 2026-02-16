@@ -69,9 +69,12 @@ export async function createDocumentJournalEntry(
             for (const [taxId, amount] of taxGroups.entries()) {
                 const tax = await tx.tax.findUnique({ where: { id: taxId } })
                 if (!tax) throw new Error(`Tax not found: ${taxId}`)
+                // Ventas: IVA va a Débito Fiscal (cuenta de ventas)
+                const accountId = tax.debito_fiscal_account_id ?? tax.gl_account_id
+                if (!accountId) throw new Error(`Tax ${tax.name} sin cuenta Débito Fiscal (ventas). Configure en Impuestos.`)
 
                 lines.push({
-                    account_id: tax.gl_account_id,
+                    account_id: accountId,
                     debit: 0,
                     credit: amount,
                     description: `IVA Débito Fiscal`
@@ -118,12 +121,15 @@ export async function createDocumentJournalEntry(
             for (const [taxId, amount] of taxGroups.entries()) {
                 const tax = await tx.tax.findUnique({ where: { id: taxId } })
                 if (tax) {
-                    lines.push({
-                        account_id: tax.gl_account_id,
-                        debit: amount,
-                        credit: 0,
-                        description: `Reverso IVA Débito Fiscal`
-                    })
+                    const accountId = tax.debito_fiscal_account_id ?? tax.gl_account_id
+                    if (accountId) {
+                        lines.push({
+                            account_id: accountId,
+                            debit: amount,
+                            credit: 0,
+                            description: `Reverso IVA Débito Fiscal`
+                        })
+                    }
                 }
             }
         }
@@ -332,7 +338,7 @@ export async function createBillJournalEntry(
 
     // 2. DEBIT: VAT Recoverable (IVA Crédito Fiscal)
     if (bill.tax_amount.toNumber() > 0) {
-        // Group taxes by tax_id
+        // Group taxes by tax_id from line items
         const taxGroups = new Map<string, Prisma.Decimal>()
 
         for (const item of bill.items) {
@@ -342,13 +348,26 @@ export async function createBillJournalEntry(
             }
         }
 
+        // Fallback: si el documento tiene IVA pero las líneas no tenían tax_id (facturas antiguas), usar el impuesto IVA de la empresa
+        if (taxGroups.size === 0) {
+            const defaultIvaTax = await tx.tax.findFirst({
+                where: { company_id: companyId, type: 'IVA' }
+            })
+            const creditoAccount = defaultIvaTax?.credito_fiscal_account_id ?? defaultIvaTax?.gl_account_id
+            if (defaultIvaTax && creditoAccount) {
+                taxGroups.set(defaultIvaTax.id, bill.tax_amount)
+            }
+        }
+
         for (const [taxId, amount] of taxGroups.entries()) {
             const tax = await tx.tax.findUnique({ where: { id: taxId } })
             if (!tax) throw new Error(`Tax not found: ${taxId}`)
-            if (!tax.gl_account_id) throw new Error(`Tax ${tax.name} missing GL Account`)
+            // Compras/gastos: IVA va a Crédito Fiscal
+            const accountId = tax.credito_fiscal_account_id ?? tax.gl_account_id
+            if (!accountId) throw new Error(`Tax ${tax.name} sin cuenta Crédito Fiscal (compras). Configure en Impuestos.`)
 
             lines.push({
-                account_id: tax.gl_account_id,
+                account_id: accountId,
                 debit: amount,
                 credit: 0,
                 description: `IVA Crédito Fiscal`

@@ -8,17 +8,28 @@ export async function PUT(
     try {
         const { taxId } = await params
         const body = await request.json()
-        const { name, rate, type, description, gl_account_id, is_active } = body
+        const {
+            name,
+            rate,
+            type,
+            description,
+            gl_account_id,
+            debito_fiscal_account_id,
+            credito_fiscal_account_id,
+            is_active
+        } = body
 
         const updatedTax = await prisma.tax.update({
             where: { id: taxId },
             data: {
-                name,
-                rate,
-                type,
-                description,
-                gl_account_id,
-                is_active
+                ...(name !== undefined && { name }),
+                ...(rate !== undefined && { rate }),
+                ...(type !== undefined && { type }),
+                ...(description !== undefined && { description }),
+                ...(gl_account_id !== undefined && { gl_account_id: gl_account_id || null }),
+                ...(debito_fiscal_account_id !== undefined && { debito_fiscal_account_id: debito_fiscal_account_id || null }),
+                ...(credito_fiscal_account_id !== undefined && { credito_fiscal_account_id: credito_fiscal_account_id || null }),
+                ...(is_active !== undefined && { is_active })
             }
         })
 
