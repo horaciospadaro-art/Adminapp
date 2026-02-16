@@ -137,6 +137,7 @@ export async function createDocumentJournalEntry(
 
     // Create Header and Lines
     if (lines.length > 0) {
+        validateJournalLinesBalance(lines)
         const journalDate = doc.accounting_date || doc.date
         const journal = await tx.journalEntry.create({
             data: {
@@ -288,6 +289,37 @@ export async function createWithholdingJournalEntry(
     })
 
     return journal
+}
+
+const BALANCE_TOLERANCE = 0.01
+
+function toNum(v: number | Prisma.Decimal): number {
+    return typeof v === 'number' ? v : Number(v)
+}
+
+/**
+ * Valida que el asiento cuadra (débito = crédito) y que todas las líneas tienen cuenta.
+ * Lanza si no cuadra o hay cuenta faltante.
+ */
+export function validateJournalLinesBalance(
+    lines: Array<{ account_id: string; debit: number | Prisma.Decimal; credit: number | Prisma.Decimal; description?: string }>
+): void {
+    let totalDebit = 0
+    let totalCredit = 0
+    for (const line of lines) {
+        if (!line.account_id?.trim()) {
+            throw new Error(`Línea sin cuenta contable: "${line.description || 'sin descripción'}". Todas las cuentas deben estar parametrizadas.`)
+        }
+        totalDebit += toNum(line.debit)
+        totalCredit += toNum(line.credit)
+    }
+    const diff = Math.abs(totalDebit - totalCredit)
+    if (diff >= BALANCE_TOLERANCE) {
+        throw new Error(
+            `El asiento no cuadra: débito ${totalDebit.toFixed(2)}, crédito ${totalCredit.toFixed(2)} (diferencia ${diff.toFixed(2)}). ` +
+            'Revise cuentas e impuestos antes de guardar. Puede cuadrarlo luego en el asiento contable si es necesario.'
+        )
+    }
 }
 
 /**
@@ -481,6 +513,7 @@ export async function createBillJournalEntry(
     if (!bill) throw new Error(`Bill not found: ${billId}`)
 
     const { lines, description, date: billDate } = await buildBillJournalLines(tx, bill, companyId)
+    validateJournalLinesBalance(lines)
 
     const journal = await tx.journalEntry.create({
         data: {
@@ -530,6 +563,7 @@ export async function resyncJournalEntryFromDocument(
     if (!isBill) throw new Error('La resincronización solo está soportada para facturas de compra (proveedor).')
 
     const { lines, description, date: newDate } = await buildBillJournalLines(tx, document, entry.company_id)
+    validateJournalLinesBalance(lines)
 
     await tx.journalLine.deleteMany({ where: { entry_id: entryId } })
 

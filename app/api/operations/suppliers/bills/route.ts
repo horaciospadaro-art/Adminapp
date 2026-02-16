@@ -265,8 +265,12 @@ export async function PUT(request: Request) {
     } catch (error: any) {
         console.error('Error updating bill:', error)
         const message = error?.message ?? 'Error al actualizar el documento'
-        if (message.includes('Payable Account') || message.includes('missing GL Account') || message.includes('not found')) {
-            return NextResponse.json({ error: 'Error contable: ' + message }, { status: 422 })
+        if (
+            message.includes('Payable Account') || message.includes('missing GL Account') ||
+            message.includes('not found') || message.includes('no cuadra') ||
+            message.includes('sin cuenta') || message.includes('parametrizadas')
+        ) {
+            return NextResponse.json({ error: message }, { status: 422 })
         }
         return NextResponse.json({ error: message }, { status: 500 })
     }
@@ -561,10 +565,13 @@ export async function POST(request: Request) {
             message.includes('missing GL Account') ||
             message.includes('GL Account') ||
             message.includes('Tax') ||
-            message.includes('not found')
+            message.includes('not found') ||
+            message.includes('no cuadra') ||
+            message.includes('sin cuenta') ||
+            message.includes('parametrizadas')
         ) {
             return NextResponse.json(
-                { error: 'Error contable: ' + message },
+                { error: message },
                 { status: 422 }
             )
         }
