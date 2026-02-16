@@ -1,9 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
 import { formatDate } from '@/lib/date-utils'
-import html2canvas from 'html2canvas'
-import { jsPDF } from 'jspdf'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -46,7 +43,6 @@ function ComprobanteCard({
     return (
         <div
             className={`comprobante-iva-page bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden print:shadow-none print:border print:rounded ${!isLast ? 'print-break-after-page' : ''}`}
-            data-comprobante-pdf
         >
             <div className="p-6 space-y-4">
                 <h1 className="text-center text-lg font-bold uppercase text-gray-800">
@@ -138,61 +134,6 @@ function ComprobanteCard({
 }
 
 export function RetentionIVAPrintView({ company, supplier, withholdings, start, end }: Props) {
-    const containerRef = useRef<HTMLDivElement>(null)
-    const [downloading, setDownloading] = useState(false)
-
-    async function handleDownloadPDF() {
-        if (!containerRef.current || withholdings.length === 0) return
-        setDownloading(true)
-        try {
-            const elements = containerRef.current.querySelectorAll<HTMLElement>('[data-comprobante-pdf]')
-            if (elements.length === 0) return
-            const pdf = new jsPDF('p', 'mm', 'a4')
-            const pageW = 210
-            const pageH = 297
-            for (let i = 0; i < elements.length; i++) {
-                const el = elements[i]
-                const canvas = await html2canvas(el, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    onclone(_, clonedEl) {
-                        const style = clonedEl.ownerDocument.createElement('style')
-                        style.textContent = `
-                          .comprobante-iva-page { background-color: #ffffff !important; }
-                          .comprobante-iva-page .bg-gray-50 { background-color: #f9fafb !important; }
-                          .comprobante-iva-page .text-gray-400 { color: #9ca3af !important; }
-                          .comprobante-iva-page .text-gray-500 { color: #6b7280 !important; }
-                          .comprobante-iva-page .text-gray-600 { color: #4b5563 !important; }
-                          .comprobante-iva-page .text-gray-700 { color: #374151 !important; }
-                          .comprobante-iva-page .text-gray-800 { color: #1f2937 !important; }
-                          .comprobante-iva-page .text-gray-900 { color: #111827 !important; }
-                          .comprobante-iva-page [class*="border"] { border-color: #e5e7eb !important; }
-                        `
-                        clonedEl.insertBefore(style, clonedEl.firstChild)
-                    }
-                })
-                const imgData = canvas.toDataURL('image/png')
-                const pxToMm = 25.4 / 96
-                const wMm = canvas.width * pxToMm
-                const hMm = canvas.height * pxToMm
-                const scale = Math.min(pageW / wMm, pageH / hMm)
-                const finalW = wMm * scale
-                const finalH = hMm * scale
-                if (i > 0) pdf.addPage()
-                pdf.addImage(imgData, 'PNG', (pageW - finalW) / 2, (pageH - finalH) / 2, finalW, finalH)
-            }
-            const safeName = (supplier.name || 'comprobantes').replace(/[^a-zA-Z0-9-_]/g, '_')
-            pdf.save(`Comprobantes-IVA-${safeName}.pdf`)
-        } catch (e) {
-            console.error(e)
-            alert('Error al generar el PDF. Intente de nuevo.')
-        } finally {
-            setDownloading(false)
-        }
-    }
-
     if (withholdings.length === 0) {
         return (
             <div className="space-y-4">
@@ -204,19 +145,23 @@ export function RetentionIVAPrintView({ company, supplier, withholdings, start, 
     }
 
     return (
-        <div className="space-y-6 print:space-y-0" ref={containerRef}>
-            <div className="flex items-center justify-between gap-4 print:hidden">
+        <div className="space-y-6 print:space-y-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 print:hidden">
                 <p className="text-sm text-gray-600">
                     {withholdings.length} comprobante{withholdings.length !== 1 ? 's' : ''} (una hoja por factura).
                 </p>
-                <button
-                    type="button"
-                    onClick={handleDownloadPDF}
-                    disabled={downloading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                    {downloading ? 'Generando PDF…' : 'Descargar PDF'}
-                </button>
+                <div className="flex flex-col gap-1">
+                    <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                        Descargar PDF
+                    </button>
+                    <p className="text-xs text-gray-500">
+                        Se abrirá el diálogo de impresión; elija «Guardar como PDF» para descargar. Cada comprobante en una página, tamaño carta.
+                    </p>
+                </div>
             </div>
             {withholdings.map((w, i) => (
                 <ComprobanteCard

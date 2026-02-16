@@ -27,25 +27,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Colores en hex para comprobante IVA: html2canvas no soporta lab()/oklch() (Tailwind v4) */
-.comprobante-iva-page,
-.comprobante-iva-page.bg-white,
-.comprobante-iva-page .bg-white { background-color: #ffffff !important; }
-.comprobante-iva-page .bg-gray-50 { background-color: #f9fafb !important; }
-.comprobante-iva-page .border-gray-200,
-.comprobante-iva-page .border-y.border-gray-200,
-.comprobante-iva-page .border-t.border-gray-200 { border-color: #e5e7eb !important; }
-.comprobante-iva-page .border-gray-300 { border-color: #d1d5db !important; }
-.comprobante-iva-page .text-gray-400 { color: #9ca3af !important; }
-.comprobante-iva-page .text-gray-500 { color: #6b7280 !important; }
-.comprobante-iva-page .text-gray-600 { color: #4b5563 !important; }
-.comprobante-iva-page .text-gray-700 { color: #374151 !important; }
-.comprobante-iva-page .text-gray-800 { color: #1f2937 !important; }
-.comprobante-iva-page .text-gray-900 { color: #111827 !important; }
-.comprobante-iva-page .divide-gray-200 > * + * { border-color: #e5e7eb !important; }
-
-/* Ocultar menú, barra y título al imprimir (solo comprobantes) */
+/* Al imprimir/PDF: solo comprobantes, una hoja por comprobante, tamaño carta */
 @media print {
+  @page {
+    size: letter;
+  }
   [data-print-hide] {
     display: none !important;
   }
