@@ -313,12 +313,13 @@ export default function TaxesPage() {
                     </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {renderAccountSelect('IVA Débito Fiscal (Ventas)', 'iva_fiscal_debit_account_id')}
-                    {renderAccountSelect('IVA Crédito Fiscal (Compras)', 'iva_fiscal_credit_account_id')}
                     {renderAccountSelect('Retenciones de IVA', 'iva_retention_account_id')}
                     {renderAccountSelect('Retenciones de ISLR', 'islr_retention_account_id')}
                     {renderAccountSelect('IGTF (Impuesto Grandes Transacciones)', 'igtf_account_id')}
                 </div>
+                <p className="text-sm text-gray-500 mt-4">
+                    Las cuentas de IVA (Débito y Crédito Fiscal) se configuran en la tabla de abajo al crear o editar cada tasa de IVA.
+                </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
