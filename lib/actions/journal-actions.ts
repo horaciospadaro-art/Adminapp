@@ -2,7 +2,7 @@
 
 import prisma from '@/lib/db'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { resyncJournalEntryFromDocument } from '@/lib/accounting-helpers'
 
 export async function getJournalEntryById(id: string) {
     const entry = await prisma.journalEntry.findUnique({
@@ -80,57 +80,39 @@ export async function updateJournalEntry(id: string, data: any) {
 }
 
 /**
- * Indica si un asiento de factura de compra puede repararse agregando la línea de IVA Crédito Fiscal faltante.
+ * Indica si el asiento puede resincronizarse con la transacción que lo originó (p. ej. factura de compra).
  */
-export async function getJournalEntryRepairIvaInfo(entryId: string) {
-    const entry = await prisma.journalEntry.findUnique({
-        where: { id: entryId },
-        include: { lines: true }
-    })
-    if (!entry) return { canRepair: false, error: 'Asiento no encontrado' }
+export async function getJournalEntryResyncInfo(entryId: string) {
+    const entry = await prisma.journalEntry.findUnique({ where: { id: entryId } })
+    if (!entry) return { canResync: false, error: 'Asiento no encontrado' }
 
     const document = await prisma.document.findFirst({
-        where: { journal_entry_id: entryId }
+        where: { journal_entry_id: entryId },
+        include: { third_party: true }
     })
-    if (!document || document.tax_amount.toNumber() <= 0) {
-        return { canRepair: false }
-    }
+    if (!document) return { canResync: false }
 
-    const ivaTax = await prisma.tax.findFirst({
-        where: { company_id: entry.company_id, type: 'IVA' }
-    })
-    const creditoAccountId = ivaTax?.credito_fiscal_account_id ?? ivaTax?.gl_account_id
-    if (!creditoAccountId) {
-        return { canRepair: false, error: 'No hay impuesto IVA con cuenta Crédito Fiscal configurada' }
-    }
+    const isBill = document.type === 'BILL' || document.type === 'CREDIT_NOTE'
+    if (!isBill) return { canResync: false }
 
-    const hasIvaLine = entry.lines.some((l) => l.account_id === creditoAccountId)
-    if (hasIvaLine) return { canRepair: false }
-
-    const amount = document.tax_amount.toNumber()
-    return { canRepair: true, amount, accountId: creditoAccountId }
+    const sourceDescription = `${document.type} #${document.number ?? document.id} - ${document.third_party?.name ?? 'Proveedor'}`
+    return { canResync: true, sourceDescription }
 }
 
 /**
- * Agrega la línea de IVA Crédito Fiscal faltante a un asiento de factura de compra (reparación).
+ * Resincroniza el asiento con la factura/documento que lo originó.
+ * Recalcula todas las líneas desde el documento para que el asiento sea un reflejo fiel.
  */
-export async function repairBillEntryAddMissingIvaLine(entryId: string) {
-    const info = await getJournalEntryRepairIvaInfo(entryId)
-    if (!info.canRepair || info.amount == null || !info.accountId) {
-        return { success: false, error: info.error ?? 'No se puede reparar este asiento' }
+export async function resyncJournalEntryWithSource(entryId: string) {
+    try {
+        await prisma.$transaction(async (tx) => {
+            await resyncJournalEntryFromDocument(tx, entryId)
+        })
+        revalidatePath('/dashboard/accounting')
+        revalidatePath('/dashboard/accounting/reports/entries')
+        return { success: true }
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Error al resincronizar'
+        return { success: false, error: message }
     }
-
-    await prisma.journalLine.create({
-        data: {
-            entry_id: entryId,
-            account_id: info.accountId,
-            debit: info.amount,
-            credit: 0,
-            description: 'IVA Crédito Fiscal (reparado)'
-        }
-    })
-
-    revalidatePath('/dashboard/accounting')
-    revalidatePath('/dashboard/accounting/reports/entries')
-    return { success: true }
 }

@@ -291,27 +291,27 @@ export async function createWithholdingJournalEntry(
 }
 
 /**
- * Creates Journal Entry for Bill (Purchase Invoice from Supplier)
- * Handles both service purchases (expense accounts) and inventory purchases
+ * Builds journal lines (and metadata) for a bill without creating the entry.
+ * Used by createBillJournalEntry and by resyncBillJournalEntry.
  */
-export async function createBillJournalEntry(
+export async function buildBillJournalLines(
     tx: Prisma.TransactionClient,
-    billId: string,
+    bill: {
+        id: string
+        type: string
+        number: string | null
+        total: Prisma.Decimal
+        tax_amount: Prisma.Decimal
+        accounting_date: Date | null
+        date: Date
+        third_party: { payable_account_id: string | null; name: string }
+        items: Array<{ description: string; gl_account_id: string | null; total: Prisma.Decimal; tax_amount: Prisma.Decimal; tax_id: string | null }>
+        withholdings: Array<{ type: string; amount: Prisma.Decimal; certificate_number: string }>
+    },
     companyId: string
-) {
-    const bill = await tx.document.findUnique({
-        where: { id: billId },
-        include: {
-            third_party: true,
-            items: true,
-            withholdings: true
-        }
-    })
+): Promise<{ lines: Array<{ account_id: string; debit: number | Prisma.Decimal; credit: number | Prisma.Decimal; description: string }>; description: string; date: Date }> {
+    if (bill.total.toNumber() === 0) throw new Error('Bill total is zero')
 
-    if (!bill) throw new Error(`Bill not found: ${billId}`)
-    if (bill.total.toNumber() === 0) return // Skip zero amount bills
-
-    // Verify supplier has payable account
     if (!bill.third_party.payable_account_id) {
         throw new Error(`Supplier ${bill.third_party.name} missing Payable Account (Cuentas por Pagar)`)
     }
@@ -457,24 +457,88 @@ export async function createBillJournalEntry(
     }
 
     const billDate = bill.accounting_date || bill.date
+    return { lines, description, date: billDate }
+}
+
+/**
+ * Creates Journal Entry for Bill (Purchase Invoice from Supplier).
+ * Uses buildBillJournalLines and then creates the entry and links the document.
+ */
+export async function createBillJournalEntry(
+    tx: Prisma.TransactionClient,
+    billId: string,
+    companyId: string
+) {
+    const bill = await tx.document.findUnique({
+        where: { id: billId },
+        include: {
+            third_party: true,
+            items: true,
+            withholdings: true
+        }
+    })
+
+    if (!bill) throw new Error(`Bill not found: ${billId}`)
+
+    const { lines, description, date: billDate } = await buildBillJournalLines(tx, bill, companyId)
+
     const journal = await tx.journalEntry.create({
         data: {
             company_id: companyId,
             date: billDate,
-            number: await generateJournalEntryNumber(tx, companyId, billDate, 'P'), // P = Proveedor/compras
-            description: description,
+            number: await generateJournalEntryNumber(tx, companyId, billDate, 'P'),
+            description,
             status: JournalStatus.POSTED,
-            lines: {
-                create: lines
-            }
+            lines: { create: lines }
         }
     })
 
-    // Link to Bill
     await tx.document.update({
         where: { id: billId },
         data: { journal_entry_id: journal.id }
     })
 
     return journal
+}
+
+/**
+ * Resincroniza un asiento con el documento que lo originó (p. ej. factura de compra).
+ * Recalcula las líneas desde el documento y reemplaza las del asiento para que sea un reflejo fiel.
+ */
+export async function resyncJournalEntryFromDocument(
+    tx: Prisma.TransactionClient,
+    entryId: string
+) {
+    const entry = await tx.journalEntry.findUnique({
+        where: { id: entryId },
+        include: { lines: true }
+    })
+    if (!entry) throw new Error('Asiento no encontrado')
+
+    const document = await tx.document.findFirst({
+        where: { journal_entry_id: entryId },
+        include: {
+            third_party: true,
+            items: true,
+            withholdings: true
+        }
+    })
+
+    if (!document) throw new Error('Este asiento no está vinculado a ninguna factura/documento.')
+
+    const isBill = document.type === DocumentType.BILL || document.type === DocumentType.CREDIT_NOTE
+    if (!isBill) throw new Error('La resincronización solo está soportada para facturas de compra (proveedor).')
+
+    const { lines, description, date: newDate } = await buildBillJournalLines(tx, document, entry.company_id)
+
+    await tx.journalLine.deleteMany({ where: { entry_id: entryId } })
+
+    await tx.journalEntry.update({
+        where: { id: entryId },
+        data: {
+            date: newDate,
+            description,
+            lines: { create: lines }
+        }
+    })
 }

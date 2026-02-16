@@ -11,24 +11,24 @@ type JournalLine = {
     description: string
 }
 
-import { updateJournalEntry, repairBillEntryAddMissingIvaLine } from '@/lib/actions/journal-actions'
+import { updateJournalEntry, resyncJournalEntryWithSource } from '@/lib/actions/journal-actions'
 import { DateInput } from '@/components/common/DateInput'
-import { Wrench } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 
 export function JournalEntryForm({
     companyId,
     initialData,
     entryId,
-    repairIvaOffer
+    resyncOffer
 }: {
     companyId: string
     initialData?: any
     entryId?: string
-    repairIvaOffer?: { amount: number; accountId: string } | null
+    resyncOffer?: { sourceDescription: string } | null
 }) {
     const router = useRouter()
     const [accounts, setAccounts] = useState<Account[]>([])
-    const [repairLoading, setRepairLoading] = useState(false)
+    const [resyncLoading, setResyncLoading] = useState(false)
 
     // Initialize state with initialData if provided
     const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10))
@@ -259,28 +259,30 @@ export function JournalEntryForm({
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-3">
-                {repairIvaOffer && entryId && (
+                {resyncOffer && entryId && (
                     <button
                         type="button"
-                        disabled={repairLoading || loading}
+                        disabled={resyncLoading || loading}
                         onClick={async () => {
-                            setRepairLoading(true)
+                            if (!confirm('¿Resincronizar este asiento con la factura de compra? Se reemplazarán todas las líneas por las actuales del documento.')) return
+                            setResyncLoading(true)
                             try {
-                                const res = await repairBillEntryAddMissingIvaLine(entryId)
+                                const res = await resyncJournalEntryWithSource(entryId)
                                 if (res.success) {
-                                    alert('Se agregó la línea de IVA Crédito Fiscal. La página se recargará.')
+                                    alert('Asiento resincronizado correctamente. La página se recargará.')
                                     router.refresh()
                                 } else {
-                                    alert(res.error || 'No se pudo reparar el asiento.')
+                                    alert(res.error || 'No se pudo resincronizar.')
                                 }
                             } finally {
-                                setRepairLoading(false)
+                                setResyncLoading(false)
                             }
                         }}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                        title={`Reflejar en este asiento lo que está en: ${resyncOffer.sourceDescription}`}
                     >
-                        <Wrench className="w-4 h-4" />
-                        {repairLoading ? 'Reparando...' : `Agregar línea IVA faltante (${repairIvaOffer.amount.toLocaleString('es-VE', { minimumFractionDigits: 2 })})`}
+                        <RefreshCw className={`w-4 h-4 ${resyncLoading ? 'animate-spin' : ''}`} />
+                        {resyncLoading ? 'Resincronizando...' : 'Resincronizar con la factura de compra'}
                     </button>
                 )}
                 <button

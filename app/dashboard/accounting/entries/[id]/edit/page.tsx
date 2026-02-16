@@ -1,4 +1,4 @@
-import { getJournalEntryById, getJournalEntryRepairIvaInfo } from '@/lib/actions/journal-actions'
+import { getJournalEntryById, getJournalEntryResyncInfo } from '@/lib/actions/journal-actions'
 import { JournalEntryForm } from '@/components/accounting/JournalEntryForm'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -36,11 +36,10 @@ export default async function EditJournalEntryPage({
     }
 
     const initialData = serializeEntry(entry)
-    const repairIvaInfo = await getJournalEntryRepairIvaInfo(entry.id)
-    const repairIvaOffer =
-        repairIvaInfo.canRepair && repairIvaInfo.amount != null && repairIvaInfo.accountId
-            ? { amount: repairIvaInfo.amount, accountId: repairIvaInfo.accountId }
-            : null
+    const resyncInfo = await getJournalEntryResyncInfo(entry.id)
+    const resyncOffer = resyncInfo.canResync && resyncInfo.sourceDescription
+        ? { sourceDescription: resyncInfo.sourceDescription }
+        : null
 
     return (
         <div className="space-y-6">
@@ -59,7 +58,7 @@ export default async function EditJournalEntryPage({
                 companyId={entry.company_id}
                 initialData={initialData ?? undefined}
                 entryId={entry.id}
-                repairIvaOffer={repairIvaOffer}
+                resyncOffer={resyncOffer}
             />
         </div>
     )
