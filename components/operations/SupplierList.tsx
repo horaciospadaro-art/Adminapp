@@ -108,9 +108,9 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
                                         <button
                                             className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
                                             onClick={() => handleViewInvoices(supplier.id)}
-                                            title="Ver Facturas"
+                                            title="Ver documentos"
                                         >
-                                            Ver Facturas
+                                            Ver documentos
                                         </button>
                                         <span className="text-gray-300">|</span>
                                         <button
@@ -124,7 +124,7 @@ export function SupplierList({ companyId, onEdit, refreshKey }: SupplierListProp
                                             className="text-orange-600 hover:text-orange-900 text-sm font-semibold"
                                             onClick={() => handleCreateBill(supplier.id)}
                                         >
-                                            Crear orden
+                                            Cargar documentos
                                         </button>
                                     </div>
                                 </td>
