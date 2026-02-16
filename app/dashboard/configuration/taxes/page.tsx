@@ -92,6 +92,8 @@ export default function TaxesPage() {
     const [vatRetForm, setVatRetForm] = useState({ description: '', rate: '', active: true })
     const [globalForm, setGlobalForm] = useState<GlobalTaxConfiguration>({ id: '', company_id: '' })
 
+    const toArray = (x: unknown): unknown[] => (Array.isArray(x) ? x : [])
+
     // --- FETCH DATA ---
     useEffect(() => {
         Promise.all([
@@ -101,12 +103,12 @@ export default function TaxesPage() {
             fetch('/api/configuration/tax-globals').then(r => r.json()),
             fetch('/api/accounting/accounts').then(r => r.json())
         ]).then(([taxesData, islrData, vatRetData, globalData, accountsData]) => {
-            setTaxes(taxesData || [])
-            setIslrConcepts(islrData || [])
-            setVatRetentions(vatRetData || [])
-            setGlobalConfig(globalData)
-            setGlobalForm(globalData || { id: '', company_id: '' })
-            setAccounts(accountsData || [])
+            setTaxes(toArray(taxesData) as Tax[])
+            setIslrConcepts(toArray(islrData) as ISLRConcept[])
+            setVatRetentions(toArray(vatRetData) as VATRetention[])
+            setGlobalConfig(globalData && typeof globalData === 'object' && !Array.isArray(globalData) ? globalData as GlobalTaxConfiguration : null)
+            setGlobalForm(globalData && typeof globalData === 'object' && !Array.isArray(globalData) ? globalData as GlobalTaxConfiguration : { id: '', company_id: '' })
+            setAccounts(toArray(accountsData) as Account[])
         }).catch(err => console.error(err))
             .finally(() => setLoading(false))
     }, [])
@@ -117,9 +119,9 @@ export default function TaxesPage() {
             fetch('/api/configuration/islr-concepts').then(r => r.json()),
             fetch('/api/configuration/vat-retentions').then(r => r.json())
         ]).then(([taxesData, islrData, vatRetData]) => {
-            setTaxes(taxesData)
-            setIslrConcepts(islrData)
-            setVatRetentions(vatRetData)
+            setTaxes(toArray(taxesData) as Tax[])
+            setIslrConcepts(toArray(islrData) as ISLRConcept[])
+            setVatRetentions(toArray(vatRetData) as VATRetention[])
         })
     }
 
@@ -285,7 +287,7 @@ export default function TaxesPage() {
                 className="border border-gray-300 rounded text-sm p-2 w-full"
             >
                 <option value="">Seleccionar Cuenta...</option>
-                {accounts.map(acc => (
+                {(Array.isArray(accounts) ? accounts : []).map(acc => (
                     <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>
                 ))}
             </select>
@@ -336,7 +338,7 @@ export default function TaxesPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {taxes.map(tax => (
+                                {(Array.isArray(taxes) ? taxes : []).map(tax => (
                                     <tr key={tax.id} className="border-b last:border-0 hover:bg-gray-50">
                                         <td className="px-4 py-3">{tax.name}</td>
                                         <td className="px-4 py-3"><span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{tax.type}</span></td>
@@ -371,7 +373,7 @@ export default function TaxesPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {vatRetentions.map(ret => (
+                                {(Array.isArray(vatRetentions) ? vatRetentions : []).map(ret => (
                                     <tr key={ret.id} className="border-b last:border-0 hover:bg-gray-50">
                                         <td className="px-4 py-3">{ret.description}</td>
                                         <td className="px-4 py-3 text-right font-mono">{Number(ret.rate).toFixed(2)}%</td>
@@ -414,7 +416,7 @@ export default function TaxesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {islrConcepts.map(item => (
+                            {(Array.isArray(islrConcepts) ? islrConcepts : []).map(item => (
                                 <tr key={item.id} className="hover:bg-gray-50">
                                     <td className="px-4 py-3 font-mono text-gray-600 text-xs">{item.seniat_code || '-'}</td>
                                     <td className="px-4 py-3">{item.description}</td>
@@ -467,7 +469,7 @@ export default function TaxesPage() {
                                     <label htmlFor="taxAccount" className="block text-sm font-medium mb-1">Cuenta Contable</label>
                                     <select id="taxAccount" required value={taxForm.gl_account_id} onChange={e => setTaxForm({ ...taxForm, gl_account_id: e.target.value })} className="w-full border rounded p-2">
                                         <option value="">Seleccionar...</option>
-                                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
+                                        {(Array.isArray(accounts) ? accounts : []).map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
                                     </select>
                                 </div>
                             )}
@@ -477,15 +479,15 @@ export default function TaxesPage() {
                                         <label htmlFor="taxDebitoFiscal" className="block text-sm font-medium mb-1">Cuenta Débito Fiscal IVA (ventas / clientes)</label>
                                         <select id="taxDebitoFiscal" value={taxForm.debito_fiscal_account_id} onChange={e => setTaxForm({ ...taxForm, debito_fiscal_account_id: e.target.value })} className="w-full border rounded p-2">
                                             <option value="">Seleccionar cuenta...</option>
-                                            {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
-                                        </select>
-                                        <p className="text-xs text-gray-500 mt-0.5">IVA cobrado en ventas. Cuenta del pasivo (obligación con el fisco).</p>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="taxCreditoFiscal" className="block text-sm font-medium mb-1">Cuenta Crédito Fiscal IVA (compras / proveedores)</label>
-                                        <select id="taxCreditoFiscal" value={taxForm.credito_fiscal_account_id} onChange={e => setTaxForm({ ...taxForm, credito_fiscal_account_id: e.target.value })} className="w-full border rounded p-2">
-                                            <option value="">Seleccionar cuenta...</option>
-                                            {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
+                                        {(Array.isArray(accounts) ? accounts : []).map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-0.5">IVA cobrado en ventas. Cuenta del pasivo (obligación con el fisco).</p>
+                                </div>
+                                <div>
+                                    <label htmlFor="taxCreditoFiscal" className="block text-sm font-medium mb-1">Cuenta Crédito Fiscal IVA (compras / proveedores)</label>
+                                    <select id="taxCreditoFiscal" value={taxForm.credito_fiscal_account_id} onChange={e => setTaxForm({ ...taxForm, credito_fiscal_account_id: e.target.value })} className="w-full border rounded p-2">
+                                        <option value="">Seleccionar cuenta...</option>
+                                        {(Array.isArray(accounts) ? accounts : []).map(acc => <option key={acc.id} value={acc.id}>{acc.code} - {acc.name}</option>)}
                                         </select>
                                         <p className="text-xs text-gray-500 mt-0.5">IVA recuperable en compras y facturas de proveedor. Cuenta del activo.</p>
                                     </div>

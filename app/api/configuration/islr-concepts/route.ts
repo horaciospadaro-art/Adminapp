@@ -8,7 +8,8 @@ export async function GET() {
         })
         return NextResponse.json(concepts)
     } catch (error) {
-        return NextResponse.json({ error: 'Error fetching ISLR concepts' }, { status: 500 })
+        console.error('ISLR concepts GET:', error)
+        return NextResponse.json([])
     }
 }
 
