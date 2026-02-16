@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { formatDate } from '@/lib/date-utils'
+import { jsPDF } from 'jspdf'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -24,6 +26,116 @@ type Props = {
     withholdings: Withholding[]
     start: Date
     end: Date
+}
+
+function addComprobantePage(
+    pdf: jsPDF,
+    company: Props['company'],
+    supplier: Props['supplier'],
+    w: Withholding,
+    isFirstPage: boolean
+) {
+    if (!isFirstPage) pdf.addPage('letter', 'portrait')
+    const pageW = 215.9
+    const margin = 15
+    let y = 20
+
+    pdf.setFontSize(14)
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('COMPROBANTE DE RETENCIÓN DEL IMPUESTO AL VALOR AGREGADO', pageW / 2, y, { align: 'center' })
+    y += 8
+    pdf.setFontSize(9)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text('Ley IVA. Art. 11', pageW / 2, y, { align: 'center' })
+    y += 12
+
+    pdf.setFontSize(8)
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('AGENTE DE RETENCIÓN', margin, y)
+    y += 5
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(company?.name ?? '—', margin, y)
+    y += 5
+    pdf.text('RIF: ' + (company?.rif ?? '—'), margin, y)
+    y += 10
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('SUJETO RETENIDO (PROVEEDOR)', margin + 100, y - 15)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(supplier.name, margin + 100, y - 10)
+    pdf.text('RIF: ' + supplier.rif, margin + 100, y - 5)
+    if (supplier.address) pdf.text('Dirección fiscal: ' + supplier.address, margin + 100, y)
+    y += 5
+
+    const d = new Date(w.date)
+    const periodoAnio = d.getFullYear()
+    const periodoMes = d.getMonth() + 1
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(7)
+    pdf.text('Nº COMPROBANTE', margin, y)
+    pdf.text('E. EMISIÓN', margin + 45, y)
+    pdf.text('F. ENTREGA', margin + 85, y)
+    pdf.text('PERÍODO FISCAL', margin + 125, y)
+    y += 5
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(w.certificate_number, margin, y)
+    pdf.text(formatDate(w.date), margin + 45, y)
+    pdf.text(formatDate(w.date), margin + 85, y)
+    pdf.text(`Año: ${periodoAnio}  Mes: ${periodoMes} (${MESES[periodoMes - 1]})`, margin + 125, y)
+    y += 12
+
+    const colW = [28, 22, 32, 18, 22, 28]
+    const headers = ['Fecha factura', 'Nº factura', 'Base imponible', '% alícuota', 'IVA', 'IVA retenido']
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(8)
+    let x = margin
+    headers.forEach((h, i) => {
+        pdf.text(h, x + 2, y + 4)
+        x += colW[i]
+    })
+    y += 8
+    pdf.setFont('helvetica', 'normal')
+    const row = [
+        formatDate(w.document?.date),
+        w.document?.number ?? '—',
+        formatNum(Number(w.base_amount)),
+        Number(w.rate) + '%',
+        formatNum(Number(w.tax_amount)),
+        formatNum(Number(w.amount))
+    ]
+    x = margin
+    row.forEach((cell, i) => {
+        const align = i >= 2 ? 'right' : 'left'
+        pdf.text(String(cell), align === 'right' ? x + colW[i] - 2 : x + 2, y + 4, { align: align === 'right' ? 'right' : 'left' })
+        x += colW[i]
+    })
+    y += 6
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('Total', margin + 2, y + 4)
+    x = margin + colW[0] + colW[1]
+    pdf.text(formatNum(Number(w.base_amount)), x + colW[2] - 2, y + 4, { align: 'right' })
+    x += colW[2]
+    pdf.text('', x + colW[3] - 2, y + 4)
+    x += colW[3]
+    pdf.text(formatNum(Number(w.tax_amount)), x + colW[4] - 2, y + 4, { align: 'right' })
+    x += colW[4]
+    pdf.text(formatNum(Number(w.amount)), x + colW[5] - 2, y + 4, { align: 'right' })
+    y += 15
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(7)
+    pdf.text('Firma y sello de la empresa que emite el comprobante', margin, y)
+    y += 5
+    pdf.setDrawColor(200, 200, 200)
+    pdf.rect(margin, y, pageW - 2 * margin, 25)
+    y += 30
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(9)
+    pdf.text(company?.name ?? '—', margin, y)
+    y += 5
+    pdf.setFontSize(8)
+    pdf.text('RIF: ' + (company?.rif ?? '—'), margin, y)
 }
 
 function ComprobanteCard({
@@ -134,6 +246,26 @@ function ComprobanteCard({
 }
 
 export function RetentionIVAPrintView({ company, supplier, withholdings, start, end }: Props) {
+    const [downloading, setDownloading] = useState(false)
+
+    function handleDownloadPDF() {
+        if (withholdings.length === 0) return
+        setDownloading(true)
+        try {
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+            withholdings.forEach((w, i) => {
+                addComprobantePage(pdf, company, supplier, w, i === 0)
+            })
+            const safeName = (supplier.name || 'comprobantes').replace(/[^a-zA-Z0-9-_]/g, '_')
+            pdf.save(`Comprobantes-IVA-${safeName}.pdf`)
+        } catch (e) {
+            console.error(e)
+            alert('Error al generar el PDF.')
+        } finally {
+            setDownloading(false)
+        }
+    }
+
     if (withholdings.length === 0) {
         return (
             <div className="space-y-4">
@@ -150,18 +282,14 @@ export function RetentionIVAPrintView({ company, supplier, withholdings, start, 
                 <p className="text-sm text-gray-600">
                     {withholdings.length} comprobante{withholdings.length !== 1 ? 's' : ''} (una hoja por factura).
                 </p>
-                <div className="flex flex-col gap-1">
-                    <button
-                        type="button"
-                        onClick={() => window.print()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                    >
-                        Descargar PDF
-                    </button>
-                    <p className="text-xs text-gray-500">
-                        Se abrirá el diálogo de impresión; elija «Guardar como PDF» para descargar. Cada comprobante en una página, tamaño carta.
-                    </p>
-                </div>
+                <button
+                    type="button"
+                    onClick={handleDownloadPDF}
+                    disabled={downloading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                    {downloading ? 'Generando PDF…' : 'Descargar PDF'}
+                </button>
             </div>
             {withholdings.map((w, i) => (
                 <ComprobanteCard
