@@ -30,6 +30,7 @@ export function documentTypeLabel(type: string | null | undefined): string {
   if (!type) return '—'
   const map: Record<string, string> = {
     BILL: 'Factura',
+    INVOICE: 'Factura',
     PAYMENT: 'Pago',
     CREDIT_NOTE: 'Nota de crédito',
     DEBIT_NOTE: 'Nota de débito',

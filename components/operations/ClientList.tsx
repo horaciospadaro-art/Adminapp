@@ -12,16 +12,20 @@ interface ClientListProps {
 export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
     const [clients, setClients] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState('')
     const router = useRouter()
 
     useEffect(() => {
-        if (!companyId) return
-
+        if (!companyId) {
+            setLoading(false)
+            return
+        }
         setLoading(true)
         fetch(`/api/operations/clients?companyId=${companyId}`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) setClients(data)
+                else setClients([])
                 setLoading(false)
             })
             .catch(err => {
@@ -34,10 +38,28 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
         router.push(`/dashboard/operations/invoices/new?clientId=${clientId}`)
     }
 
+    const handleViewDocuments = (clientId: string) => {
+        router.push(`/dashboard/operations/clients/${clientId}/statement`)
+    }
+
+    const filteredClients = clients.filter(client =>
+        client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.rif?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
     if (loading) return <div>Cargando clientes...</div>
 
     return (
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+                <input
+                    type="text"
+                    placeholder="Buscar cliente por Nombre o RIF..."
+                    className="w-full md:w-1/3 p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -57,7 +79,7 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {clients.map((client) => (
+                        {filteredClients.map((client) => (
                             <tr key={client.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-base font-medium text-[#393a3d]">{client.name}</div>
@@ -79,6 +101,14 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">
                                     <div className="flex justify-end gap-2">
                                         <button
+                                            className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
+                                            onClick={() => handleViewDocuments(client.id)}
+                                            title="Ver documentos"
+                                        >
+                                            Ver documentos
+                                        </button>
+                                        <span className="text-gray-300">|</span>
+                                        <button
                                             className="text-[#2ca01c] hover:text-[#248217] font-semibold text-sm"
                                             onClick={() => onEdit(client)}
                                         >
@@ -86,10 +116,10 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
                                         </button>
                                         <span className="text-gray-300">|</span>
                                         <button
-                                            className="text-blue-600 hover:text-blue-900 text-sm font-semibold"
+                                            className="text-orange-600 hover:text-orange-900 text-sm font-semibold"
                                             onClick={() => handleCreateInvoice(client.id)}
                                         >
-                                            Crear factura
+                                            Cargar documentos
                                         </button>
                                     </div>
                                 </td>
@@ -98,7 +128,7 @@ export function ClientList({ companyId, onEdit, refreshKey }: ClientListProps) {
                     </tbody>
                 </table>
             </div>
-            {clients.length === 0 && (
+            {filteredClients.length === 0 && (
                 <div className="p-12 text-center text-gray-500">
                     <p className="text-lg mb-2">No hay clientes registrados aún.</p>
                 </div>
