@@ -3,7 +3,7 @@ import { DateRangeFilters } from '@/components/accounting/reports/DateRangeFilte
 import { getJournalEntryList, type JournalEntryListItem } from '@/lib/actions/accounting-reports'
 import { UnifiedReportNavigation } from '@/components/reports/UnifiedReportNavigation'
 import Link from 'next/link'
-import { Edit } from 'lucide-react'
+import { Edit, CheckCircle, AlertTriangle } from 'lucide-react'
 import { DeleteEntryButton } from '@/components/accounting/DeleteEntryButton'
 
 import { getPersistentCompanyId } from '@/lib/company-utils'
@@ -60,7 +60,22 @@ export default async function EntriesListPage(props: {
                 </div>
             )}
 
-            {entries.length > 0 && (
+            {entries.length > 0 && (() => {
+                const unbalancedCount = entries.filter((e) => {
+                    const d = e.lines.reduce((s, l) => s + l.debit, 0)
+                    const c = e.lines.reduce((s, l) => s + l.credit, 0)
+                    return Math.abs(d - c) >= 0.01
+                }).length
+                return (
+                <div className="space-y-4">
+                    {unbalancedCount > 0 && (
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                            <span>
+                                Hay {unbalancedCount} asiento(s) descuadrado(s). Puede corregirlos editando el asiento (lápiz) o, si proviene de una factura de compra, usar &quot;Resincronizar con la factura de compra&quot; en la pantalla de edición.
+                            </span>
+                        </div>
+                    )}
                 <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -70,16 +85,21 @@ export default async function EntriesListPage(props: {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Débito</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Crédito</th>
+                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cuadrado</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {entries.map((entry) => {
-                                    const total = entry.lines.reduce((sum, line) => sum + line.debit, 0)
+                                    const totalDebit = entry.lines.reduce((sum, line) => sum + line.debit, 0)
+                                    const totalCredit = entry.lines.reduce((sum, line) => sum + line.credit, 0)
+                                    const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01
+                                    const difference = totalDebit - totalCredit
 
                                     return (
-                                        <tr key={entry.id} className="hover:bg-gray-50">
+                                        <tr key={entry.id} className={`hover:bg-gray-50 ${!isBalanced ? 'bg-amber-50/50' : ''}`}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {entry.date ? formatDate(entry.date) : '-'}
                                             </td>
@@ -96,11 +116,27 @@ export default async function EntriesListPage(props: {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-mono">
-                                                {total.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                                                {totalDebit.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-mono">
+                                                {totalCredit.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                {isBalanced ? (
+                                                    <span className="inline-flex items-center gap-1 text-green-700 text-xs font-medium" title="Comprobante cuadrado">
+                                                        <CheckCircle className="w-4 h-4" />
+                                                        Sí
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-amber-700 text-xs font-medium" title={`Diferencia: ${difference.toFixed(2)}`}>
+                                                        <AlertTriangle className="w-4 h-4" />
+                                                        No
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex justify-end gap-2">
-                                                    <Link href={`/dashboard/accounting/entries/${entry.id}/edit`} className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded" title="Editar">
+                                                    <Link href={`/dashboard/accounting/entries/${entry.id}/edit`} className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded" title="Editar asiento o resincronizar con el documento origen">
                                                         <Edit className="w-4 h-4" />
                                                     </Link>
                                                     <DeleteEntryButton id={entry.id} entryNumber={entry.number || 'Sin Número'} />
@@ -113,7 +149,9 @@ export default async function EntriesListPage(props: {
                         </table>
                     </div>
                 </div>
-            )}
+                </div>
+                )
+            })()}
         </div>
     )
 }
