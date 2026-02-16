@@ -46,18 +46,40 @@ export default async function SupplierRetentionISLRPage({
         orderBy: { date: 'asc' }
     })
 
+    // Nº comprobante: si hay retenciones en el período usamos la del primer asiento; si no, calculamos el siguiente correlativo (5 dígitos)
+    let numeroComprobante: string
+    if (withholdings.length > 0) {
+        numeroComprobante = withholdings[0].certificate_number
+    } else {
+        const allISLR = await prisma.withholding.findMany({
+            where: { company_id: supplier.company_id, type: TaxType.RETENCION_ISLR },
+            select: { certificate_number: true }
+        })
+        let maxSeq = 0
+        for (const w of allISLR) {
+            if (/^\d{5}$/.test(w.certificate_number)) {
+                const n = parseInt(w.certificate_number, 10)
+                if (n > maxSeq) maxSeq = n
+            }
+        }
+        numeroComprobante = (maxSeq + 1).toString().padStart(5, '0')
+    }
+
+    // Fecha de emisión del comprobante = día en que se emite el reporte (hoy)
+    const fechaEmisionComprobante = new Date()
+
     const formatNum = (n: number) => new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
     const totalBase = withholdings.reduce((s, w) => s + Number(w.base_amount), 0)
     const totalAmount = withholdings.reduce((s, w) => s + Number(w.amount), 0)
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-4 md:p-6">
             <PageHeader
                 title={`Comprobante de retención ISLR - ${supplier.name}`}
                 backHref="/dashboard/operations/suppliers"
             />
 
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden print:shadow-none">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden print:shadow-none print:break-inside-avoid">
                 <div className="p-6 space-y-4">
                     <h1 className="text-center text-lg font-bold uppercase text-gray-800">
                         Comprobante de retención de impuesto sobre la renta
@@ -77,6 +99,17 @@ export default async function SupplierRetentionISLRPage({
                             {supplier.address && (
                                 <p className="text-sm text-gray-600 mt-1">Dirección fiscal: {supplier.address}</p>
                             )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-y border-gray-200">
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Nº COMPROBANTE</p>
+                            <p className="font-mono font-medium text-gray-900">{numeroComprobante}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha de emisión del comprobante</p>
+                            <p className="font-medium text-gray-900">{formatDate(fechaEmisionComprobante)}</p>
                         </div>
                     </div>
 

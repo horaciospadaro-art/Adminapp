@@ -234,10 +234,19 @@ export async function PUT(request: Request) {
                 }))
             })
 
+            // Preservar número de comprobante ya asignado: una factura no puede recibir otro número al reemitir
+            const existingWithholdings = await tx.withholding.findMany({
+                where: { document_id: documentId },
+                select: { type: true, certificate_number: true }
+            })
+            const existingIVANumber = existingWithholdings.find(w => w.type === TaxType.RETENCION_IVA)?.certificate_number
+            const existingISLRNumber = existingWithholdings.find(w => w.type === TaxType.RETENCION_ISLR)?.certificate_number
+
             await tx.withholding.deleteMany({ where: { document_id: documentId } })
             if (totalRetIVA > 0 || totalRetISLR > 0) {
                 const withholdingsToCreate: any[] = []
                 if (totalRetIVA > 0) {
+                    const certNumber = existingIVANumber ?? await generateRetentionNumber(tx, company_id, 'IVA')
                     withholdingsToCreate.push({
                         company_id,
                         third_party_id,
@@ -248,13 +257,14 @@ export async function PUT(request: Request) {
                         rate: vat_retention_rate,
                         amount: totalRetIVA,
                         direction: WithholdingDirection.ISSUED,
-                        certificate_number: await generateRetentionNumber(tx, company_id, 'IVA'),
+                        certificate_number: certNumber,
                         date: new Date(date)
                     })
                 }
                 if (totalRetISLR > 0) {
                     const islrRate = processedItems.find((i: any) => i.islr_rate > 0)?.islr_rate || 0
                     const islrConceptName = islrConcepts.find((c: any) => c.id === processedItems.find((i: any) => i.islr_concept_id)?.islr_concept_id)?.description || null
+                    const certNumber = existingISLRNumber ?? await generateRetentionNumber(tx, company_id, 'ISLR')
                     withholdingsToCreate.push({
                         company_id,
                         third_party_id,
@@ -266,7 +276,7 @@ export async function PUT(request: Request) {
                         amount: totalRetISLR,
                         direction: WithholdingDirection.ISSUED,
                         islr_concept_name: islrConceptName,
-                        certificate_number: await generateRetentionNumber(tx, company_id, 'ISLR'),
+                        certificate_number: certNumber,
                         date: new Date(date)
                     })
                 }

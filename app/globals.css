@@ -26,3 +26,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Una hoja por comprobante de retención IVA al imprimir/PDF */
+@media print {
+  .comprobante-iva-page.print-break-after-page {
+    break-after: page;
+    page-break-after: always;
+  }
+}
